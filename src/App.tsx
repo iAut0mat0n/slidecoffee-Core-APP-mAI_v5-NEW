@@ -13,11 +13,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <Onboarding />
-          </ProtectedRoute>
-        } />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />

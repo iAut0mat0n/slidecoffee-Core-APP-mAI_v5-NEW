@@ -133,3 +133,14 @@ netlify/
 ## Current Phase: 1 - Compare UI to Mockups
 **Next Action:** Review mockups and document UI gaps
 
+
+
+
+## 🔍 Critical Audit & Fixes
+- [x] Fix all navigation buttons (Get Started, Sign In, etc.)
+- [x] Add Supabase Auth signup to onboarding flow (Google OAuth + Email/Password)
+- [x] Verify admin panel exists and works
+- [x] Check if AI provider can be changed in admin settings (Yes - Manus AI, Claude, GPT-4)
+- [x] Verify Manus API is configured in Netlify Functions (ai-chat.ts + generate-slides.ts using gemini-2.0-flash-exp)
+- [ ] Test complete user flow: signup → onboarding → dashboard → create presentation
+

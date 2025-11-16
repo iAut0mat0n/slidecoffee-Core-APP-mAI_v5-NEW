@@ -15,7 +15,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/onboarding')}
               className="text-gray-600 hover:text-gray-900 font-medium px-4 py-2"
             >
               Sign In
