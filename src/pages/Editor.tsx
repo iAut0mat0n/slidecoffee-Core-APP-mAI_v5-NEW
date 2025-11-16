@@ -66,7 +66,7 @@ export default function Editor() {
     
     try {
       const { data, error } = await supabase
-        .from('v2_chat_messages')
+        .from('v2_messages')
         .select('*')
         .eq('presentation_id', id)
         .order('created_at', { ascending: true })
@@ -82,15 +82,9 @@ export default function Editor() {
     if (!id || id === 'new') return
     
     try {
-      const { data } = await supabase
-        .from('v2_presentation_plans')
-        .select('*')
-        .eq('presentation_id', id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      
-      if (data) setPlan(data)
+      // Plan is stored in the presentation's metadata for now
+      // TODO: Create v2_presentation_plans table if needed
+      setPlan(null)
     } catch (error) {
       console.error('Error loading plan:', error)
     }
@@ -136,7 +130,7 @@ export default function Editor() {
       
       // Save messages to database if we have a presentation ID
       if (id && id !== 'new') {
-        await supabase.from('v2_chat_messages').insert([
+        await supabase.from('v2_messages').insert([
           { ...userMessage, id: undefined },
           { ...aiMessage, id: undefined }
         ])

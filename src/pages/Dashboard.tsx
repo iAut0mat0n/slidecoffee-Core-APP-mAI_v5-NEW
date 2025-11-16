@@ -30,15 +30,25 @@ export default function Dashboard() {
         .limit(1)
       
       if (workspaces && workspaces.length > 0) {
-        // Load presentations for first workspace
-        const { data } = await supabase
-          .from('v2_presentations')
-          .select('*')
+        // Get projects in this workspace
+        const { data: projects } = await supabase
+          .from('v2_projects')
+          .select('id')
           .eq('workspace_id', workspaces[0].id)
-          .order('updated_at', { ascending: false })
-          .limit(6)
         
-        setPresentations(data || [])
+        if (projects && projects.length > 0) {
+          const projectIds = projects.map(p => p.id)
+          
+          // Load presentations for these projects
+          const { data } = await supabase
+            .from('v2_presentations')
+            .select('*, v2_projects(name, v2_brands(name))')
+            .in('project_id', projectIds)
+            .order('updated_at', { ascending: false })
+            .limit(6)
+          
+          setPresentations(data || [])
+        }
       }
     } catch (error) {
       console.error('Error loading presentations:', error)
