@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Coffee, Check, Sparkles, Mail } from 'lucide-react'
+import { Coffee, Check, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import Button from '../components/Button'
