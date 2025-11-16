@@ -519,13 +519,64 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Coffee className="w-6 h-6" />
-            <span className="text-xl font-bold text-white">SlideCoffee</span>
+      <footer className="bg-gray-900 text-gray-400 py-16">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            {/* Product */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Product</h3>
+              <ul className="space-y-2">
+                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="/templates" className="hover:text-white transition-colors">Templates</a></li>
+                <li><a href="/inspiration" className="hover:text-white transition-colors">Inspiration</a></li>
+                <li><a href="/insights" className="hover:text-white transition-colors">Insights</a></li>
+              </ul>
+            </div>
+            
+            {/* Company */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li><a href="/about" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="/careers" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="/team" className="hover:text-white transition-colors">Team</a></li>
+                <li><a href="/help" className="hover:text-white transition-colors">Help</a></li>
+                <li><a href="/community" className="hover:text-white transition-colors">Community</a></li>
+                <li><a href="/contact" className="hover:text-white transition-colors">Contact us</a></li>
+              </ul>
+            </div>
+            
+            {/* Social */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Social</h3>
+              <ul className="space-y-2">
+                <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a></li>
+                <li><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a></li>
+                <li><a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">TikTok</a></li>
+                <li><a href="https://x.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a></li>
+              </ul>
+            </div>
+            
+            {/* Privacy */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Privacy</h3>
+              <ul className="space-y-2">
+                <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="/cookie-notice" className="hover:text-white transition-colors">Cookie Notice</a></li>
+                <li><a href="/cookie-preferences" className="hover:text-white transition-colors">Cookie Preferences</a></li>
+              </ul>
+            </div>
           </div>
-          <p>© 2024 SlideCoffee. All rights reserved.</p>
+          
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 pt-8 text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Coffee className="w-6 h-6 text-purple-500" />
+              <span className="text-xl font-bold text-white">SlideCoffee</span>
+            </div>
+            <p>© 2024 SlideCoffee. All rights reserved.</p>
+          </div>
         </div>
       </footer>
 

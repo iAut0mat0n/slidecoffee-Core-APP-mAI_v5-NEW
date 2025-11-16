@@ -144,3 +144,28 @@ netlify/
 - [x] Verify Manus API is configured in Netlify Functions (ai-chat.ts + generate-slides.ts using gemini-2.0-flash-exp)
 - [ ] Test complete user flow: signup → onboarding → dashboard → create presentation
 
+
+
+
+## 🖼️ Replace Copyrighted Images
+- [ ] Replace slide1.jpg (Slide Salad branding)
+- [ ] Replace slide7.jpg (Gamma AI Review)
+- [ ] Replace slide8.jpg (copyrighted content)
+
+## 📄 Footer & Pages
+- [ ] Update footer with 4 columns (Product, Company, Social, Privacy)
+- [ ] Create Pricing page
+- [ ] Create Templates page
+- [ ] Create Inspiration page
+- [ ] Create Insights page
+- [ ] Create About page
+- [ ] Create Careers page
+- [ ] Create Team page
+- [ ] Create Help page
+- [ ] Create Community page
+- [ ] Create Contact page
+- [ ] Create Terms of Service page
+- [ ] Create Privacy Policy page
+- [ ] Create Cookie Notice page
+- [ ] Create Cookie Preferences page
+
