@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 export default function CookiePreferences() {
   const navigate = useNavigate()
-  const [essential, setEssential] = useState(true)
+  const [essential] = useState(true)
   const [analytics, setAnalytics] = useState(false)
   const [functional, setFunctional] = useState(false)
 
