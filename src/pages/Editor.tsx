@@ -8,7 +8,7 @@ import * as api from '../lib/api'
 
 export default function Editor() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { } = useAuth()
   const navigate = useNavigate()
   
   const [presentation, setPresentation] = useState<Presentation | null>(null)
@@ -214,7 +214,6 @@ export default function Editor() {
   }
 
   const slides = presentation?.slides || []
-  const currentSlide = slides[currentSlideIndex]
 
   if (loading) {
     return (
@@ -351,7 +350,7 @@ export default function Editor() {
           {slides.length > 0 && (
             <div className="w-48 bg-white border-r border-gray-200 p-4 overflow-y-auto">
               <div className="space-y-3">
-                {slides.map((slide: any, index: number) => (
+                {slides.map((_slide: any, index: number) => (
                   <button
                     key={index}
                     onClick={() => setCurrentSlideIndex(index)}

@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Coffee, LayoutDashboard, Tag, Folder, Clock, Star, Settings, LogOut, ChevronDown, Search, Plus, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
