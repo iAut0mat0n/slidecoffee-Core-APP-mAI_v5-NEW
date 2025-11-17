@@ -50,8 +50,8 @@ async function startServer() {
         'https://slide-coffee-v1-production.up.railway.app',
       ];
       
-      // Also allow any Railway preview deployments
-      if (origin.includes('.railway.app') || origin.includes('localhost')) {
+      // Also allow Railway and Render deployments
+      if (origin.includes('.railway.app') || origin.includes('.onrender.com') || origin.includes('localhost')) {
         return callback(null, true);
       }
       
