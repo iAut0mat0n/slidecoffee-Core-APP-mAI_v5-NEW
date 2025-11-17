@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
+import RootRedirect from './pages/RootRedirect'
 import Dashboard from './pages/Dashboard'
 import Onboarding from './pages/Onboarding'
 import Editor from './pages/Editor'
@@ -26,7 +26,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
