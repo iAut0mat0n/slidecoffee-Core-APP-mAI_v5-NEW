@@ -169,3 +169,33 @@ netlify/
 - [ ] Create Cookie Notice page
 - [ ] Create Cookie Preferences page
 
+
+
+
+---
+
+## 🚨 NEW CRITICAL ISSUES (Sprint 1 Follow-up)
+
+### AI Chat Broken
+- [ ] Debug ai-chat-stream Netlify function (returning errors)
+- [ ] Check Netlify function logs for stack traces
+- [ ] Verify Manus API credentials in Netlify env
+- [ ] Test ManusProvider embeddings endpoint
+- [ ] Test ManusProvider chat completions endpoint
+
+### UI/UX Fixes Needed
+- [ ] Redesign Settings page (currently old blog-style, needs modern SaaS tabs)
+- [ ] Build Projects page (currently blank, needs grid/list view)
+- [ ] Build Recent page (currently blank, needs recent presentations list)
+- [ ] Build Favorites page (currently blank, needs favorited items)
+- [ ] Complete Brands page (has empty state but missing "Create Brand" button)
+
+### Completed in Sprint 1 ✅
+- [x] AI agent branding (Brew ☕ with purple coffee icon)
+- [x] Provider-agnostic architecture (Manus default, Claude switchable)
+- [x] ChatMessage component with markdown rendering
+- [x] ThinkingIndicator component
+- [x] SuggestedFollowups component
+- [x] Memory system infrastructure (EmbeddingService, VectorMemoryService, RAGService)
+- [x] Supabase pgvector setup with memories table
+

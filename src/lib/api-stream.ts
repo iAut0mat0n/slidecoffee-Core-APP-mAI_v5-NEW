@@ -1,6 +1,7 @@
 /**
  * Streaming API for AI chat with memory integration
  */
+import { getApiUrl } from '../config/env'
 
 export interface StreamEvent {
   type: 'start' | 'chunk' | 'done' | 'error';
@@ -14,7 +15,7 @@ export async function* streamChatMessage(
   userId: string,
   presentationContext?: any
 ): AsyncGenerator<StreamEvent, void, unknown> {
-  const response = await fetch('/.netlify/functions/ai-chat-stream', {
+  const response = await fetch(getApiUrl('ai-chat-stream'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

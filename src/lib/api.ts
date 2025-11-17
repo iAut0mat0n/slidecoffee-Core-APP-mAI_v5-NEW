@@ -1,7 +1,8 @@
-// API client for Netlify functions
+// API client for serverless functions
+import { getApiUrl } from '../config/env'
 
 export async function sendChatMessage(messages: Array<{ role: string; content: string }>, presentationContext?: any) {
-  const response = await fetch('/.netlify/functions/ai-chat', {
+  const response = await fetch(getApiUrl('ai-chat'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -21,7 +22,7 @@ export async function sendChatMessage(messages: Array<{ role: string; content: s
 }
 
 export async function generateSlides(plan: any, brand?: any) {
-  const response = await fetch('/.netlify/functions/generate-slides', {
+  const response = await fetch(getApiUrl('generate-slides'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

@@ -7,7 +7,7 @@ import Button from '../components/Button'
 import ChatMessage from '../components/ChatMessage'
 import ThinkingIndicator from '../components/ThinkingIndicator'
 import SuggestedFollowups from '../components/SuggestedFollowups'
-import { streamChatMessage } from '../lib/api-stream'
+import { sendChatMessage } from '../lib/api'
 import { getRandomGreeting, getSuggestedFollowups } from '../config/aiAgent'
 
 export default function EditorEnhanced() {
@@ -20,8 +20,6 @@ export default function EditorEnhanced() {
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [isThinking, setIsThinking] = useState(false)
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [streamingContent, setStreamingContent] = useState('')
   const [suggestedFollowups, setSuggestedFollowups] = useState<string[]>([])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -40,7 +38,7 @@ export default function EditorEnhanced() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, isThinking, streamingContent])
+  }, [messages, isThinking])
 
   // Auto-save draft message
   useEffect(() => {
@@ -136,7 +134,6 @@ export default function EditorEnhanced() {
     }
     
     setIsThinking(true)
-    setStreamingContent('')
     setSuggestedFollowups([])
     
     try {
@@ -165,31 +162,16 @@ export default function EditorEnhanced() {
         content: m.content,
       }))
       
-      // Start streaming response
-      setIsThinking(false)
-      setIsStreaming(true)
-      let fullResponse = ''
-      
-      for await (const event of streamChatMessage(
+      // Call AI API
+      const fullResponse = await sendChatMessage(
         apiMessages,
-        user.id,
         {
           presentationId: id,
           title: presentation?.title,
         }
-      )) {
-        if (event.type === 'chunk' && event.content) {
-          fullResponse += event.content
-          setStreamingContent(fullResponse)
-        } else if (event.type === 'done') {
-          if (event.fullResponse) {
-            fullResponse = event.fullResponse
-          }
-          break
-        } else if (event.type === 'error') {
-          throw new Error(event.error || 'Unknown error')
-        }
-      }
+      )
+      
+      setIsThinking(false)
       
       // Add AI response to messages
       const aiMessage: ChatMessageType = {
@@ -202,8 +184,6 @@ export default function EditorEnhanced() {
       }
       
       setMessages(prev => [...prev, aiMessage])
-      setStreamingContent('')
-      setIsStreaming(false)
       
       // Generate suggested follow-ups
       setSuggestedFollowups(getSuggestedFollowups('topic'))
@@ -219,8 +199,6 @@ export default function EditorEnhanced() {
     } catch (error) {
       console.error('Error sending message:', error)
       setIsThinking(false)
-      setIsStreaming(false)
-      setStreamingContent('')
       
       // Show error to user
       const errorMessage: ChatMessageType = {
@@ -292,15 +270,7 @@ export default function EditorEnhanced() {
 
           {isThinking && <ThinkingIndicator />}
 
-          {isStreaming && streamingContent && (
-            <ChatMessage
-              role="assistant"
-              content={streamingContent}
-              isStreaming={true}
-            />
-          )}
-
-          {suggestedFollowups.length > 0 && !isThinking && !isStreaming && (
+          {suggestedFollowups.length > 0 && !isThinking && (
             <SuggestedFollowups
               suggestions={suggestedFollowups}
               onSelect={handleFollowupSelect}
@@ -321,11 +291,11 @@ export default function EditorEnhanced() {
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
               placeholder="Message Brew..."
               className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-shadow"
-              disabled={isThinking || isStreaming}
+              disabled={isThinking}
             />
             <Button
               onClick={() => handleSendMessage()}
-              disabled={isThinking || isStreaming || !inputMessage.trim()}
+              disabled={isThinking || !inputMessage.trim()}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-5 h-5" />
