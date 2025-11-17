@@ -3,7 +3,7 @@
  * Implementation for Manus built-in AI APIs
  */
 
-import { AIProvider, ChatMessage, ChatCompletionOptions, EmbeddingOptions } from './AIProvider';
+import { AIProvider, type ChatMessage, type ChatCompletionOptions, type EmbeddingOptions } from './AIProvider';
 
 export class ManusProvider extends AIProvider {
   private defaultChatModel = 'gemini-2.0-flash-exp';

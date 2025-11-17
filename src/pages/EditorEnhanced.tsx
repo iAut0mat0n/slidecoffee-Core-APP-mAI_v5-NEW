@@ -72,6 +72,7 @@ export default function EditorEnhanced() {
       presentation_id: id || 'new',
       role: 'assistant',
       content: getRandomGreeting(),
+      metadata: null,
       created_at: new Date().toISOString(),
     }
     setMessages([greeting])
@@ -145,6 +146,7 @@ export default function EditorEnhanced() {
         presentation_id: id || 'new',
         role: 'user',
         content: textToSend,
+        metadata: null,
         created_at: new Date().toISOString(),
       }
       
@@ -195,6 +197,7 @@ export default function EditorEnhanced() {
         presentation_id: id || 'new',
         role: 'assistant',
         content: fullResponse,
+        metadata: null,
         created_at: new Date().toISOString(),
       }
       
@@ -225,6 +228,7 @@ export default function EditorEnhanced() {
         presentation_id: id || 'new',
         role: 'assistant',
         content: 'Oops! Something went wrong on my end. Mind trying that again?',
+        metadata: null,
         created_at: new Date().toISOString(),
       }
       setMessages(prev => [...prev, errorMessage])

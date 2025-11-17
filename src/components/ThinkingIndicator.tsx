@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Coffee, Loader2 } from 'lucide-react';
 import { getRandomThinkingMessage, AI_AGENT } from '../config/aiAgent';
 

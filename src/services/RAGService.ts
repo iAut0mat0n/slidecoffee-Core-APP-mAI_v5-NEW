@@ -4,9 +4,9 @@
  * Provider-agnostic: works with Manus, Claude, or any configured provider
  */
 
-import { VectorMemoryService, Memory } from './VectorMemoryService';
+import { VectorMemoryService, type Memory } from './VectorMemoryService';
 import { ProviderFactory } from './providers/ProviderFactory';
-import { AIProvider, ChatMessage } from './providers/AIProvider';
+import { AIProvider, type ChatMessage } from './providers/AIProvider';
 
 export class RAGService {
   private vectorMemory: VectorMemoryService;

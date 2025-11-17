@@ -1,4 +1,4 @@
-import React from 'react';
+// React imported via JSX transform
 import ReactMarkdown from 'react-markdown';
 import { Coffee, User } from 'lucide-react';
 import { AI_AGENT } from '../config/aiAgent';
@@ -52,8 +52,8 @@ export default function ChatMessage({ role, content, isStreaming }: ChatMessageP
                   ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
                   ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-2">{children}</ol>,
                   li: ({ children }) => <li className="text-gray-800">{children}</li>,
-                  code: ({ inline, children }) => 
-                    inline ? (
+                  code: ({ children, ...props }) => 
+                    (props as any).inline ? (
                       <code className="bg-gray-200 text-purple-700 px-1.5 py-0.5 rounded text-sm font-mono">
                         {children}
                       </code>

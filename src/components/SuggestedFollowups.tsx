@@ -1,4 +1,4 @@
-import React from 'react';
+// React imported via JSX transform;
 import { ArrowRight } from 'lucide-react';
 
 interface SuggestedFollowupsProps {

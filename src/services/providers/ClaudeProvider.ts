@@ -4,7 +4,7 @@
  * Note: Claude doesn't provide embeddings, so we use Voyage AI for embeddings
  */
 
-import { AIProvider, ChatMessage, ChatCompletionOptions, EmbeddingOptions } from './AIProvider';
+import { AIProvider, type ChatMessage, type ChatCompletionOptions, type EmbeddingOptions } from './AIProvider';
 
 export class ClaudeProvider extends AIProvider {
   private defaultChatModel = 'claude-3-5-sonnet-20241022';
