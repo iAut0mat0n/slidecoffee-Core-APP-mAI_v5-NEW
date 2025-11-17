@@ -24,9 +24,9 @@ export class VectorMemoryService {
   private supabase: SupabaseClient;
   private embeddingService: EmbeddingService;
 
-  constructor(supabaseUrl: string, supabaseKey: string, openaiApiKey: string) {
+  constructor(supabaseUrl: string, supabaseKey: string) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.embeddingService = new EmbeddingService(openaiApiKey);
+    this.embeddingService = new EmbeddingService();
   }
 
   /**

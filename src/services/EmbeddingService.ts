@@ -1,16 +1,18 @@
 /**
  * EmbeddingService
- * Generates vector embeddings using OpenAI's text-embedding-3-small model
- * Cost: ~$0.02 per 1M tokens (~750K words)
+ * Generates vector embeddings using configured AI provider
+ * Provider-agnostic: works with Manus, Claude, or any configured provider
  */
 
-export class EmbeddingService {
-  private apiKey: string;
-  private apiUrl: string = 'https://api.openai.com/v1/embeddings';
-  private model: string = 'text-embedding-3-small';
+import { ProviderFactory } from './providers/ProviderFactory';
+import { AIProvider } from './providers/AIProvider';
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+export class EmbeddingService {
+  private provider: AIProvider;
+  private embeddingCache = new Map<string, number[]>();
+
+  constructor(provider?: AIProvider) {
+    this.provider = provider || ProviderFactory.createProvider();
   }
 
   /**
@@ -19,31 +21,7 @@ export class EmbeddingService {
    * @returns 1536-dimensional vector
    */
   async generateEmbedding(text: string): Promise<number[]> {
-    try {
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          input: text,
-          encoding_format: 'float',
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.data[0].embedding;
-    } catch (error) {
-      console.error('[EmbeddingService] Error generating embedding:', error);
-      throw error;
-    }
+    return this.provider.generateEmbedding(text);
   }
 
   /**
@@ -52,39 +30,13 @@ export class EmbeddingService {
    * @returns Array of 1536-dimensional vectors
    */
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
-    try {
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          input: texts,
-          encoding_format: 'float',
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.data.map((item: any) => item.embedding);
-    } catch (error) {
-      console.error('[EmbeddingService] Error generating embeddings:', error);
-      throw error;
-    }
+    return this.provider.generateEmbeddings(texts);
   }
 
   /**
    * Generate embedding with caching
    * Useful for frequently embedded texts
    */
-  private embeddingCache = new Map<string, number[]>();
-
   async getCachedEmbedding(text: string): Promise<number[]> {
     if (this.embeddingCache.has(text)) {
       return this.embeddingCache.get(text)!;
@@ -100,6 +52,13 @@ export class EmbeddingService {
    */
   clearCache(): void {
     this.embeddingCache.clear();
+  }
+
+  /**
+   * Get current provider name
+   */
+  getProviderName(): string {
+    return this.provider.getProviderName();
   }
 }
 

@@ -1,24 +1,20 @@
 /**
  * RAGService (Retrieval-Augmented Generation)
  * Generates AI responses enhanced with user memory context
- * Makes AI truly personalized and context-aware
+ * Provider-agnostic: works with Manus, Claude, or any configured provider
  */
 
 import { VectorMemoryService, Memory } from './VectorMemoryService';
-
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+import { ProviderFactory } from './providers/ProviderFactory';
+import { AIProvider, ChatMessage } from './providers/AIProvider';
 
 export class RAGService {
   private vectorMemory: VectorMemoryService;
-  private openaiApiKey: string;
-  private apiUrl: string = 'https://api.openai.com/v1/chat/completions';
+  private provider: AIProvider;
 
-  constructor(vectorMemory: VectorMemoryService, openaiApiKey: string) {
+  constructor(vectorMemory: VectorMemoryService, provider?: AIProvider) {
     this.vectorMemory = vectorMemory;
-    this.openaiApiKey = openaiApiKey;
+    this.provider = provider || ProviderFactory.createProvider();
   }
 
   /**
@@ -58,43 +54,16 @@ Use this context to provide personalized, context-aware responses. Reference pas
         { role: 'user', content: userMessage },
       ];
 
-      // 5. Generate response
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages,
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
+      // 5. Generate response using provider
+      const response = await this.provider.generateChatCompletion(messages, {
+        temperature: 0.7,
+        maxTokens: 2000,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-      }
+      // 6. Store new memories from this interaction
+      await this.storeInteractionMemories(userId, userMessage, response);
 
-      const data = await response.json();
-      const aiResponse = data.choices[0].message.content || '';
-
-      // 6. Store this interaction as a memory
-      await this.vectorMemory.storeMemory(
-        userId,
-        `User: ${userMessage}\nAI: ${aiResponse}`,
-        'conversation',
-        0.5,
-        {
-          user_message: userMessage,
-          ai_response: aiResponse,
-          timestamp: new Date().toISOString(),
-        }
-      );
-
-      return aiResponse;
+      return response;
     } catch (error) {
       console.error('[RAGService] Error generating response:', error);
       throw error;
@@ -102,7 +71,7 @@ Use this context to provide personalized, context-aware responses. Reference pas
   }
 
   /**
-   * Generate streaming response with memory context
+   * Generate streaming AI response with memory-augmented context
    */
   async *generateStreamingResponse(
     userId: string,
@@ -129,7 +98,7 @@ Use this context to provide personalized, context-aware responses. Reference pas
 ## User Context (from past interactions):
 ${memoryContext}
 
-Use this context to provide personalized, context-aware responses.`;
+Use this context to provide personalized, context-aware responses. Reference past conversations naturally when relevant.`;
 
       // 4. Build messages array
       const messages: ChatMessage[] = [
@@ -138,202 +107,80 @@ Use this context to provide personalized, context-aware responses.`;
         { role: 'user', content: userMessage },
       ];
 
-      // 5. Generate streaming response
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages,
-          temperature: 0.7,
-          max_tokens: 1000,
-          stream: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body');
-      }
-
-      const decoder = new TextDecoder();
+      // 5. Stream response using provider
       let fullResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter((line) => line.trim() !== '');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices[0]?.delta?.content;
-              if (content) {
-                fullResponse += content;
-                yield content;
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
-          }
-        }
+      for await (const chunk of this.provider.generateStreamingChatCompletion(messages, {
+        temperature: 0.7,
+        maxTokens: 2000,
+      })) {
+        fullResponse += chunk;
+        yield chunk;
       }
 
-      // 6. Store the complete interaction as a memory
-      await this.vectorMemory.storeMemory(
-        userId,
-        `User: ${userMessage}\nAI: ${fullResponse}`,
-        'conversation',
-        0.5,
-        {
-          user_message: userMessage,
-          ai_response: fullResponse,
-          timestamp: new Date().toISOString(),
-        }
-      );
+      // 6. Store new memories from this interaction
+      await this.storeInteractionMemories(userId, userMessage, fullResponse);
     } catch (error) {
-      console.error('[RAGService] Error in streaming response:', error);
+      console.error('[RAGService] Error generating streaming response:', error);
       throw error;
     }
   }
 
   /**
-   * Build readable context from memories
+   * Build memory context string from relevant memories
    */
   private buildMemoryContext(memories: Memory[]): string {
     if (memories.length === 0) {
-      return 'This is a new user. No previous context available.';
+      return 'No previous context available (first interaction with this user).';
     }
 
-    const grouped = this.groupByType(memories);
-    const sections: string[] = [];
+    const contextParts = memories.map((memory, index) => {
+      const typeLabel = memory.memory_type.replace('_', ' ');
+      return `${index + 1}. [${typeLabel}] ${memory.content}`;
+    });
 
-    // Preferences
-    if (grouped.preference && grouped.preference.length > 0) {
-      sections.push(`**User Preferences**: ${grouped.preference.map((m) => m.content).join('; ')}`);
-    }
-
-    // Design Preferences
-    if (grouped.design_preference && grouped.design_preference.length > 0) {
-      sections.push(`**Design Preferences**: ${grouped.design_preference.map((m) => m.content).join('; ')}`);
-    }
-
-    // Presentation Topics
-    if (grouped.presentation_topic && grouped.presentation_topic.length > 0) {
-      sections.push(`**Past Presentation Topics**: ${grouped.presentation_topic.map((m) => m.content).join('; ')}`);
-    }
-
-    // Goals
-    if (grouped.goal && grouped.goal.length > 0) {
-      sections.push(`**User Goals**: ${grouped.goal.map((m) => m.content).join('; ')}`);
-    }
-
-    // Recent Conversations
-    if (grouped.conversation && grouped.conversation.length > 0) {
-      const recent = grouped.conversation.slice(0, 3);
-      sections.push(`**Recent Conversations**: ${recent.map((m) => m.content.substring(0, 150) + '...').join(' | ')}`);
-    }
-
-    // Insights
-    if (grouped.insight && grouped.insight.length > 0) {
-      sections.push(`**Key Insights**: ${grouped.insight.map((m) => m.content).join('; ')}`);
-    }
-
-    return sections.join('\n\n');
+    return contextParts.join('\n');
   }
 
   /**
-   * Group memories by type
+   * Store new memories from user interaction
    */
-  private groupByType(memories: Memory[]): Record<string, Memory[]> {
-    return memories.reduce((acc, memory) => {
-      if (!acc[memory.memory_type]) {
-        acc[memory.memory_type] = [];
-      }
-      acc[memory.memory_type].push(memory);
-      return acc;
-    }, {} as Record<string, Memory[]>);
-  }
-
-  /**
-   * Extract insights from conversation using LLM
-   */
-  async extractInsights(
+  private async storeInteractionMemories(
     userId: string,
-    conversation: string
-  ): Promise<Memory[]> {
+    userMessage: string,
+    aiResponse: string
+  ): Promise<void> {
     try {
-      const prompt = `Analyze this conversation and extract key insights about the user:
+      // Store user message as conversation memory
+      await this.vectorMemory.storeMemory(
+        userId,
+        `User asked: ${userMessage}`,
+        'conversation',
+        0.5,
+        { timestamp: new Date().toISOString() }
+      );
 
-Conversation:
-${conversation}
-
-Extract:
-1. User preferences (things they like/dislike about presentations)
-2. Design preferences (colors, fonts, styles mentioned)
-3. Presentation topics they're interested in
-4. Goals they mentioned
-5. Important insights about their work or industry
-
-Return as JSON array with format: [{"content": "...", "type": "preference|design_preference|presentation_topic|goal|insight", "importance": 0-1}]
-
-Only extract meaningful, specific insights. Skip generic statements.`;
-
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to extract insights');
-      }
-
-      const data = await response.json();
-      const insights = JSON.parse(data.choices[0].message.content || '{"insights": []}');
-
-      // Store each insight as a memory
-      const memories: Memory[] = [];
-      for (const insight of insights.insights || []) {
-        const memory = await this.vectorMemory.storeMemory(
+      // Extract and store insights from AI response
+      // (You can enhance this with more sophisticated extraction logic)
+      if (aiResponse.length > 100) {
+        await this.vectorMemory.storeMemory(
           userId,
-          insight.content,
-          insight.type,
-          insight.importance || 0.7,
-          { extracted_at: new Date().toISOString() }
+          `AI suggested: ${aiResponse.substring(0, 200)}...`,
+          'insight',
+          0.6,
+          { timestamp: new Date().toISOString() }
         );
-        if (memory) {
-          memories.push(memory);
-        }
       }
-
-      return memories;
     } catch (error) {
-      console.error('[RAGService] Error extracting insights:', error);
-      return [];
+      console.error('[RAGService] Error storing interaction memories:', error);
+      // Don't throw - memory storage failures shouldn't break the conversation
     }
+  }
+
+  /**
+   * Get current provider name
+   */
+  getProviderName(): string {
+    return this.provider.getProviderName();
   }
 }
 

@@ -1,11 +1,11 @@
 import { Handler } from '@netlify/functions';
 import { VectorMemoryService } from '../../src/services/VectorMemoryService';
 import { RAGService } from '../../src/services/RAGService';
+import { ProviderFactory } from '../../src/services/providers/ProviderFactory';
 import { AI_AGENT } from '../../src/config/aiAgent';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
-const OPENAI_API_KEY = process.env.VITE_OPENAI_API_KEY || '';
 
 export const handler: Handler = async (event) => {
   // Only allow POST
@@ -33,9 +33,10 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Initialize services
-    const vectorMemory = new VectorMemoryService(SUPABASE_URL, SUPABASE_KEY, OPENAI_API_KEY);
-    const ragService = new RAGService(vectorMemory, OPENAI_API_KEY);
+    // Initialize provider-agnostic services
+    const provider = ProviderFactory.createProvider();
+    const vectorMemory = new VectorMemoryService(SUPABASE_URL, SUPABASE_KEY);
+    const ragService = new RAGService(vectorMemory, provider);
 
     // Get the last user message
     const userMessage = messages[messages.length - 1]?.content || '';
@@ -57,8 +58,11 @@ export const handler: Handler = async (event) => {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Send initial event
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'start' })}\n\n`));
+          // Send initial event with provider info
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            type: 'start',
+            provider: provider.getProviderName()
+          })}\n\n`));
 
           let fullResponse = '';
 
