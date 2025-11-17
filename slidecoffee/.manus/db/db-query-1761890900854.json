@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, name, email, subscriptionTier, creditsRemaining, creditsUsedThisMonth, billingCycleStart FROM users LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2v8pAKU5avPdM9f.root --database 7hU2KPdt4KWuW7h9MWghrJ --execute SELECT id, name, email, subscriptionTier, creditsRemaining, creditsUsedThisMonth, billingCycleStart FROM users LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Javian Walker",
+      "email": "javian@forthlogic.com",
+      "subscriptionTier": "starter",
+      "creditsRemaining": "200",
+      "creditsUsedThisMonth": "0",
+      "billingCycleStart": "2025-10-31 00:20:12"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tsubscriptionTier\tcreditsRemaining\tcreditsUsedThisMonth\tbillingCycleStart\n1\tJavian Walker\tjavian@forthlogic.com\tstarter\t200\t0\t2025-10-31 00:20:12\n",
+  "stderr": "",
+  "execution_time_ms": 314
+}

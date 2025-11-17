@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE users \nADD COLUMN adminRole ENUM('super_admin', 'admin', 'support', 'viewer') NULL,\nADD COLUMN mfaEnabled INT NOT NULL DEFAULT 0,\nADD COLUMN mfaSecret VARCHAR(255) NULL,\nADD COLUMN mfaBackupCodes TEXT NULL",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2v8pAKU5avPdM9f.root --database 7hU2KPdt4KWuW7h9MWghrJ --execute ALTER TABLE users \nADD COLUMN adminRole ENUM('super_admin', 'admin', 'support', 'viewer') NULL,\nADD COLUMN mfaEnabled INT NOT NULL DEFAULT 0,\nADD COLUMN mfaSecret VARCHAR(255) NULL,\nADD COLUMN mfaBackupCodes TEXT NULL",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'adminRole'"
+  ]
+}

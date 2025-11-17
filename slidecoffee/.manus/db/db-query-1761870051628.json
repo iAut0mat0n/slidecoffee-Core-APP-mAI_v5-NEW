@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `presentations` MODIFY COLUMN `status` ENUM('draft', 'planning', 'outline_ready', 'generating', 'completed', 'failed') NOT NULL DEFAULT 'draft';\nALTER TABLE `presentations` ADD COLUMN `manusVersionId` VARCHAR(255) AFTER `manusTaskId`;\nALTER TABLE `presentations` ADD COLUMN `outlineJson` JSON AFTER `manusVersionId`;\nALTER TABLE `chatMessages` ADD COLUMN `originalContent` TEXT AFTER `content`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2v8pAKU5avPdM9f.root --database 7hU2KPdt4KWuW7h9MWghrJ --execute ALTER TABLE `presentations` MODIFY COLUMN `status` ENUM('draft', 'planning', 'outline_ready', 'generating', 'completed', 'failed') NOT NULL DEFAULT 'draft';\nALTER TABLE `presentations` ADD COLUMN `manusVersionId` VARCHAR(255) AFTER `manusTaskId`;\nALTER TABLE `presentations` ADD COLUMN `outlineJson` JSON AFTER `manusVersionId`;\nALTER TABLE `chatMessages` ADD COLUMN `originalContent` TEXT AFTER `content`;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1555
+}
