@@ -1,135 +1,68 @@
-# ☕ SlideCoffee v2
+# SlideCoffee ☕
 
-> AI-Powered Presentation Builder with Human-in-the-Loop Design
+AI-first presentation platform that brews perfect slides.
 
-SlideCoffee is a modern web application that helps you create professional presentations using AI. Chat with an AI assistant to generate slides, apply brand guidelines, and export to PowerPoint or PDF.
+## Tech Stack
 
-## ✨ Features
+- **Frontend:** React 19 + Vite + Tailwind CSS 4
+- **Backend:** Express 4 + Node.js
+- **Database:** PostgreSQL (Supabase)
+- **Auth:** Supabase Auth
+- **AI:** Manus AI API
 
-### Core Features
-- **AI-Powered Generation**: Chat with AI to create presentations from scratch
-- **Human-in-the-Loop**: Review and approve presentation plans before generation
-- **Brand Management**: Create and apply brand guidelines (colors, fonts, logos)
-- **Split-Screen Editor**: 30% chat interface + 70% live preview
-- **Multi-Workspace**: Organize presentations across different workspaces
-- **Credit System**: 3-tier subscription model (Starter/Professional/Enterprise)
-- **Real-time Preview**: See slides update as you chat
-- **Export**: Download as PowerPoint or PDF
+## Development
 
-### User Management
-- **Authentication**: Email/password + Google OAuth
-- **3-Step Onboarding**: Welcome → Workspace → Brand setup
-- **User Roles**: Admin and regular users
-- **Team Collaboration**: Invite team members to workspaces
-
-### Admin Features
-- **AI Provider Switching**: Choose between Manus/Claude/GPT-4
-- **User Management**: View and manage all users
-- **Analytics Dashboard**: Track usage and engagement
-- **System Monitoring**: Database, API, and storage status
-
-## 🏗️ Tech Stack
-
-### Frontend
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Tailwind CSS 4** - Styling
-- **React Router** - Navigation
-- **Lucide React** - Icons
-
-### Backend
-- **Netlify Functions** - Serverless API
-- **Supabase** - PostgreSQL database + Auth
-- **Manus LLM API** - AI slide generation
-
-### Deployment
-- **Netlify** - Hosting + Functions
-- **Supabase** - Database + Auth
-- **GitHub** - Version control
-
-## 📦 Installation
-
-### Prerequisites
-- Node.js 22+
-- pnpm 10+
-- Supabase account
-- Manus API key
-
-### Setup
-
-1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/slidecoffee-v2.git
-cd slidecoffee-v2
-```
-
-2. **Install dependencies**
-```bash
+# Install dependencies
 pnpm install
-```
 
-3. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
-
-4. **Set up database**
-```bash
-# Run the SQL schema in your Supabase SQL Editor
-cat database-schema.sql
-```
-
-5. **Start development server**
-```bash
+# Run dev server (frontend + backend)
 pnpm dev
+
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
 ```
 
-Visit `http://localhost:5173`
+## Environment Variables
 
-## 🚀 Deployment
+All environment variables are managed through the Manus platform. See `.env.example` for reference.
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+## Deployment
 
-Quick deploy to Netlify:
-```bash
-netlify deploy --prod
+Deployed on Render: https://slidecoffee-v2-new-prod.onrender.com
+
+Build command: `pnpm install && pnpm build`
+Start command: `pnpm start`
+
+## Features
+
+- ✨ AI-powered presentation generation
+- 🎨 Brand management with themes
+- 📊 Live preview and editing
+- 💬 AI chat assistant
+- 📤 Export to PowerPoint, PDF, Google Slides
+- 👥 Collaboration and sharing
+
+## Project Structure
+
+```
+├── src/                  # Frontend React app
+│   ├── pages/           # Page components
+│   ├── components/      # Reusable components
+│   ├── contexts/        # React contexts
+│   ├── hooks/           # Custom hooks
+│   ├── services/        # API services
+│   └── lib/             # Utilities
+├── server/              # Express backend
+│   ├── index.ts         # Server entry point
+│   └── routes/          # API routes
+├── mockups/             # UI design mockups
+└── public/              # Static assets
 ```
 
-## 📁 Project Structure
+## License
 
-```
-slidecoffee-v2/
-├── src/
-│   ├── components/       # Reusable UI components
-│   ├── contexts/         # React contexts
-│   ├── lib/              # Utilities and configs
-│   ├── pages/            # Page components
-│   ├── App.tsx           # Main app component
-│   ├── main.tsx          # Entry point
-│   └── index.css         # Global styles
-├── netlify/functions/    # Serverless functions
-├── database-schema.sql   # Database schema
-└── DEPLOYMENT.md         # Deployment guide
-```
-
-## 🎨 Design System
-
-- **Primary**: Purple gradient (#7C3AED)
-- **Secondary**: Mint green (#6EE7B7)
-- **Typography**: Inter font family
-
-## 💳 Credit System
-
-- **Starter**: 75 credits/month (Free)
-- **Professional**: 500 credits/month ($29/mo)
-- **Enterprise**: Unlimited credits ($99/mo)
-
-## 📄 License
-
-MIT License
-
----
-
-**Made with ☕ and AI** | Version 2.0.0
-
+Proprietary - ForthLogic
