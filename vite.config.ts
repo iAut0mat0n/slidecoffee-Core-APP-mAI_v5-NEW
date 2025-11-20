@@ -7,6 +7,11 @@ export default defineConfig({
   server: {
     host: true,
     port: parseInt(process.env.PORT || '3000'),
+    allowedHosts: [
+      '.manusvm.computer',
+      '.onrender.com',
+      'localhost',
+    ],
   },
   preview: {
     host: true,

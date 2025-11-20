@@ -32,6 +32,13 @@ import ThemesNew from './pages/ThemesNew'
 import SettingsNew from './pages/SettingsNew'
 import CreateModeSelector from './pages/CreateModeSelector'
 import AIAgentCreate from './pages/AIAgentCreate'
+import WorkspaceSettings from './pages/WorkspaceSettings'
+import AnalyticsDashboard from './pages/AnalyticsDashboard'
+import UserProfile from './pages/UserProfile'
+import HelpCenter from './pages/HelpCenter'
+import Notifications from './pages/Notifications'
+import VersionHistory from './pages/VersionHistory'
+import Comments from './pages/Comments'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -101,6 +108,43 @@ function App() {
         <Route path="/create/import" element={
           <ProtectedRoute>
             <AIAgentCreate />
+          </ProtectedRoute>
+        } />
+        
+        {/* Phase 4 & 5: Management and Supporting Pages */}
+        <Route path="/workspace/settings" element={
+          <ProtectedRoute>
+            <WorkspaceSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <AnalyticsDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/help-center" element={
+          <ProtectedRoute>
+            <HelpCenter />
+          </ProtectedRoute>
+        } />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        } />
+        <Route path="/version-history/:id" element={
+          <ProtectedRoute>
+            <VersionHistory />
+          </ProtectedRoute>
+        } />
+        <Route path="/comments/:id" element={
+          <ProtectedRoute>
+            <Comments />
           </ProtectedRoute>
         } />
         
