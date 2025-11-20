@@ -163,3 +163,24 @@
 - [ ] Theme editor page
 - [ ] API keys management page
 
+
+
+
+## Future AI Enhancements (Don't implement yet)
+- [ ] Context-aware suggestions in advanced search
+- [ ] Intelligent folder/tag recommendations based on presentation content
+
+## Additional Screens to Build (Reaching 50+)
+- [x] Template creation wizard (TemplateCreator.tsx)
+- [x] Template editor page (integrated in TemplateCreator)
+- [x] Theme creation wizard (integrated in ThemeEditor)
+- [x] Theme editor page (ThemeEditor.tsx)
+- [x] Presentation remix page (PresentationRemix.tsx)
+- [x] API keys management page (APIKeysManagement.tsx)
+- [x] Developer settings page (integrated in APIKeysManagement)
+- [x] Webhook configuration page (WebhookSettings.tsx)
+- [x] Welcome tour overlay (WelcomeTour.tsx)
+- [x] Success celebration modals (SuccessCelebration.tsx)
+- [x] Onboarding checklist (OnboardingChecklist in SuccessCelebration.tsx)
+- [ ] Quick tips tooltips (optional enhancement)
+

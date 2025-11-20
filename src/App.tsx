@@ -47,6 +47,11 @@ import ActivityFeed from './pages/ActivityFeed'
 import FoldersManagement from './pages/FoldersManagement'
 import TagsManagement from './pages/TagsManagement'
 import AdvancedSearch from './pages/AdvancedSearch'
+import TemplateCreator from './pages/TemplateCreator'
+import ThemeEditor from './pages/ThemeEditor'
+import PresentationRemix from './pages/PresentationRemix'
+import APIKeysManagement from './pages/APIKeysManagement'
+import WebhookSettings from './pages/WebhookSettings'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -188,6 +193,35 @@ function App() {
         <Route path="/search" element={
           <ProtectedRoute>
             <AdvancedSearch />
+          </ProtectedRoute>
+        } />
+        
+        {/* Creation Tools */}
+        <Route path="/template/create" element={
+          <ProtectedRoute>
+            <TemplateCreator />
+          </ProtectedRoute>
+        } />
+        <Route path="/theme/editor" element={
+          <ProtectedRoute>
+            <ThemeEditor />
+          </ProtectedRoute>
+        } />
+        <Route path="/presentation/remix/:id" element={
+          <ProtectedRoute>
+            <PresentationRemix />
+          </ProtectedRoute>
+        } />
+        
+        {/* Developer Tools */}
+        <Route path="/developer/api-keys" element={
+          <ProtectedRoute>
+            <APIKeysManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/developer/webhooks" element={
+          <ProtectedRoute>
+            <WebhookSettings />
           </ProtectedRoute>
         } />
         
