@@ -39,6 +39,14 @@ import HelpCenter from './pages/HelpCenter'
 import Notifications from './pages/Notifications'
 import VersionHistory from './pages/VersionHistory'
 import Comments from './pages/Comments'
+import NotFound from './pages/NotFound'
+import ServerError from './pages/ServerError'
+import AdminDashboard from './pages/AdminDashboard'
+import LiveCollaboration from './pages/LiveCollaboration'
+import ActivityFeed from './pages/ActivityFeed'
+import FoldersManagement from './pages/FoldersManagement'
+import TagsManagement from './pages/TagsManagement'
+import AdvancedSearch from './pages/AdvancedSearch'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -148,6 +156,41 @@ function App() {
           </ProtectedRoute>
         } />
         
+        {/* Error Pages */}
+        <Route path="/500" element={<ServerError />} />
+        
+        {/* Admin & Organization */}
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/collaboration" element={
+          <ProtectedRoute>
+            <LiveCollaboration />
+          </ProtectedRoute>
+        } />
+        <Route path="/activity" element={
+          <ProtectedRoute>
+            <ActivityFeed />
+          </ProtectedRoute>
+        } />
+        <Route path="/folders" element={
+          <ProtectedRoute>
+            <FoldersManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/tags" element={
+          <ProtectedRoute>
+            <TagsManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/search" element={
+          <ProtectedRoute>
+            <AdvancedSearch />
+          </ProtectedRoute>
+        } />
+        
         {/* Old Routes (keeping for compatibility) */}
         <Route path="/editor/:id" element={
           <ProtectedRoute>
@@ -182,6 +225,9 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/cookie-notice" element={<CookieNotice />} />
         <Route path="/cookie-preferences" element={<CookiePreferences />} />
+        
+        {/* 404 Catch-all */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
