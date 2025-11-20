@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import RootRedirect from './pages/RootRedirect'
+
+// Old pages (keeping for compatibility)
 import Dashboard from './pages/Dashboard'
 import Onboarding from './pages/Onboarding'
 import Editor from './pages/Editor'
@@ -20,6 +22,17 @@ import Pricing from './pages/Pricing'
 import Templates from './pages/Templates'
 import Inspiration from './pages/Inspiration'
 import Insights from './pages/Insights'
+
+// New UI components
+import DashboardNew from './pages/DashboardNew'
+import BrandsNew from './pages/BrandsNew'
+import ProjectsNew from './pages/ProjectsNew'
+import TemplatesNew from './pages/TemplatesNew'
+import ThemesNew from './pages/ThemesNew'
+import SettingsNew from './pages/SettingsNew'
+import CreateModeSelector from './pages/CreateModeSelector'
+import AIAgentCreate from './pages/AIAgentCreate'
+
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -28,16 +41,70 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        
+        {/* New UI Routes */}
+        <Route path="/dashboard-new" element={
+          <ProtectedRoute>
+            <DashboardNew />
+          </ProtectedRoute>
+        } />
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/brands-new" element={
+          <ProtectedRoute>
+            <BrandsNew />
           </ProtectedRoute>
         } />
         <Route path="/brands" element={
           <ProtectedRoute>
-            <Brands />
+            <BrandsNew />
           </ProtectedRoute>
         } />
+        <Route path="/projects" element={
+          <ProtectedRoute>
+            <ProjectsNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/templates-new" element={
+          <ProtectedRoute>
+            <TemplatesNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/themes" element={
+          <ProtectedRoute>
+            <ThemesNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings-new" element={
+          <ProtectedRoute>
+            <SettingsNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/create" element={
+          <ProtectedRoute>
+            <CreateModeSelector />
+          </ProtectedRoute>
+        } />
+        <Route path="/create/generate" element={
+          <ProtectedRoute>
+            <AIAgentCreate />
+          </ProtectedRoute>
+        } />
+        <Route path="/create/paste" element={
+          <ProtectedRoute>
+            <AIAgentCreate />
+          </ProtectedRoute>
+        } />
+        <Route path="/create/import" element={
+          <ProtectedRoute>
+            <AIAgentCreate />
+          </ProtectedRoute>
+        } />
+        
+        {/* Old Routes (keeping for compatibility) */}
         <Route path="/editor/:id" element={
           <ProtectedRoute>
             <Editor />
@@ -53,11 +120,13 @@ function App() {
             <AdminPanel />
           </ProtectedRoute>
         } />
+        
         {/* Footer Pages - Product */}
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/inspiration" element={<Inspiration />} />
         <Route path="/insights" element={<Insights />} />
+        
         {/* Footer Pages - Company */}
         <Route path="/about" element={<About />} />
         <Route path="/careers" element={<Careers />} />

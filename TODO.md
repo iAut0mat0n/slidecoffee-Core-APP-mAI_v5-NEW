@@ -1,5 +1,12 @@
 # SlideCoffee v2 - Completion Plan
 
+## 🔴 CRITICAL BUG - FIX NOW
+
+- [ ] **WORKSPACE CREATION FAILING** - "Failed to create workspace" error in onboarding
+  - Check server/routes/onboarding.ts
+  - Verify database connection
+  - Check PostgreSQL schema and permissions
+
 **Current Status:** App structure exists, needs backend + UI polish
 **Goal:** Deploy full working app to Netlify
 **Architecture:** Vite + React + Netlify Functions + Supabase
