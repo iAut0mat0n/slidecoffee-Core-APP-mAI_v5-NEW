@@ -16,12 +16,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.BACKEND_PORT || 3001;
 
 // CORS configuration
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
+  'http://localhost:5000',
+  'http://0.0.0.0:5000',
+  /\.replit\.dev$/,
+  /\.repl\.co$/,
   /\.netlify\.app$/,
   /\.onrender\.com$/,
 ];
@@ -71,8 +73,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, 'localhost', () => {
+  console.log(`🚀 Server running on localhost:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
