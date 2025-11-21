@@ -1,5 +1,6 @@
 // React Query hooks for API calls
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
 import { systemAPI, authAPI, brandsAPI, projectsAPI, templatesAPI, workspacesAPI } from './api-client';
 
 // System Settings Hooks
