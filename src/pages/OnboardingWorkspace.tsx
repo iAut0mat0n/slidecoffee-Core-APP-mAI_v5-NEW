@@ -1,13 +1,32 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCreateWorkspace } from '../lib/queries';
+import { toast } from 'sonner';
 
 export default function OnboardingWorkspace() {
+  const navigate = useNavigate();
+  const createWorkspace = useCreateWorkspace();
   const [workspaceName, setWorkspaceName] = useState('');
   const [workspaceType, setWorkspaceType] = useState<'personal' | 'team' | 'company'>('personal');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle workspace creation
+    setLoading(true);
+    
+    try {
+      await createWorkspace.mutateAsync({
+        name: workspaceName,
+        type: workspaceType,
+      });
+      
+      toast.success('Workspace created successfully!');
+      navigate('/onboarding/brand');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create workspace');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,7 +102,7 @@ export default function OnboardingWorkspace() {
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
-              <Link href="/onboarding/welcome" className="flex-1">
+              <Link to="/onboarding/welcome" className="flex-1">
                 <button
                   type="button"
                   className="w-full px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
@@ -91,14 +110,13 @@ export default function OnboardingWorkspace() {
                   Back
                 </button>
               </Link>
-              <Link href="/onboarding/brand" className="flex-1">
-                <button
-                  type="submit"
-                  className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-                >
-                  Continue
-                </button>
-              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating...' : 'Continue'}
+              </button>
             </div>
           </form>
 

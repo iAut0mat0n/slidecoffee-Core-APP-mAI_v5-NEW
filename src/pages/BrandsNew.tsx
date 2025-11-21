@@ -1,47 +1,13 @@
 import { useState } from 'react'
 import { Plus, Coffee } from 'lucide-react'
 import CollapsibleSidebar from '../components/CollapsibleSidebar'
-
-interface Brand {
-  id: string
-  name: string
-  font: string
-  colors: string[]
-  logo?: string
-}
+import { useBrands, useDeleteBrand } from '../lib/queries'
+import BrandCreationModal from '../components/BrandCreationModal'
+import { toast } from 'sonner'
 
 export default function BrandsNew() {
-  const [brands, setBrands] = useState<Brand[]>([
-    {
-      id: '1',
-      name: 'Apple',
-      font: 'Helvetic Neue',
-      colors: ['#000000', '#6B7280', '#F3F4F6'],
-      logo: '🍎',
-    },
-    {
-      id: '2',
-      name: 'Google',
-      font: 'Roboto',
-      colors: ['#EA4335', '#34A853', '#4285F4', '#000000'],
-      logo: '🔍',
-    },
-    {
-      id: '3',
-      name: 'Shopify',
-      font: 'Graphik',
-      colors: ['#96BF48', '#008060', '#1A1A1A'],
-      logo: '🛍️',
-    },
-    {
-      id: '4',
-      name: 'Amazon',
-      font: 'Amazon Ember',
-      colors: ['#000000', '#FF9900', '#9CA3AF'],
-      logo: '📦',
-    },
-  ])
-
+  const { data: brands, isLoading } = useBrands()
+  const deleteBrand = useDeleteBrand()
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   const handleCreateBrand = () => {
@@ -49,11 +15,24 @@ export default function BrandsNew() {
   }
 
   const handleEdit = (brandId: string) => {
+    // TODO: Implement edit functionality
     console.log('Edit brand:', brandId)
+    setShowCreateModal(true)
   }
 
-  const handleDelete = (brandId: string) => {
-    setBrands(brands.filter(b => b.id !== brandId))
+  const handleDelete = async (brandId: string) => {
+    if (confirm('Are you sure you want to delete this brand?')) {
+      try {
+        await deleteBrand.mutateAsync(brandId)
+        toast.success('Brand deleted successfully')
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete brand')
+      }
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false)
   }
 
   return (
@@ -74,10 +53,14 @@ export default function BrandsNew() {
             </button>
           </div>
 
-          {/* Brands Grid */}
-          {brands.length > 0 ? (
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            </div>
+          ) : brands && brands.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {brands.map((brand) => (
+              {brands.map((brand: any) => (
                 <div
                   key={brand.id}
                   className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
@@ -85,25 +68,29 @@ export default function BrandsNew() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
                       {/* Logo */}
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-3xl">
-                        {brand.logo}
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                        {brand.logo_url ? (
+                          <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl">🏢</span>
+                        )}
                       </div>
                       
                       {/* Brand Info */}
                       <div>
                         <h3 className="text-xl font-bold mb-1">{brand.name}</h3>
-                        <p className="text-gray-600">{brand.font}</p>
+                        <p className="text-gray-600 text-sm">{brand.font_heading || brand.font_body || 'Default Font'}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Colors */}
                   <div className="flex items-center gap-3 mb-4">
-                    {brand.colors.map((color, index) => (
+                    {[brand.primary_color, brand.secondary_color, brand.accent_color].filter(Boolean).map((color, index) => (
                       <div
                         key={index}
                         className="w-10 h-10 rounded-full border-2 border-gray-200"
-                        style={{ backgroundColor: color }}
+                        style={{ backgroundColor: color || '#8B5CF6' }}
                         title={color}
                       ></div>
                     ))}
@@ -120,18 +107,13 @@ export default function BrandsNew() {
                     <button
                       onClick={() => handleDelete(brand.id)}
                       className="flex-1 px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium"
+                      disabled={deleteBrand.isPending}
                     >
-                      Delete
+                      {deleteBrand.isPending ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
                 </div>
               ))}
-
-              {/* Empty State Card */}
-              <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 flex flex-col items-center justify-center min-h-[200px] hover:border-purple-400 transition-colors">
-                <Coffee className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-gray-500 text-center">No brands yet</p>
-              </div>
             </div>
           ) : (
             // Empty State
@@ -151,29 +133,11 @@ export default function BrandsNew() {
         </div>
       </div>
 
-      {/* Create Brand Modal (placeholder) */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Create Brand</h2>
-            <p className="text-gray-600 mb-6">Brand creation form will go here</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create/Edit Brand Modal */}
+      <BrandCreationModal
+        isOpen={showCreateModal}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }

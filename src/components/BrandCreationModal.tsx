@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useCreateBrand, useWorkspaces } from '../lib/queries';
+import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 interface BrandCreationModalProps {
   isOpen: boolean;
@@ -6,19 +9,24 @@ interface BrandCreationModalProps {
 }
 
 export default function BrandCreationModal({ isOpen, onClose }: BrandCreationModalProps) {
+  const createBrand = useCreateBrand();
+  const { data: workspaces } = useWorkspaces();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [brandData, setBrandData] = useState({
     name: '',
     primaryColor: '#8B5CF6',
     secondaryColor: '#3B82F6',
     logo: null as string | null,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   if (!isOpen) return null;
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setBrandData({ ...brandData, logo: reader.result as string });
@@ -27,9 +35,51 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
     }
   };
 
-  const handleSubmit = () => {
-    // Handle brand creation
-    onClose();
+  const handleSubmit = async () => {
+    setLoading(true);
+    
+    try {
+      let logoUrl = null;
+      
+      // Upload logo if provided
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('brand-assets')
+          .upload(`logos/${fileName}`, logoFile);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('brand-assets')
+          .getPublicUrl(`logos/${fileName}`);
+        
+        logoUrl = publicUrl;
+      }
+      
+      // Get first workspace
+      const workspaceId = workspaces?.[0]?.id;
+      if (!workspaceId) {
+        throw new Error('No workspace found. Please create a workspace first.');
+      }
+      
+      // Create brand
+      await createBrand.mutateAsync({
+        name: brandData.name,
+        primary_color: brandData.primaryColor,
+        secondary_color: brandData.secondaryColor,
+        logo_url: logoUrl,
+        workspace_id: workspaceId,
+      });
+      
+      toast.success('Brand created successfully!');
+      onClose();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create brand');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -208,9 +258,10 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg"
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create Brand
+                {loading ? 'Creating...' : 'Create Brand'}
               </button>
             </>
           )}

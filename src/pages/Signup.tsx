@@ -1,20 +1,39 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function Signup() {
+  const navigate = useNavigate();
+  const { signUp, signInWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle signup logic
+    setLoading(true);
+    
+    try {
+      await signUp(formData.email, formData.password, formData.name);
+      toast.success('Account created successfully! Please check your email to verify your account.');
+      navigate('/onboarding/welcome');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create account');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleSignup = () => {
-    // Handle Google OAuth
+  const handleGoogleSignup = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to sign in with Google');
+    }
   };
 
   return (
@@ -129,9 +148,10 @@ export default function Signup() {
 
               <button
                 type="submit"
-                className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                disabled={loading}
+                className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create Account
+                {loading ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
 

@@ -2,10 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import RootRedirect from './pages/RootRedirect'
 
 // Old pages (keeping for compatibility)
-import Dashboard from './pages/Dashboard'
 import Onboarding from './pages/Onboarding'
 import Editor from './pages/Editor'
-import Brands from './pages/Brands'
 import Settings from './pages/Settings'
 import AdminPanel from './pages/AdminPanel'
 import About from './pages/About'

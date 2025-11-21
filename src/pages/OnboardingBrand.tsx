@@ -1,14 +1,23 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCreateBrand, useWorkspaces } from '../lib/queries';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 export default function OnboardingBrand() {
+  const navigate = useNavigate();
+  const createBrand = useCreateBrand();
+  const { data: workspaces } = useWorkspaces();
   const [brandName, setBrandName] = useState('');
   const [brandColor, setBrandColor] = useState('#8B5CF6');
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedLogo(reader.result as string);
@@ -17,9 +26,52 @@ export default function OnboardingBrand() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle brand creation
+    setLoading(true);
+    
+    try {
+      let logoUrl = null;
+      
+      // Upload logo to Supabase storage if provided
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('brand-assets')
+          .upload(`logos/${fileName}`, logoFile);
+        
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('brand-assets')
+          .getPublicUrl(`logos/${fileName}`);
+        
+        logoUrl = publicUrl;
+      }
+      
+      // Get first workspace (created in previous step)
+      const workspaceId = workspaces?.[0]?.id;
+      if (!workspaceId) {
+        throw new Error('No workspace found. Please create a workspace first.');
+      }
+      
+      // Create brand
+      await createBrand.mutateAsync({
+        name: brandName,
+        primary_color: brandColor,
+        logo_url: logoUrl,
+        workspace_id: workspaceId,
+      });
+      
+      toast.success('Brand created successfully!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create brand');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const presetColors = [
@@ -156,7 +208,7 @@ export default function OnboardingBrand() {
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
-              <Link href="/onboarding/workspace" className="flex-1">
+              <Link to="/onboarding/workspace" className="flex-1">
                 <button
                   type="button"
                   className="w-full px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
@@ -164,19 +216,18 @@ export default function OnboardingBrand() {
                   Back
                 </button>
               </Link>
-              <Link href="/dashboard" className="flex-1">
-                <button
-                  type="submit"
-                  className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-                >
-                  Complete Setup
-                </button>
-              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Setting up...' : 'Complete Setup'}
+              </button>
             </div>
 
             {/* Skip Option */}
             <div className="text-center">
-              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+              <Link to="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
                 Skip for now
               </Link>
             </div>

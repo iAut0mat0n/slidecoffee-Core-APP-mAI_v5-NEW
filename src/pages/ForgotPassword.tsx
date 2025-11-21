@@ -1,14 +1,31 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle password reset logic
-    setSubmitted(true);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Password reset email sent!');
+      setSubmitted(true);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -29,7 +46,7 @@ export default function ForgotPassword() {
               </p>
               
               <div className="pt-4">
-                <Link href="/login">
+                <Link to="/login">
                   <button className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
                     Back to Login
                   </button>
@@ -78,15 +95,16 @@ export default function ForgotPassword() {
 
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send Reset Link
+              {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
 
           {/* Back to Login */}
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2">
+            <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2">
               <span>←</span>
               Back to login
             </Link>
