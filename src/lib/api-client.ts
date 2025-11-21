@@ -52,6 +52,7 @@ export const authAPI = {
 // Brands API
 export const brandsAPI = {
   list: () => fetchAPI<any[]>('/brands'),
+  get: (id: string) => fetchAPI<any>(`/brands/${id}`),
   create: (data: any) => fetchAPI<any>('/brands', {
     method: 'POST',
     body: JSON.stringify(data),

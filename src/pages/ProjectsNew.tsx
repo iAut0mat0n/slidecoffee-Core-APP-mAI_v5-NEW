@@ -2,59 +2,16 @@ import { useState } from 'react'
 import { Search, Plus, Star, Image as ImageIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import CollapsibleSidebar from '../components/CollapsibleSidebar'
-
-interface Project {
-  id: string
-  title: string
-  slideCount: number
-  lastEdited: string
-  thumbnail?: string
-  isFavorite?: boolean
-}
+import { useProjects } from '../lib/queries'
+import { formatDistanceToNow } from 'date-fns'
 
 type FilterTab = 'all' | 'recent' | 'created' | 'favorites'
 
 export default function ProjectsNew() {
   const navigate = useNavigate()
+  const { data: projectsData, isLoading } = useProjects()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      title: 'Project title',
-      slideCount: 3,
-      lastEdited: 'Last edited 2 hours ago',
-      isFavorite: false,
-    },
-    {
-      id: '2',
-      title: 'Project title',
-      slideCount: 3,
-      lastEdited: 'Last edited 2 hours ago',
-      isFavorite: true,
-    },
-    {
-      id: '3',
-      title: 'Project title',
-      slideCount: 3,
-      lastEdited: 'Last edited 2 hours ago',
-      isFavorite: false,
-    },
-    {
-      id: '4',
-      title: 'Project title',
-      slideCount: 3,
-      lastEdited: 'Last edited 2 hours ago',
-      isFavorite: false,
-    },
-    {
-      id: '5',
-      title: 'Project title',
-      slideCount: 3,
-      lastEdited: 'Last edited 2 hours ago',
-      isFavorite: false,
-    },
-  ])
 
   const filterTabs = [
     { id: 'all', label: 'All' },
@@ -63,11 +20,17 @@ export default function ProjectsNew() {
     { id: 'favorites', label: 'Favorites' },
   ] as const
 
-  const toggleFavorite = (projectId: string) => {
-    setProjects(projects.map(p => 
-      p.id === projectId ? { ...p, isFavorite: !p.isFavorite } : p
-    ))
-  }
+  const projects = projectsData || []
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? true
+    
+    if (activeFilter === 'favorites') {
+      return matchesSearch && project.is_favorite
+    }
+    
+    return matchesSearch
+  })
 
   const handleCreateNew = () => {
     navigate('/create/generate')
@@ -133,43 +96,51 @@ export default function ProjectsNew() {
           </div>
 
           {/* Projects Grid */}
-          {projects.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-gray-500">Loading projects...</div>
+            </div>
+          ) : filteredProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <div
-                  key={project.id}
-                  className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  {/* Thumbnail */}
-                  <div
-                    onClick={() => handleProjectClick(project.id)}
-                    className="aspect-video bg-gradient-to-br from-purple-600 to-purple-700 relative flex items-center justify-center"
-                  >
-                    <div className="w-16 h-12 bg-purple-500 bg-opacity-50 rounded"></div>
-                  </div>
+              {filteredProjects.map((project) => {
+                const slideCount = project.slides?.length || 0
+                const lastEdited = project.updated_at 
+                  ? `Last edited ${formatDistanceToNow(new Date(project.updated_at), { addSuffix: true })}`
+                  : 'Recently created'
 
-                  {/* Content */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{project.title}</h3>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleFavorite(project.id)
-                        }}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      >
-                        <Star
-                          size={20}
-                          className={project.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}
-                        />
-                      </button>
+                return (
+                  <div
+                    key={project.id}
+                    className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      onClick={() => handleProjectClick(project.id)}
+                      className="aspect-video bg-gradient-to-br from-purple-600 to-purple-700 relative flex items-center justify-center"
+                    >
+                      <div className="w-16 h-12 bg-purple-500 bg-opacity-50 rounded"></div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">{project.slideCount} slides</p>
-                    <p className="text-sm text-gray-500">{project.lastEdited}</p>
+
+                    {/* Content */}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-lg">{project.name || 'Untitled Project'}</h3>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        >
+                          <Star
+                            size={20}
+                            className={project.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">{slideCount} slides</p>
+                      <p className="text-sm text-gray-500">{lastEdited}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {/* Empty State Card */}
               <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 overflow-hidden flex flex-col items-center justify-center aspect-[4/3] hover:border-purple-400 transition-colors">

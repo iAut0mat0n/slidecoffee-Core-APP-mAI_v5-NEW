@@ -23,6 +23,22 @@ router.get('/brands', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/brands/:id - Get single brand
+router.get('/brands/:id', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('v2_brands')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Failed to fetch brand' });
+  }
+});
+
 // POST /api/brands - Create brand
 router.post('/brands', async (req: Request, res: Response) => {
   try {

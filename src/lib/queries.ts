@@ -50,6 +50,15 @@ export const useBrands = (options?: UseQueryOptions<any[]>) => {
   });
 };
 
+export const useBrand = (id: string, options?: UseQueryOptions<any>) => {
+  return useQuery({
+    queryKey: ['brands', id],
+    queryFn: () => brandsAPI.get(id),
+    enabled: !!id,
+    ...options,
+  });
+};
+
 export const useCreateBrand = () => {
   const queryClient = useQueryClient();
   return useMutation({

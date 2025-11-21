@@ -9,14 +9,15 @@ export default function BrandsNew() {
   const { data: brands, isLoading } = useBrands()
   const deleteBrand = useDeleteBrand()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
 
   const handleCreateBrand = () => {
+    setSelectedBrandId(null)
     setShowCreateModal(true)
   }
 
   const handleEdit = (brandId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit brand:', brandId)
+    setSelectedBrandId(brandId)
     setShowCreateModal(true)
   }
 
@@ -33,6 +34,7 @@ export default function BrandsNew() {
 
   const handleCloseModal = () => {
     setShowCreateModal(false)
+    setSelectedBrandId(null)
   }
 
   return (
@@ -137,6 +139,7 @@ export default function BrandsNew() {
       <BrandCreationModal
         isOpen={showCreateModal}
         onClose={handleCloseModal}
+        brandId={selectedBrandId}
       />
     </div>
   )

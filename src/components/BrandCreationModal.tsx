@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { useCreateBrand, useWorkspaces } from '../lib/queries';
+import { useState, useEffect } from 'react';
+import { useCreateBrand, useUpdateBrand, useWorkspaces, useBrand } from '../lib/queries';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 
 interface BrandCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  brandId?: string | null;
 }
 
-export default function BrandCreationModal({ isOpen, onClose }: BrandCreationModalProps) {
+export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCreationModalProps) {
   const createBrand = useCreateBrand();
+  const updateBrand = useUpdateBrand();
   const { data: workspaces } = useWorkspaces();
+  const { data: existingBrand } = useBrand(brandId || '', { enabled: !!brandId });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [brandData, setBrandData] = useState({
@@ -20,6 +23,27 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
     logo: null as string | null,
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  const isEditing = !!brandId;
+
+  useEffect(() => {
+    if (existingBrand && isEditing) {
+      setBrandData({
+        name: existingBrand.name || '',
+        primaryColor: existingBrand.primary_color || '#8B5CF6',
+        secondaryColor: existingBrand.secondary_color || '#3B82F6',
+        logo: existingBrand.logo_url || null,
+      });
+    } else if (!isEditing) {
+      setBrandData({
+        name: '',
+        primaryColor: '#8B5CF6',
+        secondaryColor: '#3B82F6',
+        logo: null,
+      });
+      setStep(1);
+    }
+  }, [existingBrand, isEditing, isOpen]);
 
   if (!isOpen) return null;
 
@@ -39,9 +63,9 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
     setLoading(true);
     
     try {
-      let logoUrl = null;
+      let logoUrl = brandData.logo;
       
-      // Upload logo if provided
+      // Upload new logo if provided
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -58,25 +82,37 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
         logoUrl = publicUrl;
       }
       
-      // Get first workspace
-      const workspaceId = workspaces?.[0]?.id;
-      if (!workspaceId) {
-        throw new Error('No workspace found. Please create a workspace first.');
-      }
-      
-      // Create brand
-      await createBrand.mutateAsync({
+      const brandPayload = {
         name: brandData.name,
         primary_color: brandData.primaryColor,
         secondary_color: brandData.secondaryColor,
         logo_url: logoUrl,
-        workspace_id: workspaceId,
-      });
+      };
       
-      toast.success('Brand created successfully!');
+      if (isEditing && brandId) {
+        // Update existing brand
+        await updateBrand.mutateAsync({
+          id: brandId,
+          data: brandPayload,
+        });
+        toast.success('Brand updated successfully!');
+      } else {
+        // Create new brand
+        const workspaceId = workspaces?.[0]?.id;
+        if (!workspaceId) {
+          throw new Error('No workspace found. Please create a workspace first.');
+        }
+        
+        await createBrand.mutateAsync({
+          ...brandPayload,
+          workspace_id: workspaceId,
+        });
+        toast.success('Brand created successfully!');
+      }
+      
       onClose();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create brand');
+      toast.error(error.message || `Failed to ${isEditing ? 'update' : 'create'} brand`);
     } finally {
       setLoading(false);
     }
@@ -88,7 +124,7 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Create New Brand</h2>
+            <h2 className="text-2xl font-bold">{isEditing ? 'Edit Brand' : 'Create New Brand'}</h2>
             <p className="text-gray-600 mt-1">Step {step} of 2</p>
           </div>
           <button
@@ -261,7 +297,10 @@ export default function BrandCreationModal({ isOpen, onClose }: BrandCreationMod
                 disabled={loading}
                 className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create Brand'}
+                {loading 
+                  ? (isEditing ? 'Updating...' : 'Creating...') 
+                  : (isEditing ? 'Update Brand' : 'Create Brand')
+                }
               </button>
             </>
           )}
