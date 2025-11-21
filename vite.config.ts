@@ -11,22 +11,15 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
-    port: parseInt(process.env.PORT || '3000'),
-    allowedHosts: [
-      '.manusvm.computer',
-      '.onrender.com',
-      'localhost',
-    ],
+    host: '0.0.0.0',
+    port: 5000,
+    strictPort: true,
+    allowedHosts: true,
   },
   preview: {
-    host: true,
-    port: parseInt(process.env.PORT || '3000'),
-    allowedHosts: [
-      'slidecoffee-v2-new-prod.onrender.com',
-      '.onrender.com', // Allow all Render subdomains
-      'localhost',
-    ],
+    host: '0.0.0.0',
+    port: 5000,
+    allowedHosts: true,
   },
 })
 
