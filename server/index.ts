@@ -6,6 +6,11 @@ import { aiChatRouter } from './routes/ai-chat.js';
 import { aiChatStreamRouter } from './routes/ai-chat-stream.js';
 import { generateSlidesRouter } from './routes/generate-slides.js';
 import { healthRouter } from './routes/health.js';
+import { systemSettingsRouter } from './routes/system-settings.js';
+import { brandsRouter } from './routes/brands.js';
+import { projectsRouter } from './routes/projects.js';
+import { templatesWorkspacesRouter } from './routes/templates-workspaces.js';
+import { authRouter } from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +54,11 @@ app.use('/api', aiChatRouter);
 app.use('/api', aiChatStreamRouter);
 app.use('/api', generateSlidesRouter);
 app.use('/api', healthRouter);
+app.use('/api', systemSettingsRouter);
+app.use('/api', brandsRouter);
+app.use('/api', projectsRouter);
+app.use('/api', templatesWorkspacesRouter);
+app.use('/api', authRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

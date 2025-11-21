@@ -283,3 +283,73 @@
 - [x] Keyboard shortcuts modal (KeyboardShortcuts.tsx - already exists)
 - [x] Tour/walkthrough overlay (WelcomeTour.tsx - already exists)
 
+
+
+
+## Final Additional Screens (Reaching 93+)
+- [ ] Font Management Page - Upload and manage custom fonts for presentations
+- [ ] Quick Tips Tooltips System - Interactive onboarding hints throughout the app
+
+
+
+
+## Design Updates (URGENT)
+- [x] Update all logo references to purple coffee cup ☕ + "SlideCoffee" text (remove coffee cup illustrations)
+- [ ] Rename "AI Agent" to "BREW" across all screens (in progress)
+- [x] Redesign onboarding screens to modern full-screen Netlify-style (OnboardingWelcome done)
+- [x] Update Signup/Login to match reference design (centered card, clean, spacious)
+- [x] Ensure consistent purple branding (#8B5CF6 or similar)
+
+
+
+
+## Logo Upload Feature (NEW)
+- [x] Create backend tRPC mutation for logo upload to S3 (systemRouter.ts)
+- [x] Add logo upload UI to admin panel with image preview (LogoUploadSection.tsx)
+- [x] Store logo URL in database (v2_system_settings table)
+- [x] Create AppLogo component to fetch and display uploaded logo
+- [ ] Update all auth/onboarding screens to use AppLogo component
+- [ ] Test logo upload functionality
+
+
+
+
+## Deployment to Render (URGENT)
+- [ ] Verify git remote points to ForthLogic/slidecoffee-CORE-APP
+- [ ] Fix all 46 TypeScript errors
+- [ ] Wire up systemRouter to main app router
+- [ ] Test dev server compilation
+- [ ] Commit all 93+ new screens and components
+- [ ] Push to GitHub main branch
+- [ ] Verify Render auto-deployment
+- [ ] Test production deployment
+
+
+
+
+## Express + React Query Conversion (IN PROGRESS)
+- [ ] Install @tanstack/react-query dependencies
+- [ ] Create API client with fetch wrapper
+- [ ] Create Express endpoints for system settings (logo upload)
+- [ ] Create Express endpoints for brands, projects, templates
+- [ ] Convert all 93 screens from tRPC to React Query
+- [ ] Remove tRPC dependencies and files
+- [ ] Test all API endpoints
+- [ ] Fix TypeScript compilation errors
+
+
+
+
+## REAL IMPLEMENTATION (URGENT - IN PROGRESS)
+- [ ] Create Express routes for brands CRUD
+- [ ] Create Express routes for projects CRUD  
+- [ ] Create Express routes for templates
+- [ ] Create Express routes for workspaces
+- [ ] Create Express routes for auth (me, logout)
+- [ ] Update Dashboard to fetch real projects from Supabase
+- [ ] Update Brands page to fetch real brands from Supabase
+- [ ] Update Projects page to fetch real projects from Supabase
+- [ ] Fix all build errors
+- [ ] Test all API endpoints work
+- [ ] Push working app to GitHub
+
