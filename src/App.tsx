@@ -60,6 +60,13 @@ import IntegrationMarketplace from './pages/IntegrationMarketplace'
 import BrandAssetLibrary from './pages/BrandAssetLibrary'
 import StockImageBrowser from './pages/StockImageBrowser'
 import IconLibraryBrowser from './pages/IconLibraryBrowser'
+import Signup from './pages/Signup'
+import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import OnboardingWelcome from './pages/OnboardingWelcome'
+import OnboardingWorkspace from './pages/OnboardingWorkspace'
+import OnboardingBrand from './pages/OnboardingBrand'
+import SlideEditor from './pages/SlideEditor'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -68,7 +75,24 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<RootRedirect />} />
+        
+        {/* Auth Routes */}
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        
+        {/* Onboarding Routes */}
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
+        <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
+        <Route path="/onboarding/brand" element={<OnboardingBrand />} />
+        
+        {/* Editor Routes */}
+        <Route path="/editor/slide/:id" element={
+          <ProtectedRoute>
+            <SlideEditor />
+          </ProtectedRoute>
+        } />
         
         {/* New UI Routes */}
         <Route path="/dashboard-new" element={
