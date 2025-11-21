@@ -1,8 +1,48 @@
 # SlideCoffee - Replit Project Documentation
 
-**Last Updated:** November 21, 2025  
+**Last Updated:** November 21, 2025 - 1:20 AM  
 **Project Type:** Full-Stack AI-Powered Presentation Platform  
 **Tech Stack:** React 19 + Vite + Express + Supabase + TypeScript
+
+---
+
+## Recent Updates (November 20-21, 2025)
+
+### ✅ Completed Tonight
+1. **Full Supabase Integration** - All core CRUD operations now connected to real database:
+   - Brands: Create, Read, Update, Delete with logo upload to Supabase Storage
+   - Projects: List, filter, display with real-time data from v2_projects table
+   - Workspaces: Created during onboarding and saved to v2_workspaces
+   
+2. **Brand Management Enhancements**:
+   - Added GET /brands/:id backend endpoint for fetching single brands
+   - Implemented useBrand React Query hook for brand details
+   - BrandCreationModal now supports both create and edit modes
+   - Logo uploads working with Supabase Storage (brand-assets bucket)
+
+3. **Projects CRUD Integration**:
+   - ProjectsNew page connected to Supabase via useProjects hook
+   - Loading states, empty states, and error handling implemented
+   - Slide count calculation from project.slides array
+   - Human-readable timestamps with date-fns
+
+4. **Authentication Improvements**:
+   - AuthContext extended to track isOnboarded status (checks for workspaces)
+   - RootRedirect updated with conditional logic for auth/onboarding states
+   - ProtectedRoute redirects to /login instead of root (prevents redirect loops)
+
+### ⏳ In Progress
+- **Auth Redirect Flow**: Implemented basic logic but needs production hardening:
+  - Add race condition handling in AuthContext
+  - Implement onboarding bypass guards
+  - Add persistent onboarding completion flag
+  - Improve error handling for Supabase queries
+
+### 🎯 Next Steps
+- Complete auth redirect production fixes
+- End-to-end testing: signup → onboarding → brand creation → project creation
+- Final deployment configuration
+- Performance optimization and caching
 
 ---
 

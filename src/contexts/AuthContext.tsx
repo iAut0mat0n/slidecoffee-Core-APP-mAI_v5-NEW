@@ -6,6 +6,7 @@ type AuthContextType = {
   user: User | null
   supabaseUser: SupabaseUser | null
   loading: boolean
+  isOnboarded: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string) => Promise<void>
   signOut: () => Promise<void>
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isOnboarded, setIsOnboarded] = useState(false)
 
   useEffect(() => {
     // Check active session
@@ -47,6 +49,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUser = async () => {
     const userData = await getCurrentUser()
     setUser(userData)
+    
+    // Check if user has completed onboarding by checking for workspaces
+    if (userData) {
+      const { data: workspaces } = await supabase
+        .from('v2_workspaces')
+        .select('id')
+        .eq('created_by', userData.id)
+        .limit(1)
+      
+      setIsOnboarded(!!workspaces && workspaces.length > 0)
+    } else {
+      setIsOnboarded(false)
+    }
+    
     setLoading(false)
   }
 
@@ -91,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       supabaseUser,
       loading,
+      isOnboarded,
       signIn,
       signUp,
       signOut,
