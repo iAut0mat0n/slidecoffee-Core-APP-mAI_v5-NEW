@@ -52,6 +52,14 @@ import ThemeEditor from './pages/ThemeEditor'
 import PresentationRemix from './pages/PresentationRemix'
 import APIKeysManagement from './pages/APIKeysManagement'
 import WebhookSettings from './pages/WebhookSettings'
+import PasteMode from './pages/PasteMode'
+import ImportMode from './pages/ImportMode'
+import SubscriptionBilling from './pages/SubscriptionBilling'
+import PresentationAnalytics from './pages/PresentationAnalytics'
+import IntegrationMarketplace from './pages/IntegrationMarketplace'
+import BrandAssetLibrary from './pages/BrandAssetLibrary'
+import StockImageBrowser from './pages/StockImageBrowser'
+import IconLibraryBrowser from './pages/IconLibraryBrowser'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -222,6 +230,54 @@ function App() {
         <Route path="/developer/webhooks" element={
           <ProtectedRoute>
             <WebhookSettings />
+          </ProtectedRoute>
+        } />
+        
+        {/* Creation Modes */}
+        <Route path="/create/paste" element={
+          <ProtectedRoute>
+            <PasteMode />
+          </ProtectedRoute>
+        } />
+        <Route path="/create/import" element={
+          <ProtectedRoute>
+            <ImportMode />
+          </ProtectedRoute>
+        } />
+        
+        {/* Billing & Subscription */}
+        <Route path="/subscription" element={
+          <ProtectedRoute>
+            <SubscriptionBilling />
+          </ProtectedRoute>
+        } />
+        
+        {/* Analytics */}
+        <Route path="/presentation/:id/analytics" element={
+          <ProtectedRoute>
+            <PresentationAnalytics />
+          </ProtectedRoute>
+        } />
+        
+        {/* Integrations & Assets */}
+        <Route path="/integrations" element={
+          <ProtectedRoute>
+            <IntegrationMarketplace />
+          </ProtectedRoute>
+        } />
+        <Route path="/brand/assets" element={
+          <ProtectedRoute>
+            <BrandAssetLibrary />
+          </ProtectedRoute>
+        } />
+        <Route path="/assets/images" element={
+          <ProtectedRoute>
+            <StockImageBrowser />
+          </ProtectedRoute>
+        } />
+        <Route path="/assets/icons" element={
+          <ProtectedRoute>
+            <IconLibraryBrowser />
           </ProtectedRoute>
         } />
         

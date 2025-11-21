@@ -1,0 +1,190 @@
+import { useState } from 'react';
+
+export default function SubscriptionBilling() {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
+  const plans = [
+    {
+      name: 'Starter',
+      price: { monthly: 0, annual: 0 },
+      features: ['5 presentations/month', 'Basic templates', 'Export to PDF', 'Community support'],
+      current: true,
+    },
+    {
+      name: 'Pro',
+      price: { monthly: 29, annual: 290 },
+      features: ['Unlimited presentations', 'All templates', 'AI generation', 'Brand guidelines', 'Priority support', 'Export to PPT/PDF'],
+      popular: true,
+    },
+    {
+      name: 'Enterprise',
+      price: { monthly: 99, annual: 990 },
+      features: ['Everything in Pro', 'Custom branding', 'API access', 'SSO', 'Dedicated support', 'SLA guarantee', 'Advanced analytics'],
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="container mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Subscription & Billing</h1>
+          <p className="text-gray-600 mt-1">Manage your plan and payment methods</p>
+        </div>
+
+        {/* Current Plan */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Current Plan</h2>
+              <p className="text-gray-600 mt-1">You are on the Starter plan</p>
+            </div>
+            <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
+              Active
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Presentations this month</div>
+              <div className="text-2xl font-bold">3 / 5</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Next billing date</div>
+              <div className="text-2xl font-bold">-</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Monthly cost</div>
+              <div className="text-2xl font-bold">$0</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Billing Cycle Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex bg-white rounded-lg border border-gray-200 p-1">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                billingCycle === 'monthly'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                billingCycle === 'annual'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Annual <span className="text-xs text-green-600 ml-1">(Save 17%)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Plans */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`bg-white rounded-xl shadow-sm border-2 p-6 relative ${
+                plan.popular
+                  ? 'border-purple-600'
+                  : plan.current
+                  ? 'border-green-500'
+                  : 'border-gray-200'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
+                  MOST POPULAR
+                </div>
+              )}
+              {plan.current && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                  CURRENT PLAN
+                </div>
+              )}
+              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">${plan.price[billingCycle]}</span>
+                <span className="text-gray-600">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-sm">
+                    <span className="text-purple-600 mt-0.5">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                className={`w-full px-4 py-3 rounded-lg font-medium ${
+                  plan.current
+                    ? 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                    : plan.popular
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'border border-gray-300 hover:bg-gray-50'
+                }`}
+                disabled={plan.current}
+              >
+                {plan.current ? 'Current Plan' : 'Upgrade'}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Payment Method */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-8 bg-gray-200 rounded flex items-center justify-center text-xs font-semibold">
+                VISA
+              </div>
+              <div>
+                <div className="font-medium">•••• •••• •••• 4242</div>
+                <div className="text-sm text-gray-600">Expires 12/25</div>
+              </div>
+            </div>
+            <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+              Update
+            </button>
+          </div>
+        </div>
+
+        {/* Billing History */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold mb-4">Billing History</h2>
+          <div className="space-y-3">
+            {[
+              { date: 'Jan 1, 2024', amount: '$0.00', status: 'Paid', invoice: '#INV-001' },
+              { date: 'Dec 1, 2023', amount: '$0.00', status: 'Paid', invoice: '#INV-002' },
+              { date: 'Nov 1, 2023', amount: '$0.00', status: 'Paid', invoice: '#INV-003' },
+            ].map((item) => (
+              <div key={item.invoice} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <div className="font-medium">{item.date}</div>
+                    <div className="text-sm text-gray-600">{item.invoice}</div>
+                  </div>
+                  <div className="font-semibold">{item.amount}</div>
+                  <div className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                    {item.status}
+                  </div>
+                </div>
+                <button className="px-4 py-2 text-sm text-purple-600 hover:text-purple-700">
+                  Download
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
