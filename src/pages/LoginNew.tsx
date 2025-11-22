@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppLogo from '../components/AppLogo';
 
 export default function LoginNew() {
   const navigate = useNavigate();
@@ -23,9 +24,8 @@ export default function LoginNew() {
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="text-4xl">☕</div>
-            <h1 className="text-2xl font-bold">SlideCoffee</h1>
+          <div className="flex items-center justify-center mb-6">
+            <AppLogo className="h-10" showText={true} />
           </div>
           <h2 className="text-3xl font-bold mb-2">Welcome back</h2>
           <p className="text-gray-600">Sign in to continue creating</p>
