@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -39,6 +40,12 @@ router.post('/system/upload-logo', async (req: Request, res: Response) => {
 
     if (!base64Image || !filename) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Validate filename length
+    const filenameError = validateLength(filename, 'Filename', MAX_LENGTHS.PRESENTATION_TITLE);
+    if (filenameError) {
+      return res.status(400).json({ message: filenameError.message });
     }
 
     // TODO: Add admin authentication check here

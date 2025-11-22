@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../middleware/auth.js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -119,6 +120,20 @@ router.patch('/admin/ai-settings/:id', requireAuth, requireAdmin, async (req: Re
   try {
     const { id } = req.params;
     const { api_key, model, config } = req.body;
+
+    // Validate inputs
+    if (api_key !== undefined) {
+      const apiKeyError = validateLength(api_key, 'API key', 500);
+      if (apiKeyError) {
+        return res.status(400).json({ message: apiKeyError.message });
+      }
+    }
+    if (model !== undefined) {
+      const modelError = validateLength(model, 'Model', MAX_LENGTHS.USER_NAME);
+      if (modelError) {
+        return res.status(400).json({ message: modelError.message });
+      }
+    }
 
     const updates: any = {};
     if (api_key !== undefined) updates.api_key = api_key;
