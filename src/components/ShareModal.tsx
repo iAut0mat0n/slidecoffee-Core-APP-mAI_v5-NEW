@@ -238,6 +238,8 @@ export default function ShareModal({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Set a password"
+                      minLength={8}
+                      maxLength={72}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Viewers will need this password to access the presentation

@@ -119,6 +119,7 @@ export default function Signup() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   placeholder="Full Name"
+                  maxLength={100}
                   required
                 />
               </div>
@@ -130,6 +131,7 @@ export default function Signup() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   placeholder="Email"
+                  maxLength={254}
                   required
                 />
               </div>
@@ -140,9 +142,10 @@ export default function Signup() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                  placeholder="Password (min 6 characters)"
+                  placeholder="Password (8-72 characters)"
                   required
-                  minLength={6}
+                  minLength={8}
+                  maxLength={72}
                 />
               </div>
 

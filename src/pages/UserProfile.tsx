@@ -40,6 +40,7 @@ export default function UserProfile() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                maxLength={100}
               />
             </div>
 
@@ -50,6 +51,7 @@ export default function UserProfile() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                maxLength={254}
               />
             </div>
 
@@ -59,6 +61,7 @@ export default function UserProfile() {
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Tell us about yourself..."
+                maxLength={1000}
               />
             </div>
           </div>
@@ -71,6 +74,8 @@ export default function UserProfile() {
               <input
                 type="password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                minLength={8}
+                maxLength={72}
               />
             </div>
             <div>
@@ -78,6 +83,8 @@ export default function UserProfile() {
               <input
                 type="password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                minLength={8}
+                maxLength={72}
               />
             </div>
             <div>
@@ -85,6 +92,8 @@ export default function UserProfile() {
               <input
                 type="password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                minLength={8}
+                maxLength={72}
               />
             </div>
           </div>

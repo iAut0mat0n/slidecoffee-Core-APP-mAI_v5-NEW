@@ -82,6 +82,14 @@ router.post('/presentations/:id/share', sharedRequireAuth, async (req: AuthReque
       return res.status(400).json({ error: 'Password is required for limited access mode' });
     }
 
+    // Validate password length (if provided)
+    if (password) {
+      const passwordError = validateLength(password, 'Password', MAX_LENGTHS.PASSWORD_MAX, MAX_LENGTHS.PASSWORD_MIN);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError.message });
+      }
+    }
+
     // Validate expiration
     let expiryTimestamp = undefined;
     if (expiresAt) {
@@ -299,6 +307,14 @@ router.patch('/presentations/:id/share', sharedRequireAuth, async (req: AuthRequ
     // For limited access, password is ALWAYS required
     if (access === 'limited' && (!password || !password.trim())) {
       return res.status(400).json({ error: 'Password is required for limited access mode' });
+    }
+
+    // Validate password length (if provided)
+    if (password) {
+      const passwordError = validateLength(password, 'Password', MAX_LENGTHS.PASSWORD_MAX, MAX_LENGTHS.PASSWORD_MIN);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError.message });
+      }
     }
 
     // Validate expiration
