@@ -1,5 +1,6 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import Stripe from 'stripe';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -12,9 +13,12 @@ const PLAN_PRICE_IDS = {
   enterprise_annual: process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || '',
 };
 
-router.post('/create-checkout-session', async (req: Request, res: Response) => {
+router.post('/create-checkout-session', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { priceId, userId, userEmail } = req.body;
+    const { priceId } = req.body;
+    const userId = req.user?.id;
+    const userEmail = req.user?.email;
+    const workspaceId = req.user?.workspaceId;
 
     if (!priceId || !userId) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -34,10 +38,12 @@ router.post('/create-checkout-session', async (req: Request, res: Response) => {
       customer_email: userEmail,
       metadata: {
         userId,
+        workspaceId: workspaceId || '',
       },
       subscription_data: {
         metadata: {
           userId,
+          workspaceId: workspaceId || '',
         },
       },
     });
@@ -49,16 +55,33 @@ router.post('/create-checkout-session', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/create-portal-session', async (req: Request, res: Response) => {
+router.post('/create-portal-session', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { customerId } = req.body;
+    const userId = req.user?.id;
 
-    if (!customerId) {
-      return res.status(400).json({ error: 'Customer ID required' });
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Fetch user's Stripe customer ID from database
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+
+    const { data: userRecord, error } = await supabase
+      .from('v2_users')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single();
+
+    if (error || !userRecord?.stripe_customer_id) {
+      return res.status(400).json({ error: 'No active subscription found' });
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
+      customer: userRecord.stripe_customer_id,
       return_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/settings`,
     });
 
@@ -69,7 +92,7 @@ router.post('/create-portal-session', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/plans', async (req: Request, res: Response) => {
+router.get('/plans', (req: Request, res: Response) => {
   try {
     res.json({
       plans: [
