@@ -14,7 +14,7 @@ export type User = {
   avatar_url: string | null
   role: 'user' | 'admin'
   credits: number
-  plan: 'starter' | 'professional' | 'enterprise' | 'free' | 'pro' | 'business'
+  plan: 'espresso' | 'americano' | 'cappuccino' | 'coldBrew' | 'frenchPress'
   default_workspace_id?: string | null
   subscription_status?: string | null
   created_at: string

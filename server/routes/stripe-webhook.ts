@@ -150,7 +150,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   await updateUserSubscription(userId, {
-    plan: 'starter',
+    plan: 'espresso',
     customerId: subscription.customer as string,
     subscriptionId: null,
     status: 'canceled',

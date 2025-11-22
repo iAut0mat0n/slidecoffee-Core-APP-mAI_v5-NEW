@@ -65,15 +65,42 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
       console.error('Error fetching user profile:', userError);
     }
 
+    // Get workspace ID from user's membership or default workspace
+    let workspaceId = userRecord?.default_workspace_id;
+    
+    if (!workspaceId) {
+      // Find user's workspace from memberships
+      const { data: membership } = await supabase
+        .from('v2_workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single();
+      
+      workspaceId = membership?.workspace_id;
+    }
+
+    // Normalize plan identifier (handle legacy plan names)
+    const planMapping: Record<string, string> = {
+      'starter': 'americano',
+      'professional': 'cappuccino',
+      'enterprise': 'frenchPress',
+      'free': 'espresso',
+      'pro': 'cappuccino',
+      'business': 'coldBrew',
+    };
+    const rawPlan = userRecord?.plan || 'espresso';
+    const normalizedPlan = planMapping[rawPlan] || rawPlan;
+
     // Attach user info to request
     req.user = {
       id: user.id,
       email: user.email || '',
       name: userRecord?.name,
       role: userRecord?.role || 'user',
-      plan: userRecord?.plan || 'starter',
+      plan: normalizedPlan,
       subscription_status: userRecord?.subscription_status,
-      workspaceId: userRecord?.default_workspace_id,
+      workspaceId: workspaceId,
     } as any;
 
     next();
