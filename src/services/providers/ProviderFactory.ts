@@ -1,30 +1,32 @@
 /**
  * AI Provider Factory
  * Creates the appropriate AI provider based on environment configuration
- * Allows easy switching between Manus, Claude, and other providers
+ * Prioritizes Claude (Haiku) as the primary AI provider
  */
 
 import { AIProvider } from './AIProvider';
 import { ManusProvider } from './ManusProvider';
 import { ClaudeProvider } from './ClaudeProvider';
 
-export type ProviderType = 'manus' | 'claude';
+export type ProviderType = 'claude' | 'manus';
 
 export class ProviderFactory {
   /**
    * Create AI provider based on environment variable
-   * Defaults to Manus if not specified
+   * Defaults to Claude (Haiku) as the primary provider
    */
   static createProvider(providerType?: ProviderType): AIProvider {
-    const type = providerType || (process.env.AI_PROVIDER as ProviderType) || 'manus';
+    const type = providerType || (process.env.AI_PROVIDER as ProviderType) || 'claude';
 
     switch (type) {
       case 'claude':
         return new ClaudeProvider();
       
       case 'manus':
-      default:
         return new ManusProvider();
+      
+      default:
+        return new ClaudeProvider(); // Default to Claude
     }
   }
 
@@ -32,7 +34,7 @@ export class ProviderFactory {
    * Get current provider type from environment
    */
   static getCurrentProviderType(): ProviderType {
-    return (process.env.AI_PROVIDER as ProviderType) || 'manus';
+    return (process.env.AI_PROVIDER as ProviderType) || 'claude';
   }
 
   /**
@@ -40,14 +42,14 @@ export class ProviderFactory {
    */
   static isProviderAvailable(providerType: ProviderType): boolean {
     switch (providerType) {
+      case 'claude':
+        return !!(process.env.ANTHROPIC_API_KEY && process.env.VOYAGE_API_KEY);
+      
       case 'manus':
         return !!(
           (process.env.OPENAI_API_KEY && process.env.OPENAI_BASE_URL) ||
           (process.env.BUILT_IN_FORGE_API_KEY && process.env.BUILT_IN_FORGE_API_URL)
         );
-      
-      case 'claude':
-        return !!(process.env.ANTHROPIC_API_KEY && process.env.VOYAGE_API_KEY);
       
       default:
         return false;
@@ -55,17 +57,18 @@ export class ProviderFactory {
   }
 
   /**
-   * Get all available providers
+   * Get all available providers (Claude prioritized first)
    */
   static getAvailableProviders(): ProviderType[] {
     const providers: ProviderType[] = [];
     
-    if (this.isProviderAvailable('manus')) {
-      providers.push('manus');
-    }
-    
+    // Claude is checked first as it's the primary provider
     if (this.isProviderAvailable('claude')) {
       providers.push('claude');
+    }
+    
+    if (this.isProviderAvailable('manus')) {
+      providers.push('manus');
     }
     
     return providers;

@@ -7,7 +7,7 @@
 import { AIProvider, type ChatMessage, type ChatCompletionOptions, type EmbeddingOptions } from './AIProvider';
 
 export class ClaudeProvider extends AIProvider {
-  private defaultChatModel = 'claude-3-5-sonnet-20241022';
+  private defaultChatModel = 'claude-3-5-haiku-20241022'; // Primary model: Haiku
   private voyageApiKey: string;
 
   constructor(apiKey?: string, voyageApiKey?: string) {
@@ -23,9 +23,9 @@ export class ClaudeProvider extends AIProvider {
   getSupportedModels() {
     return {
       chat: [
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-opus-20240229',
+        'claude-3-5-haiku-20241022', // Primary: Fast & efficient
+        'claude-3-5-sonnet-20241022', // Alternative: Highest quality
+        'claude-3-opus-20240229', // Alternative: Most capable
       ],
       embedding: ['voyage-3', 'voyage-3-lite'], // Via Voyage AI
     };

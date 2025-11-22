@@ -17,10 +17,11 @@ SlideCoffee is built as a full-stack application with a clear separation between
 **Technical Implementations:**
 -   **Frontend:** Developed with React 19, TypeScript, and Vite. React Query manages server state and caching, while React Router handles client-side routing.
 -   **Backend:** An Express.js server running on Node.js handles API requests. TSX is used for TypeScript execution.
--   **AI Integration:** Real streaming AI integration is achieved using the Manus API, which provides OpenAI-compatible endpoints. A structured plan generation system ensures AI outputs are consistently formatted JSON, which includes `title`, `summary`, `slides[]`, and `themes[]`. Each slide detail includes `title`, `purpose`, and `keyPoints[]`.
+-   **AI Integration:** Primary AI provider is **Claude 3.5 Haiku** via Anthropic API, with database-driven provider switching supporting multiple AI models (Claude Haiku, Claude Sonnet, Manus/Gemini, GPT-4). Real streaming AI integration with structured plan generation ensures AI outputs are consistently formatted JSON, which includes `title`, `summary`, `slides[]`, and `themes[]`. Each slide detail includes `title`, `purpose`, and `keyPoints[]`. Admin panel allows switching between providers with encrypted API key storage.
 -   **Authentication & Authorization:** Supabase provides authentication. JWT tokens are used for securing API routes, and a custom middleware enforces authentication and extracts user workspace information. Row Level Security (RLS) is applied across all database tables to ensure data isolation and security.
 -   **Stripe Billing:** Integrated for subscription management (Pro & Enterprise plans) with secure webhook handling, idempotency, and a customer portal. Subscriptions are workspace-scoped.
 -   **Project Editor:** Features a full slide editor with debounced autosave functionality and real-time save status indicators.
+-   **Real-Time Collaboration:** Live presence indicators show active users with avatars and names via Supabase Realtime.
 -   **Deployment:** Configured for Replit Autoscale, with frontend (Vite) on port 5000 and backend (Express) on localhost:3001. CORS is configured to allow Replit domains.
 
 **System Design Choices:**
@@ -30,8 +31,10 @@ SlideCoffee is built as a full-stack application with a clear separation between
 
 ## External Dependencies
 
--   **Supabase:** Utilized for PostgreSQL database, authentication services, and file storage.
--   **Manus AI:** Serves as an AI proxy, providing OpenAI-compatible API endpoints for AI-powered features.
+-   **Supabase:** Utilized for PostgreSQL database, authentication services, file storage, and real-time collaboration features.
+-   **Claude (Anthropic):** Primary AI provider - Claude 3.5 Haiku for fast, efficient, high-quality slide generation and AI chat.
+-   **Manus AI:** Alternative AI provider, providing OpenAI-compatible API endpoints (Gemini-powered).
 -   **Manus Analytics:** Used for tracking application usage.
 -   **Forge API:** Integrated for additional functionalities and integrations.
 -   **Stripe:** Integrated for handling all billing and subscription management.
+-   **Voyage AI:** Used for embeddings when Claude provider is active (Claude doesn't provide embedding API).

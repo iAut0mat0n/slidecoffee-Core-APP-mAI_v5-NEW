@@ -15,11 +15,15 @@ CREATE TABLE IF NOT EXISTS v2_ai_settings (
 -- Insert default providers if they don't exist
 INSERT INTO v2_ai_settings (provider, is_active, model, config)
 VALUES 
-  ('manus', TRUE, 'gemini-2.0-flash-exp', '{}'),
+  ('manus', FALSE, 'gemini-2.0-flash-exp', '{}'),
   ('claude', FALSE, 'claude-3-5-sonnet-20241022', '{}'),
-  ('claude-haiku', FALSE, 'claude-3-5-haiku-20241022', '{}'),
+  ('claude-haiku', TRUE, 'claude-3-5-haiku-20241022', '{}'),
   ('gpt4', FALSE, 'gpt-4-turbo', '{}')
 ON CONFLICT (provider) DO NOTHING;
+
+-- If table already exists, update to make Claude Haiku the active provider
+UPDATE v2_ai_settings SET is_active = FALSE WHERE provider != 'claude-haiku';
+UPDATE v2_ai_settings SET is_active = TRUE WHERE provider = 'claude-haiku';
 
 -- Enable Row Level Security
 ALTER TABLE v2_ai_settings ENABLE ROW LEVEL SECURITY;

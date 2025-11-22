@@ -40,7 +40,18 @@ export async function getActiveAIProvider(): Promise<ActiveAIProvider> {
 }
 
 function getFallbackProvider(): ActiveAIProvider {
-  // Check if OpenAI/Manus is configured
+  // Priority 1: Check if Claude is configured (primary provider)
+  if (process.env.ANTHROPIC_API_KEY) {
+    return {
+      provider: 'claude-haiku',
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiUrl: 'https://api.anthropic.com',
+      model: 'claude-3-5-haiku-20241022',
+      config: {},
+    };
+  }
+
+  // Priority 2: Check if OpenAI/Manus is configured
   if (process.env.OPENAI_API_KEY || process.env.BUILT_IN_FORGE_API_KEY) {
     return {
       provider: 'manus',
@@ -51,23 +62,12 @@ function getFallbackProvider(): ActiveAIProvider {
     };
   }
 
-  // Check if Claude is configured
-  if (process.env.ANTHROPIC_API_KEY) {
-    return {
-      provider: 'claude',
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      apiUrl: 'https://api.anthropic.com',
-      model: 'claude-3-5-sonnet-20241022',
-      config: {},
-    };
-  }
-
-  // Default to Manus even if not configured (will fail gracefully)
+  // Default to Claude Haiku (will use env var when available)
   return {
-    provider: 'manus',
-    apiKey: '',
-    apiUrl: '',
-    model: 'gemini-2.0-flash-exp',
+    provider: 'claude-haiku',
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    apiUrl: 'https://api.anthropic.com',
+    model: 'claude-3-5-haiku-20241022',
     config: {},
   };
 }

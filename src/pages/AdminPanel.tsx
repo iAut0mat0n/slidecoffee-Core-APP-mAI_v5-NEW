@@ -328,15 +328,15 @@ export default function AdminPanel() {
               <Card className="p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">AI Provider Settings</h2>
                 <p className="text-gray-600 mb-6">
-                  Configure which AI provider to use for slide generation
+                  Configure which AI provider to use for slide generation. <strong>Claude 3.5 Haiku</strong> is the primary provider.
                 </p>
                 
                 <div className="space-y-4">
                   {[
-                    { provider: 'manus', label: 'Manus AI', model: 'gemini-2.0-flash-exp', description: 'Fast and cost-effective (Gemini-powered)' },
-                    { provider: 'claude', label: 'Claude 3.5 Sonnet', model: 'claude-3-5-sonnet-20241022', description: 'Highest quality, best for complex presentations' },
-                    { provider: 'claude-haiku', label: 'Claude 3.5 Haiku', model: 'claude-3-5-haiku-20241022', description: 'Fast and efficient, great balance of speed and quality' },
-                    { provider: 'gpt4', label: 'GPT-4 Turbo', model: 'gpt-4-turbo', description: 'Versatile and reliable from OpenAI' },
+                    { provider: 'claude-haiku', label: 'Claude 3.5 Haiku', model: 'claude-3-5-haiku-20241022', description: '⭐ Primary provider - Fast, efficient, and high-quality' },
+                    { provider: 'claude', label: 'Claude 3.5 Sonnet', model: 'claude-3-5-sonnet-20241022', description: 'Highest quality for complex presentations' },
+                    { provider: 'manus', label: 'Manus AI', model: 'gemini-2.0-flash-exp', description: 'Alternative provider (Gemini-powered)' },
+                    { provider: 'gpt4', label: 'GPT-4 Turbo', model: 'gpt-4-turbo', description: 'Alternative provider from OpenAI' },
                   ].map((item) => {
                     const setting = aiSettings.find(s => s.provider === item.provider)
                     const isActive = setting?.is_active || false
@@ -453,8 +453,9 @@ export default function AdminPanel() {
                       <strong>Getting API Keys:</strong>
                     </p>
                     <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4 list-disc">
+                      <li><strong>Claude 3.5 Haiku (Primary):</strong> Get API key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a></li>
+                      <li>Claude 3.5 Sonnet: Same API key works for both Claude models</li>
                       <li>Manus AI: Already configured via environment variables</li>
-                      <li>Claude: Get from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a></li>
                       <li>GPT-4: Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI Platform</a></li>
                     </ul>
                   </div>
