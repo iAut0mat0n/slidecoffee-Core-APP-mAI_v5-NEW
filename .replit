@@ -37,11 +37,12 @@ externalPort = 3001
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 37755
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 run = ["npm", "start"]
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "slidecoffee_jwt_secret_change_in_production_2024"

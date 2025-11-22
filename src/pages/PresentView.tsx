@@ -22,18 +22,15 @@ export default function PresentView() {
   const [error, setError] = useState<string | null>(null)
   const [requiresPassword, setRequiresPassword] = useState(false)
   const [password, setPassword] = useState('')
-  const [passwordError, setPasswordError] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const loadPresentation = async (pwd?: string) => {
+  const loadPresentation = async () => {
     try {
       setLoading(true)
-      setPasswordError(false)
+      setPasswordError(null)
       
-      const url = pwd 
-        ? `/api/present/${shareToken}?password=${encodeURIComponent(pwd)}`
-        : `/api/present/${shareToken}`
-      
-      const response = await fetch(url)
+      const response = await fetch(`/api/present/${shareToken}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -59,13 +56,39 @@ export default function PresentView() {
     }
   }, [shareToken])
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     if (!password.trim()) {
-      setPasswordError(true)
+      setPasswordError('Password is required')
       return
     }
-    loadPresentation(password)
+
+    try {
+      setSubmitting(true)
+      setPasswordError(null)
+
+      const response = await fetch(`/api/present/${shareToken}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Incorrect password')
+      }
+
+      setPresentation(data)
+      setRequiresPassword(false)
+    } catch (err: any) {
+      setPasswordError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (loading) {
@@ -86,7 +109,7 @@ export default function PresentView() {
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">⚠️</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Presentation Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Presentation Not Available</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Button onClick={() => navigate('/')}>
             Go to Homepage
@@ -115,18 +138,19 @@ export default function PresentView() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value)
-                  setPasswordError(false)
+                  setPasswordError(null)
                 }}
                 placeholder="Enter password"
                 className={passwordError ? 'border-red-500' : ''}
                 autoFocus
+                disabled={submitting}
               />
               {passwordError && (
-                <p className="text-sm text-red-600 mt-1">Password is required</p>
+                <p className="text-sm text-red-600 mt-1">{passwordError}</p>
               )}
             </div>
-            <Button type="submit" className="w-full">
-              View Presentation
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? 'Verifying...' : 'View Presentation'}
             </Button>
           </form>
         </Card>
