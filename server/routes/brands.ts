@@ -1,19 +1,19 @@
-import { Router, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 
 const router = Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
 // GET /api/brands - List all brands
-router.get('/brands', async (req: Request, res: Response) => {
+router.get('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const workspaceId = req.user?.workspaceId;
+
     const { data, error } = await supabase
       .from('v2_brands')
       .select('*')
+      .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -24,8 +24,10 @@ router.get('/brands', async (req: Request, res: Response) => {
 });
 
 // GET /api/brands/:id - Get single brand
-router.get('/brands/:id', async (req: Request, res: Response) => {
+router.get('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
     const { data, error } = await supabase
       .from('v2_brands')
       .select('*')
@@ -39,12 +41,34 @@ router.get('/brands/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/brands - Create brand
-router.post('/brands', async (req: Request, res: Response) => {
+// POST /api/brands - Create brand (with limit enforcement)
+router.post('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const workspaceId = req.user?.workspaceId;
+    const userPlan = req.user?.plan || 'espresso';
+
+    // Enforce brand limits (Espresso: 1 brand, paid plans: unlimited)
+    if (userPlan === 'espresso') {
+      const { count } = await supabase
+        .from('v2_brands')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', workspaceId);
+
+      if (count && count >= 1) {
+        return res.status(403).json({
+          error: 'Brand limit reached',
+          message: 'Free plan limited to 1 brand. Upgrade to create more brands.',
+          limit: 1,
+          current: count,
+          upgradeRequired: true,
+        });
+      }
+    }
+
     const { data, error } = await supabase
       .from('v2_brands')
-      .insert([req.body])
+      .insert([{ ...req.body, workspace_id: workspaceId }])
       .select()
       .single();
 
@@ -56,8 +80,10 @@ router.post('/brands', async (req: Request, res: Response) => {
 });
 
 // PUT /api/brands/:id - Update brand
-router.put('/brands/:id', async (req: Request, res: Response) => {
+router.put('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
     const { data, error } = await supabase
       .from('v2_brands')
       .update(req.body)
@@ -73,8 +99,10 @@ router.put('/brands/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/brands/:id - Delete brand
-router.delete('/brands/:id', async (req: Request, res: Response) => {
+router.delete('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
     const { error } = await supabase
       .from('v2_brands')
       .delete()

@@ -1,14 +1,65 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { getActiveAIProvider } from '../utils/ai-settings.js';
+import { STRIPE_CONFIG } from '../config/stripe-plans.js';
 
 const router = Router();
 
-router.post('/generate-slides', async (req, res) => {
+router.post('/generate-slides', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { plan, brand } = req.body;
+    const userPlan = req.user?.plan || 'espresso';
+    const workspaceId = req.user?.workspaceId;
 
     if (!plan) {
       return res.status(400).json({ error: 'Presentation plan is required' });
+    }
+
+    // Get authenticated Supabase client
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    // Get plan limits
+    const planConfig = STRIPE_CONFIG.plans[userPlan as keyof typeof STRIPE_CONFIG.plans];
+    const limits = planConfig?.limits || STRIPE_CONFIG.plans.espresso.limits;
+
+    // Check monthly slide limits
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const { count: monthlySlides } = await supabase
+      .from('v2_slides')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    const estimatedSlideCount = plan.slides?.length || 10;
+    
+    if (monthlySlides !== null && (monthlySlides + estimatedSlideCount) > limits.slidesPerMonth) {
+      return res.status(403).json({
+        error: 'Monthly slide limit reached',
+        message: `Your ${planConfig.name} plan allows ${limits.slidesPerMonth} slides per month. You have ${monthlySlides} slides this month and would exceed your limit.`,
+        limit: limits.slidesPerMonth,
+        current: monthlySlides,
+        upgradeRequired: true,
+      });
+    }
+
+    // Check monthly presentation limits
+    const { count: monthlyPresentations } = await supabase
+      .from('v2_presentations')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (monthlyPresentations !== null && monthlyPresentations >= limits.presentationsPerMonth) {
+      return res.status(403).json({
+        error: 'Monthly presentation limit reached',
+        message: `Your ${planConfig.name} plan allows ${limits.presentationsPerMonth} presentations per month.`,
+        limit: limits.presentationsPerMonth,
+        current: monthlyPresentations,
+        upgradeRequired: true,
+      });
     }
 
     // Get active AI provider from database

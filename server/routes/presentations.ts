@@ -1,14 +1,10 @@
-import { Router, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { Router, Response } from 'express';
+import { requireAuth as sharedRequireAuth, AuthRequest } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 if (!process.env.JWT_SECRET) {
   throw new Error('FATAL: JWT_SECRET environment variable is required for secure share link generation. Please set JWT_SECRET in your environment.');
@@ -30,42 +26,9 @@ interface ShareTokenPayload {
   expiresAt?: number;
 }
 
-// Middleware to verify auth token and get user workspace
-const requireAuth = async (req: Request, res: Response, next: Function) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized - No token provided' });
-    }
-
-    const token = authHeader.substring(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({ error: 'Unauthorized - Invalid token' });
-    }
-
-    // Get user's workspace
-    const { data: userWorkspace } = await supabase
-      .from('v2_workspace_users')
-      .select('workspace_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userWorkspace) {
-      console.error(`User ${user.id} has no workspace`);
-    }
-
-    (req as any).user = user;
-    (req as any).workspaceId = userWorkspace?.workspace_id;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Authentication failed' });
-  }
-};
-
 // Verify user owns/has access to presentation
 const verifyPresentationAccess = async (
+  supabase: any,
   presentationId: string, 
   userId: string, 
   workspaceId: string | undefined
@@ -93,15 +56,22 @@ const verifyPresentationAccess = async (
 };
 
 // Generate share link for presentation
-router.post('/presentations/:id/share', requireAuth, async (req: Request, res: Response) => {
+router.post('/presentations/:id/share', sharedRequireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { access = 'unlimited', password, expiresAt } = req.body;
-    const user = (req as any).user;
-    const workspaceId = (req as any).workspaceId;
+    const userId = req.user?.id;
+    const workspaceId = req.user?.workspaceId;
+
+    if (!userId || !workspaceId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get authenticated Supabase client
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
 
     // Verify user owns this presentation
-    const { authorized, presentation, error: authError } = await verifyPresentationAccess(id, user.id, workspaceId);
+    const { authorized, presentation, error: authError } = await verifyPresentationAccess(supabase, id, userId, workspaceId);
     if (!authorized) {
       return res.status(presentation ? 403 : 404).json({ error: authError });
     }

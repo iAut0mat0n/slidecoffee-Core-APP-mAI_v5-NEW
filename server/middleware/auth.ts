@@ -1,10 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { getAuthenticatedSupabaseClient, getServiceRoleClient } from '../utils/supabase-auth.js';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -20,42 +15,14 @@ export interface AuthRequest extends Request {
 
 export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    // Extract auth token from Authorization header or cookies
-    const authHeader = req.headers.authorization;
-    let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    // Get authenticated Supabase client (enforces RLS)
+    const { user } = await getAuthenticatedSupabaseClient(req);
 
-    // Fallback to cookies if no Authorization header (Supabase browser sessions use cookies)
-    if (!token && req.headers.cookie) {
-      const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = decodeURIComponent(value);
-        return acc;
-      }, {} as Record<string, string>);
-
-      // Supabase stores access token in sb-<project-ref>-access-token cookie
-      // Find cookie with pattern: sb-*-access-token
-      const accessTokenCookieName = Object.keys(cookies).find(key => 
-        key.startsWith('sb-') && key.endsWith('-access-token')
-      );
-      
-      if (accessTokenCookieName) {
-        token = cookies[accessTokenCookieName];
-      }
-    }
-
-    if (!token) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Verify the JWT token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
-
-    // Fetch user's workspace and role (for admin checks)
-    const { data: userRecord, error: userError } = await supabase
+    // Use service-role ONLY for fetching user profile metadata
+    // (v2_users table requires service-role for cross-workspace admin queries)
+    const serviceSupabase = getServiceRoleClient();
+    
+    const { data: userRecord, error: userError } = await serviceSupabase
       .from('v2_users')
       .select('id, email, name, role, plan, default_workspace_id, subscription_status')
       .eq('id', user.id)
@@ -70,7 +37,7 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     
     if (!workspaceId) {
       // Find user's workspace from memberships
-      const { data: membership } = await supabase
+      const { data: membership } = await serviceSupabase
         .from('v2_workspace_members')
         .select('workspace_id')
         .eq('user_id', user.id)
@@ -104,8 +71,11 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     } as any;
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth middleware error:', error);
+    if (error.message?.includes('authentication')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     res.status(500).json({ error: 'Authentication failed' });
   }
 }
