@@ -20,13 +20,36 @@ export interface UserContext {
 export class UserContextManager {
   /**
    * Store or update user context
+   * SECURITY: Validates userId to prevent unauthorized access
    */
   static async setContext(context: UserContext): Promise<void> {
+    // Validate userId is provided (prevent null/undefined injection)
+    if (!context.userId || typeof context.userId !== 'string') {
+      throw new Error('Valid userId is required');
+    }
+
+    // Validate context type
+    const validTypes = ['preference', 'conversation', 'insight', 'project_info', 'skill', 'goal'];
+    if (!validTypes.includes(context.contextType)) {
+      throw new Error('Invalid context type');
+    }
+
+    // Validate key length
+    if (!context.contextKey || context.contextKey.length > 255) {
+      throw new Error('Invalid context key');
+    }
+
+    // Validate value size (max 50KB)
+    const valueSize = JSON.stringify(context.contextValue).length;
+    if (valueSize > 50000) {
+      throw new Error('Context value too large');
+    }
+
     const { data, error } = await supabase
       .from('v2_user_context')
       .upsert({
         user_id: context.userId,
-        workspace_id: context.workspaceId,
+        workspace_id: context.workspaceId || null,
         context_type: context.contextType,
         context_key: context.contextKey,
         context_value: context.contextValue,
@@ -44,6 +67,7 @@ export class UserContextManager {
 
   /**
    * Get user context by type and key
+   * SECURITY: Requires userId to prevent unauthorized access
    */
   static async getContext(
     userId: string,
@@ -51,11 +75,20 @@ export class UserContextManager {
     contextKey?: string,
     workspaceId?: string
   ): Promise<UserContext[]> {
+    // Validate userId to prevent unauthorized access
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid userId is required');
+    }
+
+    // Build query with REQUIRED user_id filter for security
     let query = supabase
       .from('v2_user_context')
       .select('*')
-      .eq('user_id', userId)
-      .eq('context_type', contextType);
+      .eq('user_id', userId); // CRITICAL: Always filter by user_id
+
+    if (contextType) {
+      query = query.eq('context_type', contextType);
+    }
 
     if (contextKey) {
       query = query.eq('context_key', contextKey);
@@ -64,6 +97,9 @@ export class UserContextManager {
     if (workspaceId) {
       query = query.eq('workspace_id', workspaceId);
     }
+
+    // Limit results to prevent resource exhaustion
+    query = query.limit(100);
 
     const { data, error } = await query.order('updated_at', { ascending: false });
 
@@ -87,12 +123,19 @@ export class UserContextManager {
 
   /**
    * Get all context for a user (for AI system prompt)
+   * SECURITY: Validates userId and limits results
    */
   static async getUserProfile(userId: string, workspaceId?: string): Promise<string> {
+    // Validate userId to prevent unauthorized access
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid userId is required');
+    }
+
     let query = supabase
       .from('v2_user_context')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) // CRITICAL: Always filter by user_id
+      .limit(100); // Prevent resource exhaustion
 
     if (workspaceId) {
       query = query.eq('workspace_id', workspaceId);
@@ -217,6 +260,7 @@ export class UserContextManager {
 
   /**
    * Delete user context
+   * SECURITY: Validates userId to prevent unauthorized deletion
    */
   static async deleteContext(
     userId: string,
@@ -224,6 +268,12 @@ export class UserContextManager {
     contextKey: string,
     workspaceId?: string
   ): Promise<void> {
+    // Validate userId to prevent unauthorized access
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid userId is required');
+    }
+
+    // CRITICAL: Always include user_id in delete to prevent unauthorized deletion
     let query = supabase
       .from('v2_user_context')
       .delete()

@@ -5,23 +5,25 @@ import { ProviderFactory } from '../../src/services/providers/ProviderFactory.js
 import { AI_AGENT } from '../../src/config/aiAgent.js';
 import { UserContextManager } from '../utils/user-context.js';
 import { webSearch } from '../utils/web-search.js';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
-router.post('/ai-chat-stream', async (req, res) => {
+// CRITICAL SECURITY: Require authentication to prevent user impersonation
+router.post('/ai-chat-stream', requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { messages, userId, presentationContext, workspaceId, enableResearch } = req.body;
+    const { messages, presentationContext, enableResearch } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    // SECURITY: Get userId and workspaceId from authenticated user (not request body!)
+    const userId = req.user!.id;
+    const workspaceId = req.user!.workspaceId;
 
     // Initialize provider-agnostic services
     const provider = ProviderFactory.createProvider();

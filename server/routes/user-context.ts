@@ -47,9 +47,9 @@ router.get('/user-context', requireAuth, async (req: Request, res: Response) => 
     res.json({ success: true, contexts });
   } catch (error: any) {
     console.error('Error fetching user context:', error);
+    // Don't expose internal error details to client
     res.status(500).json({ 
-      error: 'Failed to fetch user context',
-      details: error.message 
+      error: 'Failed to fetch user context'
     });
   }
 });
@@ -60,9 +60,33 @@ router.post('/user-context', requireAuth, async (req: Request, res: Response) =>
     const user = (req as any).user;
     const { contextType, contextKey, contextValue, workspaceId, metadata } = req.body;
 
+    // Input validation
     if (!contextType || !contextKey || contextValue === undefined) {
       return res.status(400).json({ 
         error: 'contextType, contextKey, and contextValue are required' 
+      });
+    }
+
+    // Validate context type
+    const validTypes = ['preference', 'conversation', 'insight', 'project_info', 'skill', 'goal'];
+    if (!validTypes.includes(contextType)) {
+      return res.status(400).json({ 
+        error: 'Invalid context type' 
+      });
+    }
+
+    // Validate key length
+    if (contextKey.length > 255) {
+      return res.status(400).json({ 
+        error: 'Context key too long (max 255 characters)' 
+      });
+    }
+
+    // Validate value size (prevent DoS)
+    const valueSize = JSON.stringify(contextValue).length;
+    if (valueSize > 50000) { // 50KB limit
+      return res.status(400).json({ 
+        error: 'Context value too large (max 50KB)' 
       });
     }
 
@@ -78,9 +102,9 @@ router.post('/user-context', requireAuth, async (req: Request, res: Response) =>
     res.json({ success: true, message: 'User context saved successfully' });
   } catch (error: any) {
     console.error('Error setting user context:', error);
+    // Don't expose internal error details to client
     res.status(500).json({ 
-      error: 'Failed to save user context',
-      details: error.message 
+      error: 'Failed to save user context'
     });
   }
 });
@@ -107,9 +131,9 @@ router.delete('/user-context', requireAuth, async (req: Request, res: Response) 
     res.json({ success: true, message: 'User context deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting user context:', error);
+    // Don't expose internal error details to client
     res.status(500).json({ 
-      error: 'Failed to delete user context',
-      details: error.message 
+      error: 'Failed to delete user context'
     });
   }
 });
@@ -128,9 +152,9 @@ router.get('/user-profile', requireAuth, async (req: Request, res: Response) => 
     res.json({ success: true, profile });
   } catch (error: any) {
     console.error('Error fetching user profile:', error);
+    // Don't expose internal error details to client
     res.status(500).json({ 
-      error: 'Failed to fetch user profile',
-      details: error.message 
+      error: 'Failed to fetch user profile'
     });
   }
 });

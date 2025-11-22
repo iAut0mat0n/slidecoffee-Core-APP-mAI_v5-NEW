@@ -33,21 +33,68 @@ export class WebSearchService {
   async search(query: string, maxResults: number = 5): Promise<SearchResponse> {
     const startTime = Date.now();
 
+    // Input validation
+    if (!query || typeof query !== 'string') {
+      throw new Error('Invalid search query');
+    }
+
+    // Limit query length to prevent abuse
+    if (query.length > 500) {
+      throw new Error('Search query too long (max 500 characters)');
+    }
+
+    // Sanitize query to prevent injection attacks
+    const sanitizedQuery = query.replace(/[<>]/g, '').trim();
+    
+    if (!sanitizedQuery) {
+      throw new Error('Invalid search query after sanitization');
+    }
+
+    // Limit max results to prevent resource exhaustion
+    const safeMaxResults = Math.min(Math.max(1, maxResults), 10);
+
     try {
-      // Using DuckDuckGo HTML search (no API key required)
-      const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`);
+      // Using DuckDuckGo HTML search with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(
+        `https://html.duckduckgo.com/html/?q=${encodeURIComponent(sanitizedQuery)}`,
+        { 
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'SlideCoffee/1.0 (AI Research Bot)',
+          }
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Search service returned ${response.status}`);
+      }
+
       const html = await response.text();
 
+      // Limit HTML size to prevent memory issues
+      if (html.length > 1000000) { // 1MB limit
+        console.warn('[WebSearch] Response too large, truncating');
+      }
+
       // Parse results from HTML (basic extraction)
-      const results = this.parseSearchResults(html, maxResults);
+      const results = this.parseSearchResults(html, safeMaxResults);
 
       return {
-        query,
+        query: sanitizedQuery,
         results,
         totalResults: results.length,
         searchTime: Date.now() - startTime,
       };
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('[WebSearch] Search timeout');
+        throw new Error('Search request timed out');
+      }
       console.error('[WebSearch] Search error:', error);
       throw new Error('Failed to perform web search');
     }

@@ -115,9 +115,9 @@ Create 6-8 slides. Be specific and actionable.`
       setMessages(prev => [...prev, currentMessage])
       
       // Stream the AI response with research enabled
+      // Note: userId and workspaceId are derived from auth token on backend for security
       for await (const event of streamChatMessage(chatMessages, user.id, undefined, {
         enableResearch: enableResearch,
-        workspaceId: user.default_workspace_id || undefined,
       })) {
         if (event.type === 'chunk' && event.content) {
           aiPlanText += event.content

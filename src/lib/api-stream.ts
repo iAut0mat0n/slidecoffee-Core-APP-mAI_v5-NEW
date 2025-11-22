@@ -19,17 +19,21 @@ export async function* streamChatMessage(
     enableResearch?: boolean;
   }
 ): AsyncGenerator<StreamEvent, void, unknown> {
+  // Get auth token from localStorage (Supabase session)
+  const session = localStorage.getItem('supabase.auth.token');
+  const token = session ? JSON.parse(session)?.access_token : null;
+
   const response = await fetch(getApiUrl('ai-chat-stream'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
     },
     body: JSON.stringify({
       messages,
-      userId,
       presentationContext,
-      workspaceId: options?.workspaceId,
       enableResearch: options?.enableResearch ?? true, // Enable research by default
+      // SECURITY NOTE: userId and workspaceId are derived from auth token on backend
     }),
   });
 
