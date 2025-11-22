@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { User, CreditCard, Bell, Shield, Palette, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import CollapsibleSidebar from '../components/CollapsibleSidebar'
+import BillingSettings from '../components/BillingSettings'
 
 type SettingsTab = 'profile' | 'subscription' | 'notifications' | 'security' | 'appearance' | 'integrations'
 
@@ -104,27 +105,7 @@ export default function SettingsNew() {
               )}
 
               {activeTab === 'subscription' && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-6">Subscription</h2>
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold">Starter Plan</h3>
-                        <p className="text-gray-600">75 credits remaining</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold">Free</p>
-                      </div>
-                    </div>
-                    <button className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors">
-                      Upgrade Plan
-                    </button>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-4">Billing History</h3>
-                    <p className="text-gray-500">No billing history yet</p>
-                  </div>
-                </div>
+                <BillingSettings />
               )}
 
               {activeTab === 'notifications' && (

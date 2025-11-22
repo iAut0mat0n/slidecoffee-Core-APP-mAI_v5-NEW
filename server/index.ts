@@ -17,6 +17,7 @@ import { adminRouter } from './routes/admin.js';
 import { presentationsRouter } from './routes/presentations.js';
 import { userContextRouter } from './routes/user-context.js';
 import supportTicketsRouter from './routes/support-tickets.js';
+import usageRouter from './routes/usage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,7 @@ app.use('/api', adminRouter);
 app.use('/api', presentationsRouter);
 app.use('/api', userContextRouter);
 app.use('/api/support-tickets', supportTicketsRouter);
+app.use('/api/usage', usageRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
