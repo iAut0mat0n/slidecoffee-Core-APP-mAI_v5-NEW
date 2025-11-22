@@ -1,17 +1,20 @@
 import { Router, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 
 const router = Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-// TEMPLATES
+// TEMPLATES - Public templates (accessible to all users)
 router.get('/templates', async (req: Request, res: Response) => {
   try {
+    // Templates are public - use anon key for consistent access
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_ANON_KEY || ''
+    );
+    
     const { data, error } = await supabase
       .from('v2_templates')
       .select('*')
@@ -26,6 +29,13 @@ router.get('/templates', async (req: Request, res: Response) => {
 
 router.get('/templates/:id', async (req: Request, res: Response) => {
   try {
+    // Templates are public - use anon key for consistent access
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_ANON_KEY || ''
+    );
+    
     const { data, error } = await supabase
       .from('v2_templates')
       .select('*')
@@ -39,12 +49,21 @@ router.get('/templates/:id', async (req: Request, res: Response) => {
   }
 });
 
-// WORKSPACES
-router.get('/workspaces', async (req: Request, res: Response) => {
+// WORKSPACES - Require authentication to list workspaces
+router.get('/workspaces', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
+    // Only return the user's workspace (workspace-scoped)
     const { data, error } = await supabase
       .from('v2_workspaces')
       .select('*')
+      .eq('id', workspaceId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -54,17 +73,24 @@ router.get('/workspaces', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/workspaces', async (req: Request, res: Response) => {
+router.post('/workspaces', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
     // Validate workspace name
     const nameError = validateLength(req.body.name, 'Workspace name', MAX_LENGTHS.WORKSPACE_NAME, 1);
     if (nameError) {
       return res.status(400).json({ error: nameError.message });
     }
 
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { data, error } = await supabase
       .from('v2_workspaces')
-      .insert([req.body])
+      .insert([{ ...req.body, owner_id: userId }])
       .select()
       .single();
 

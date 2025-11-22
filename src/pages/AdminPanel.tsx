@@ -378,6 +378,7 @@ export default function AdminPanel() {
                                     onChange={(e) => setApiKeyInput(e.target.value)}
                                     placeholder={`Enter ${item.label} API key`}
                                     className="pr-20"
+                                    maxLength={500}
                                   />
                                   <button
                                     onClick={() => setShowApiKey(!showApiKey)}

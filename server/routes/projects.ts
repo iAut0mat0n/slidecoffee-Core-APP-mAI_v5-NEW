@@ -1,20 +1,24 @@
 import { Router, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 
 const router = Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-// GET /api/projects - List all projects
-router.get('/projects', async (req: Request, res: Response) => {
+// GET /api/projects - List all projects for authenticated user's workspace
+router.get('/projects', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { data, error } = await supabase
       .from('v2_projects')
       .select('*')
+      .eq('workspace_id', workspaceId)
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -25,12 +29,20 @@ router.get('/projects', async (req: Request, res: Response) => {
 });
 
 // GET /api/projects/:id - Get single project
-router.get('/projects/:id', async (req: Request, res: Response) => {
+router.get('/projects/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { data, error } = await supabase
       .from('v2_projects')
       .select('*')
       .eq('id', req.params.id)
+      .eq('workspace_id', workspaceId)
       .single();
 
     if (error) throw error;
@@ -41,8 +53,13 @@ router.get('/projects/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/projects - Create project
-router.post('/projects', async (req: Request, res: Response) => {
+router.post('/projects', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
     // Validate project name
     const nameError = validateLength(req.body.name, 'Project name', MAX_LENGTHS.PRESENTATION_TITLE, 1);
     if (nameError) {
@@ -57,9 +74,11 @@ router.post('/projects', async (req: Request, res: Response) => {
       }
     }
 
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { data, error} = await supabase
       .from('v2_projects')
-      .insert([req.body])
+      .insert([{ ...req.body, workspace_id: workspaceId }])
       .select()
       .single();
 
@@ -71,8 +90,13 @@ router.post('/projects', async (req: Request, res: Response) => {
 });
 
 // PUT /api/projects/:id - Update project
-router.put('/projects/:id', async (req: Request, res: Response) => {
+router.put('/projects/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
     // Validate name if provided
     if (req.body.name) {
       const nameError = validateLength(req.body.name, 'Project name', MAX_LENGTHS.PRESENTATION_TITLE, 1);
@@ -89,10 +113,13 @@ router.put('/projects/:id', async (req: Request, res: Response) => {
       }
     }
 
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { data, error } = await supabase
       .from('v2_projects')
       .update(req.body)
       .eq('id', req.params.id)
+      .eq('workspace_id', workspaceId)
       .select()
       .single();
 
@@ -104,12 +131,20 @@ router.put('/projects/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/projects/:id - Delete project
-router.delete('/projects/:id', async (req: Request, res: Response) => {
+router.delete('/projects/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    
     const { error } = await supabase
       .from('v2_projects')
       .delete()
-      .eq('id', req.params.id);
+      .eq('id', req.params.id)
+      .eq('workspace_id', workspaceId);
 
     if (error) throw error;
     res.status(204).send();

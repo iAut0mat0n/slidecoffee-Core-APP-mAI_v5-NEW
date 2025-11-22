@@ -160,6 +160,7 @@ export default function APIKeysManagement() {
                     type="text"
                     placeholder="e.g., Production API Key"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    maxLength={100}
                   />
                 </div>
                 <div>
