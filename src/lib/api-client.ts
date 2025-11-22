@@ -120,5 +120,10 @@ export const adminAPI = {
     method: 'PATCH',
     body: JSON.stringify({ role }),
   }),
+  updateAISettings: (settingId: string, data: { api_key?: string; model?: string; config?: any }) => 
+    fetchAPI<any>(`/admin/ai-settings/${settingId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 };
 

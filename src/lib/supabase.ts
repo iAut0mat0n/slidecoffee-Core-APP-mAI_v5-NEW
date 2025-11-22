@@ -140,7 +140,7 @@ export type Collaborator = {
 
 export type AISettings = {
   id: string
-  provider: 'manus' | 'claude' | 'gpt4'
+  provider: 'manus' | 'claude' | 'claude-haiku' | 'gpt4'
   is_active: boolean
   api_key: string | null
   model: string | null

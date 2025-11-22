@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText } from 'lucide-react'
+import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText, Key } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, type AISettings } from '../lib/supabase'
 import { adminAPI } from '../lib/api-client'
 import Button from '../components/Button'
 import Card from '../components/Card'
-// import Input from '../components/Input'
+import Input from '../components/Input'
 
 type Tab = 'overview' | 'users' | 'subscriptions' | 'analytics' | 'ai-settings' | 'database' | 'logs'
 
@@ -24,6 +24,9 @@ export default function AdminPanel() {
     totalProjects: 0,
     creditsUsed: 0,
   })
+  const [configuring, setConfiguring] = useState<string | null>(null)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
     // Check if user is admin
@@ -74,6 +77,30 @@ export default function AdminPanel() {
       loadData()
     } catch (error) {
       console.error('Error toggling provider:', error)
+    }
+  }
+
+  const handleConfigureProvider = (providerId: string) => {
+    setConfiguring(providerId)
+    setApiKeyInput('')
+    setShowApiKey(false)
+  }
+
+  const handleSaveApiKey = async (settingId: string) => {
+    if (!apiKeyInput.trim()) {
+      alert('Please enter an API key')
+      return
+    }
+
+    try {
+      await adminAPI.updateAISettings(settingId, { api_key: apiKeyInput })
+      setConfiguring(null)
+      setApiKeyInput('')
+      loadData()
+      alert('API key saved successfully!')
+    } catch (error) {
+      console.error('Error saving API key:', error)
+      alert('Failed to save API key')
     }
   }
 
@@ -306,9 +333,10 @@ export default function AdminPanel() {
                 
                 <div className="space-y-4">
                   {[
-                    { provider: 'manus', label: 'Manus AI', model: 'gemini-2.0-flash-exp', description: 'Fast and cost-effective' },
-                    { provider: 'claude', label: 'Claude (Anthropic)', model: 'claude-3-5-sonnet', description: 'High quality, best for complex presentations' },
-                    { provider: 'gpt4', label: 'GPT-4 (OpenAI)', model: 'gpt-4-turbo', description: 'Versatile and reliable' },
+                    { provider: 'manus', label: 'Manus AI', model: 'gemini-2.0-flash-exp', description: 'Fast and cost-effective (Gemini-powered)' },
+                    { provider: 'claude', label: 'Claude 3.5 Sonnet', model: 'claude-3-5-sonnet-20241022', description: 'Highest quality, best for complex presentations' },
+                    { provider: 'claude-haiku', label: 'Claude 3.5 Haiku', model: 'claude-3-5-haiku-20241022', description: 'Fast and efficient, great balance of speed and quality' },
+                    { provider: 'gpt4', label: 'GPT-4 Turbo', model: 'gpt-4-turbo', description: 'Versatile and reliable from OpenAI' },
                   ].map((item) => {
                     const setting = aiSettings.find(s => s.provider === item.provider)
                     const isActive = setting?.is_active || false
@@ -322,38 +350,120 @@ export default function AdminPanel() {
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">{item.label}</h3>
-                              {isActive && (
-                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                  Active
-                                </span>
-                              )}
+                        {configuring === setting?.id ? (
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">{item.label}</h3>
+                                <p className="text-sm text-gray-600">Configure API Key</p>
+                              </div>
+                              <button
+                                onClick={() => setConfiguring(null)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                ✕
+                              </button>
                             </div>
-                            <p className="text-sm text-gray-600 mb-1">{item.description}</p>
-                            <p className="text-xs text-gray-500">Model: {item.model}</p>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  API Key
+                                </label>
+                                <div className="relative">
+                                  <Input
+                                    type={showApiKey ? 'text' : 'password'}
+                                    value={apiKeyInput}
+                                    onChange={(e) => setApiKeyInput(e.target.value)}
+                                    placeholder={`Enter ${item.label} API key`}
+                                    className="pr-20"
+                                  />
+                                  <button
+                                    onClick={() => setShowApiKey(!showApiKey)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700"
+                                  >
+                                    {showApiKey ? 'Hide' : 'Show'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => setting && handleSaveApiKey(setting.id)}
+                                  size="sm"
+                                >
+                                  Save API Key
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => setConfiguring(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                          <Button
-                            variant={isActive ? 'secondary' : 'primary'}
-                            size="sm"
-                            onClick={() => setting && handleToggleProvider(setting.id, isActive)}
-                            disabled={loading}
-                          >
-                            {isActive ? 'Active' : 'Activate'}
-                          </Button>
-                        </div>
+                        ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-900">{item.label}</h3>
+                                {isActive && (
+                                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                                    Active
+                                  </span>
+                                )}
+                                {setting?.api_key && (
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded flex items-center gap-1">
+                                    <Key className="w-3 h-3" />
+                                    Configured
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 mb-1">{item.description}</p>
+                              <p className="text-xs text-gray-500">Model: {item.model}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setting && handleConfigureProvider(setting.id)}
+                                disabled={loading}
+                              >
+                                Configure
+                              </Button>
+                              <Button
+                                variant={isActive ? 'secondary' : 'primary'}
+                                size="sm"
+                                onClick={() => setting && handleToggleProvider(setting.id, isActive)}
+                                disabled={loading}
+                              >
+                                {isActive ? 'Active' : 'Activate'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
                 </div>
 
-                <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> Changing the AI provider will affect all new presentations. 
-                    Existing presentations will continue using their original provider.
-                  </p>
+                <div className="mt-8 space-y-3">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Getting API Keys:</strong>
+                    </p>
+                    <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4 list-disc">
+                      <li>Manus AI: Already configured via environment variables</li>
+                      <li>Claude: Get from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="underline">Anthropic Console</a></li>
+                      <li>GPT-4: Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI Platform</a></li>
+                    </ul>
+                  </div>
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Changing the AI provider will affect all new presentations. 
+                      Existing presentations will continue using their original provider.
+                    </p>
+                  </div>
                 </div>
               </Card>
             )}

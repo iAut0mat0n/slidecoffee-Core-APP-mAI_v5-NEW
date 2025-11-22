@@ -114,4 +114,37 @@ router.patch('/admin/users/:id/role', requireAuth, requireAdmin, async (req: Req
   }
 });
 
+// PATCH /api/admin/ai-settings/:id - Update AI provider settings
+router.patch('/admin/ai-settings/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { api_key, model, config } = req.body;
+
+    const updates: any = {};
+    if (api_key !== undefined) updates.api_key = api_key;
+    if (model !== undefined) updates.model = model;
+    if (config !== undefined) updates.config = config;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('v2_ai_settings')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Return without exposing the API key
+    const safeData = { ...data };
+    if (safeData.api_key) {
+      safeData.api_key = '***';
+    }
+
+    res.json(safeData);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Failed to update AI settings' });
+  }
+});
+
 export const adminRouter = router;
