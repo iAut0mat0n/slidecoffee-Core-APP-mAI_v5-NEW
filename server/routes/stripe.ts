@@ -1,17 +1,11 @@
 import { Router, Response, Request } from 'express';
 import Stripe from 'stripe';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { STRIPE_CONFIG } from '../config/stripe-plans.js';
 
 const router = Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
-
-const PLAN_PRICE_IDS = {
-  pro_monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
-  pro_annual: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
-  enterprise_monthly: process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || '',
-  enterprise_annual: process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || '',
-};
 
 router.post('/create-checkout-session', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
@@ -92,42 +86,114 @@ router.post('/create-portal-session', requireAuth, async (req: AuthRequest, res:
   }
 });
 
+// Get all available plans
 router.get('/plans', (req: Request, res: Response) => {
   try {
-    res.json({
-      plans: [
-        {
-          id: 'starter',
-          name: 'Starter',
-          price: { monthly: 0, annual: 0 },
-          features: ['5 presentations/month', 'Basic templates', 'Export to PDF', 'Community support'],
-          priceIds: null,
-        },
-        {
-          id: 'pro',
-          name: 'Pro',
-          price: { monthly: 29, annual: 290 },
-          features: ['Unlimited presentations', 'All templates', 'AI generation', 'Brand guidelines', 'Priority support', 'Export to PPT/PDF'],
-          priceIds: {
-            monthly: PLAN_PRICE_IDS.pro_monthly,
-            annual: PLAN_PRICE_IDS.pro_annual,
-          },
-        },
-        {
-          id: 'enterprise',
-          name: 'Enterprise',
-          price: { monthly: 99, annual: 990 },
-          features: ['Everything in Pro', 'Custom branding', 'API access', 'SSO', 'Dedicated support', 'SLA guarantee', 'Advanced analytics'],
-          priceIds: {
-            monthly: PLAN_PRICE_IDS.enterprise_monthly,
-            annual: PLAN_PRICE_IDS.enterprise_annual,
-          },
-        },
-      ],
-    });
+    const plans = [
+      {
+        id: STRIPE_CONFIG.plans.starter.id,
+        name: STRIPE_CONFIG.plans.starter.name,
+        price: STRIPE_CONFIG.plans.starter.price,
+        features: STRIPE_CONFIG.plans.starter.features,
+        limits: STRIPE_CONFIG.plans.starter.limits,
+        priceIds: null, // Free plan has no price IDs
+      },
+      {
+        id: STRIPE_CONFIG.plans.americano.id,
+        name: STRIPE_CONFIG.plans.americano.name,
+        price: STRIPE_CONFIG.plans.americano.price,
+        features: STRIPE_CONFIG.plans.americano.features,
+        limits: STRIPE_CONFIG.plans.americano.limits,
+        priceIds: STRIPE_CONFIG.plans.americano.priceIds,
+      },
+      {
+        id: STRIPE_CONFIG.plans.cappuccino.id,
+        name: STRIPE_CONFIG.plans.cappuccino.name,
+        price: STRIPE_CONFIG.plans.cappuccino.price,
+        features: STRIPE_CONFIG.plans.cappuccino.features,
+        limits: STRIPE_CONFIG.plans.cappuccino.limits,
+        priceIds: STRIPE_CONFIG.plans.cappuccino.priceIds,
+        popular: true,
+      },
+      {
+        id: STRIPE_CONFIG.plans.coldBrew.id,
+        name: STRIPE_CONFIG.plans.coldBrew.name,
+        price: STRIPE_CONFIG.plans.coldBrew.price,
+        features: STRIPE_CONFIG.plans.coldBrew.features,
+        limits: STRIPE_CONFIG.plans.coldBrew.limits,
+        priceIds: STRIPE_CONFIG.plans.coldBrew.priceIds,
+      },
+    ];
+
+    res.json({ plans });
   } catch (error: any) {
     console.error('Error fetching plans:', error);
     res.status(500).json({ error: 'Failed to fetch plans' });
+  }
+});
+
+// Get credit top-up options
+router.get('/topups', (req: Request, res: Response) => {
+  try {
+    const topups = Object.values(STRIPE_CONFIG.topups);
+    res.json({ topups });
+  } catch (error: any) {
+    console.error('Error fetching topups:', error);
+    res.status(500).json({ error: 'Failed to fetch topups' });
+  }
+});
+
+// Check if user can create slides (enforce limits)
+router.get('/check-slide-limit', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userPlan = req.user?.plan || 'starter';
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get user's current slide count this month
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+
+    // Get presentations created this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { data: presentations, error } = await supabase
+      .from('v2_presentations')
+      .select('id, slides')
+      .eq('user_id', userId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (error) {
+      console.error('Error fetching presentations:', error);
+      return res.status(500).json({ error: 'Failed to check slide limit' });
+    }
+
+    // Count total slides created this month
+    const totalSlides = presentations?.reduce((sum, p) => {
+      const slides = p.slides ? (Array.isArray(p.slides) ? p.slides.length : 0) : 0;
+      return sum + slides;
+    }, 0) || 0;
+
+    // Import helper function
+    const { canCreateSlides } = await import('../config/stripe-plans.js');
+    const limitCheck = canCreateSlides(userPlan, totalSlides);
+
+    res.json({
+      ...limitCheck,
+      currentCount: totalSlides,
+      plan: userPlan,
+    });
+  } catch (error: any) {
+    console.error('Error checking slide limit:', error);
+    res.status(500).json({ error: 'Failed to check slide limit' });
   }
 });
 
