@@ -2,8 +2,8 @@ import { Router } from 'express';
 
 const router = Router();
 
-const MANUS_API_URL = process.env.BUILT_IN_FORGE_API_URL || '';
-const MANUS_API_KEY = process.env.BUILT_IN_FORGE_API_KEY || '';
+const MANUS_API_URL = process.env.OPENAI_BASE_URL || process.env.BUILT_IN_FORGE_API_URL || '';
+const MANUS_API_KEY = process.env.OPENAI_API_KEY || process.env.BUILT_IN_FORGE_API_KEY || '';
 
 router.post('/generate-slides', async (req, res) => {
   try {
@@ -11,6 +11,13 @@ router.post('/generate-slides', async (req, res) => {
 
     if (!plan) {
       return res.status(400).json({ error: 'Presentation plan is required' });
+    }
+
+    if (!MANUS_API_URL || !MANUS_API_KEY) {
+      return res.status(500).json({ 
+        error: 'AI service not configured',
+        details: 'Missing OPENAI_API_KEY or OPENAI_BASE_URL environment variables'
+      });
     }
 
     // Generate slides using Manus LLM API
@@ -52,8 +59,8 @@ Return the slides as a JSON array.`
       throw new Error(`Manus API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const slidesContent = data.choices[0]?.message?.content || '{}';
+    const data = await response.json() as any;
+    const slidesContent = data.choices?.[0]?.message?.content || '{}';
     const slides = JSON.parse(slidesContent);
 
     res.json({

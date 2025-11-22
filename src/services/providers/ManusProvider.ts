@@ -10,8 +10,8 @@ export class ManusProvider extends AIProvider {
   private defaultEmbeddingModel = 'text-embedding-3-small';
 
   constructor(apiUrl?: string, apiKey?: string) {
-    const url = apiUrl || process.env.BUILT_IN_FORGE_API_URL || '';
-    const key = apiKey || process.env.BUILT_IN_FORGE_API_KEY || '';
+    const url = apiUrl || process.env.OPENAI_BASE_URL || process.env.BUILT_IN_FORGE_API_URL || '';
+    const key = apiKey || process.env.OPENAI_API_KEY || process.env.BUILT_IN_FORGE_API_KEY || '';
     super(url, key);
   }
 

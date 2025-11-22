@@ -41,7 +41,10 @@ export class ProviderFactory {
   static isProviderAvailable(providerType: ProviderType): boolean {
     switch (providerType) {
       case 'manus':
-        return !!(process.env.BUILT_IN_FORGE_API_KEY && process.env.BUILT_IN_FORGE_API_URL);
+        return !!(
+          (process.env.OPENAI_API_KEY && process.env.OPENAI_BASE_URL) ||
+          (process.env.BUILT_IN_FORGE_API_KEY && process.env.BUILT_IN_FORGE_API_URL)
+        );
       
       case 'claude':
         return !!(process.env.ANTHROPIC_API_KEY && process.env.VOYAGE_API_KEY);

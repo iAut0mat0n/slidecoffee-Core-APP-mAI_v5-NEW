@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, Coffee, Loader2, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { streamChatMessage } from '../lib/api-stream'
+import { generateSlides } from '../lib/api'
+import { toast } from 'sonner'
 
 interface Message {
   id: string
@@ -64,59 +67,128 @@ export default function AIAgentCreate() {
     setMessages((prev) => [...prev, newMessage])
   }
 
-  const simulateAgentWork = async () => {
+  const generatePresentationWithAI = async (userRequest: string) => {
+    if (!user?.id) {
+      toast.error('Please log in to use AI generation')
+      return
+    }
+
     setIsGenerating(true)
     
-    // Phase 1: Research
-    setCurrentPhase('research')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    addAgentMessage('Let me research your topic...', true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    addAgentMessage('Found 3 relevant market reports')
-    
-    // Phase 2: Outline
-    setCurrentPhase('outline')
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    addAgentMessage('Generating outline with 8 slides')
-    
-    const slideOutline = [
-      'Slide 1: Title',
-      'Slide 2: Executive Summary',
-      'Slide 3: Market Overview',
-      'Slide 4: Key Findings',
-      'Slide 5: Data Analysis',
-      'Slide 6: Recommendations',
-      'Slide 7: Next Steps',
-      'Slide 8: Thank You',
-    ]
-    
-    addAgentMessage(slideOutline.map((s, i) => `• ${s}`).join('\n'))
-    
-    // Phase 3: Generating slides
-    setCurrentPhase('generating')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const newSlides: SlidePreview[] = []
-    for (let i = 0; i < 8; i++) {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      const slide: SlidePreview = {
-        id: i + 1,
-        title: slideOutline[i].replace(/Slide \d+: /, ''),
-        content: 'Content preview...',
-      }
-      newSlides.push(slide)
-      setSlides([...newSlides])
-      setCurrentSlide(i)
-      setProgress(((i + 1) / 8) * 100)
-      addAgentMessage(`Adding content to slide ${i + 1}...`, true)
+    try {
+      // Phase 1: Research & Planning with streaming AI
+      setCurrentPhase('research')
+      addAgentMessage('Let me research your topic and create a plan...', true)
+      
+      const chatMessages = [
+        {
+          role: 'system',
+          content: `You are an expert presentation designer. Create a detailed presentation plan based on the user's request.
+
+CRITICAL: Respond ONLY with valid JSON in this exact format:
+{
+  "title": "Presentation Title",
+  "summary": "Brief overview of the topic",
+  "slides": [
+    {
+      "title": "Slide Title",
+      "purpose": "What this slide accomplishes",
+      "keyPoints": ["Point 1", "Point 2", "Point 3"]
     }
-    
-    // Phase 4: Complete
-    setCurrentPhase('complete')
-    await new Promise(resolve => setTimeout(resolve, 500))
-    addAgentMessage('🎉 Your presentation is ready! You can now review and edit it.')
-    
-    setIsGenerating(false)
+  ],
+  "themes": ["Theme 1", "Theme 2"]
+}
+
+Create 6-8 slides. Be specific and actionable.`
+        },
+        {
+          role: 'user',
+          content: userRequest
+        }
+      ]
+      
+      let aiPlanText = ''
+      let currentMessage = { id: Date.now().toString(), role: 'agent' as const, content: '', timestamp: new Date() }
+      setMessages(prev => [...prev, currentMessage])
+      
+      // Stream the AI response
+      for await (const event of streamChatMessage(chatMessages, user.id)) {
+        if (event.type === 'chunk' && event.content) {
+          aiPlanText += event.content
+          setMessages(prev => {
+            const updated = [...prev]
+            const lastMsg = updated[updated.length - 1]
+            if (lastMsg.role === 'agent') {
+              lastMsg.content = aiPlanText
+            }
+            return updated
+          })
+        } else if (event.type === 'done') {
+          if (event.fullResponse) {
+            aiPlanText = event.fullResponse
+          }
+          break
+        } else if (event.type === 'error') {
+          throw new Error(event.error || 'AI generation failed')
+        }
+      }
+      
+      // Parse the JSON plan
+      let parsedPlan
+      try {
+        parsedPlan = JSON.parse(aiPlanText)
+        if (!parsedPlan.slides || !Array.isArray(parsedPlan.slides)) {
+          throw new Error('Invalid plan format: missing slides array')
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI plan:', parseError)
+        throw new Error('AI returned invalid plan format. Please try again.')
+      }
+      
+      addAgentMessage(`Perfect! I've created a plan with ${parsedPlan.slides.length} slides: ${parsedPlan.title}`)
+      setCurrentPhase('outline')
+      
+      // Phase 2: Generate Slides
+      setCurrentPhase('generating')
+      addAgentMessage('Creating your slides with beautiful designs...', true)
+      
+      const slidesResult = await generateSlides({ plan: parsedPlan })
+      
+      if (!slidesResult.slides || slidesResult.slides.length === 0) {
+        throw new Error('No slides were generated')
+      }
+      
+      // Phase 3: Display slides progressively
+      const generatedSlides: SlidePreview[] = []
+      for (let i = 0; i < slidesResult.slides.length; i++) {
+        const slide = slidesResult.slides[i]
+        const slidePreview: SlidePreview = {
+          id: i + 1,
+          title: slide.title || `Slide ${i + 1}`,
+          content: slide.content || '',
+        }
+        generatedSlides.push(slidePreview)
+        setSlides([...generatedSlides])
+        setCurrentSlide(i)
+        setProgress(((i + 1) / slidesResult.slides.length) * 100)
+        addAgentMessage(`✓ Slide ${i + 1}: ${slidePreview.title}`)
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
+      
+      // Phase 4: Complete
+      setCurrentPhase('complete')
+      addAgentMessage(`🎉 Your presentation is ready! Created ${slidesResult.slides.length} slides. You can now review and edit them.`)
+      
+      toast.success('Presentation created successfully!')
+      
+    } catch (error) {
+      console.error('AI Generation Error:', error)
+      addAgentMessage(`❌ Sorry, something went wrong: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error('Failed to generate presentation')
+      setCurrentPhase('research')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const handleSendMessage = async () => {
@@ -126,16 +198,17 @@ export default function AIAgentCreate() {
     setInputValue('')
     addUserMessage(userMessage)
 
-    // Simulate agent response
+    // Start AI generation
     if (messages.length === 1) {
       // First user message - start generation
       await new Promise(resolve => setTimeout(resolve, 500))
       addAgentMessage('Great! Let me start working on that for you.')
-      await simulateAgentWork()
+      await generatePresentationWithAI(userMessage)
     } else {
-      // Follow-up messages
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      addAgentMessage('I understand. Let me adjust that for you.')
+      // Follow-up messages - allow refinement
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addAgentMessage('I understand. Let me refine the presentation based on your feedback.')
+      await generatePresentationWithAI(userMessage)
     }
   }
 
