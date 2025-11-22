@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Send, Coffee, Loader2, Sparkles } from 'lucide-react'
+import { Send, Coffee, Loader2, Sparkles, Search } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { streamChatMessage } from '../lib/api-stream'
 import { generateSlides } from '../lib/api'
@@ -35,6 +35,7 @@ export default function AIAgentCreate() {
   const [slides, setSlides] = useState<SlidePreview[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [enableResearch, setEnableResearch] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -113,8 +114,11 @@ Create 6-8 slides. Be specific and actionable.`
       let currentMessage = { id: Date.now().toString(), role: 'agent' as const, content: '', timestamp: new Date() }
       setMessages(prev => [...prev, currentMessage])
       
-      // Stream the AI response
-      for await (const event of streamChatMessage(chatMessages, user.id)) {
+      // Stream the AI response with research enabled
+      for await (const event of streamChatMessage(chatMessages, user.id, undefined, {
+        enableResearch: enableResearch,
+        workspaceId: undefined, // Backend will get from auth context
+      })) {
         if (event.type === 'chunk' && event.content) {
           aiPlanText += event.content
           setMessages(prev => {
@@ -295,6 +299,31 @@ Create 6-8 slides. Be specific and actionable.`
 
         {/* Input */}
         <div className="border-t border-gray-200 p-4">
+          {/* Research Mode Toggle */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Search className="w-4 h-4" />
+              <span>Research Mode</span>
+            </div>
+            <button
+              onClick={() => setEnableResearch(!enableResearch)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                enableResearch ? 'bg-purple-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  enableResearch ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {enableResearch && (
+            <div className="mb-3 px-1 text-xs text-purple-600 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              <span>AI will research your topic for better insights</span>
+            </div>
+          )}
           <div className="flex items-end gap-3">
             <input
               type="text"

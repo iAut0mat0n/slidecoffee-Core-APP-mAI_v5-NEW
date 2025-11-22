@@ -17,7 +17,7 @@ SlideCoffee is built as a full-stack application with a clear separation between
 **Technical Implementations:**
 -   **Frontend:** Developed with React 19, TypeScript, and Vite. React Query manages server state and caching, while React Router handles client-side routing.
 -   **Backend:** An Express.js server running on Node.js handles API requests. TSX is used for TypeScript execution.
--   **AI Integration:** Primary AI provider is **Claude 3.5 Haiku** via Anthropic API, with database-driven provider switching supporting multiple AI models (Claude Haiku, Claude Sonnet, Manus/Gemini, GPT-4). Real streaming AI integration with structured plan generation ensures AI outputs are consistently formatted JSON, which includes `title`, `summary`, `slides[]`, and `themes[]`. Each slide detail includes `title`, `purpose`, and `keyPoints[]`. Admin panel allows switching between providers with encrypted API key storage.
+-   **AI Integration:** Primary AI provider is **Claude Haiku 4.5** (Oct 2025 release) via Anthropic API, offering 4-5x faster performance than Sonnet at 1/3 the cost with 90% of the quality. Database-driven provider switching supports multiple AI models (Claude Haiku 4.5, Claude Sonnet, Manus/Gemini, GPT-4). Real streaming AI integration with structured plan generation ensures AI outputs are consistently formatted JSON, which includes `title`, `summary`, `slides[]`, and `themes[]`. Each slide detail includes `title`, `purpose`, and `keyPoints[]`. Admin panel allows switching between providers with encrypted API key storage.
 -   **Authentication & Authorization:** Supabase provides authentication. JWT tokens are used for securing API routes, and a custom middleware enforces authentication and extracts user workspace information. Row Level Security (RLS) is applied across all database tables to ensure data isolation and security.
 -   **Stripe Billing:** Integrated for subscription management (Pro & Enterprise plans) with secure webhook handling, idempotency, and a customer portal. Subscriptions are workspace-scoped.
 -   **Project Editor:** Features a full slide editor with debounced autosave functionality and real-time save status indicators.
@@ -32,9 +32,38 @@ SlideCoffee is built as a full-stack application with a clear separation between
 ## External Dependencies
 
 -   **Supabase:** Utilized for PostgreSQL database, authentication services, file storage, and real-time collaboration features.
--   **Claude (Anthropic):** Primary AI provider - Claude 3.5 Haiku for fast, efficient, high-quality slide generation and AI chat.
+-   **Claude (Anthropic):** Primary AI provider - Claude Haiku 4.5 (Oct 2025) for ultra-fast, efficient, high-quality slide generation and AI chat with research capabilities.
 -   **Manus AI:** Alternative AI provider, providing OpenAI-compatible API endpoints (Gemini-powered).
 -   **Manus Analytics:** Used for tracking application usage.
 -   **Forge API:** Integrated for additional functionalities and integrations.
 -   **Stripe:** Integrated for handling all billing and subscription management.
 -   **Voyage AI:** Used for embeddings when Claude provider is active (Claude doesn't provide embedding API).
+
+## Recent Updates (November 22, 2025)
+
+### Claude Haiku 4.5 Upgrade
+-   Upgraded from Claude 3.5 Haiku to Claude Haiku 4.5 (latest October 2025 release)
+-   Model identifiers updated across the application: `claude-haiku-4-5`
+-   Benefits: 4-5x faster than Sonnet, 90% performance at 1/3 cost, 200K context window
+-   Updated in: `server/utils/ai-settings.ts`, `src/services/providers/ClaudeProvider.ts`
+
+### AI Research Capabilities
+-   Implemented web search integration for AI-powered research (`server/utils/web-search.ts`)
+-   DuckDuckGo HTML search integration (no API key required)
+-   AI can now research topics and provide source-backed insights
+-   Research mode toggle in AI Agent UI with visual indicators
+-   Web search results automatically formatted and included in AI context
+
+### User-Specific AI Learning
+-   Created `v2_user_context` database table for storing user-specific AI memory
+-   Context types: preferences, conversation, insights, project_info, skills, goals
+-   User context automatically loaded and included in AI system prompts
+-   API endpoints for managing user context (`/api/user-context`)
+-   Enables personalized AI responses based on user history and preferences
+-   Context is workspace-scoped for proper data isolation
+
+### AI Chat Enhancements
+-   Enhanced system prompts with user profile information
+-   Integrated web search results into AI responses when research mode enabled
+-   Backend automatically enriches AI context with user preferences and insights
+-   Improved streaming AI chat with research and personalization support

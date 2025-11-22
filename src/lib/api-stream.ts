@@ -13,7 +13,11 @@ export interface StreamEvent {
 export async function* streamChatMessage(
   messages: Array<{ role: string; content: string }>,
   userId: string,
-  presentationContext?: any
+  presentationContext?: any,
+  options?: {
+    workspaceId?: string;
+    enableResearch?: boolean;
+  }
 ): AsyncGenerator<StreamEvent, void, unknown> {
   const response = await fetch(getApiUrl('ai-chat-stream'), {
     method: 'POST',
@@ -24,6 +28,8 @@ export async function* streamChatMessage(
       messages,
       userId,
       presentationContext,
+      workspaceId: options?.workspaceId,
+      enableResearch: options?.enableResearch ?? true, // Enable research by default
     }),
   });
 
@@ -70,11 +76,15 @@ export async function* streamChatMessage(
 export async function sendChatMessageWithMemory(
   messages: Array<{ role: string; content: string }>,
   userId: string,
-  presentationContext?: any
+  presentationContext?: any,
+  options?: {
+    workspaceId?: string;
+    enableResearch?: boolean;
+  }
 ): Promise<string> {
   let fullResponse = '';
 
-  for await (const event of streamChatMessage(messages, userId, presentationContext)) {
+  for await (const event of streamChatMessage(messages, userId, presentationContext, options)) {
     if (event.type === 'chunk' && event.content) {
       fullResponse += event.content;
     } else if (event.type === 'done' && event.fullResponse) {
