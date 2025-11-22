@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useCreateBrand, useUpdateBrand, useWorkspaces, useBrand } from '../lib/queries';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import UpgradePrompt from './UpgradePrompt';
 
 interface BrandCreationModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface BrandCreationModalProps {
 }
 
 export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCreationModalProps) {
+  const { user } = useAuth();
   const createBrand = useCreateBrand();
   const updateBrand = useUpdateBrand();
   const { data: workspaces } = useWorkspaces();
@@ -23,8 +26,11 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
     logo: null as string | null,
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [brandCount, setBrandCount] = useState(0);
 
   const isEditing = !!brandId;
+  const currentPlan = user?.plan || 'espresso';
 
   useEffect(() => {
     if (existingBrand && isEditing) {
@@ -43,9 +49,56 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
       });
       setStep(1);
     }
+
+    // Fetch brand count to check limits
+    if (isOpen && !isEditing) {
+      fetchBrandCount();
+    }
   }, [existingBrand, isEditing, isOpen]);
 
+  const fetchBrandCount = async () => {
+    try {
+      const response = await fetch('/api/usage/current', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setBrandCount(data.usage?.brands || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch brand count:', error);
+    }
+  };
+
   if (!isOpen) return null;
+
+  const handleUpgrade = async (planId: string) => {
+    try {
+      const plansResponse = await fetch('/api/stripe/plans');
+      const plansData = await plansResponse.json();
+      const plan = plansData.plans?.find((p: any) => p.id === planId);
+
+      if (!plan || !plan.priceIds) {
+        toast.error('Invalid plan selected');
+        return;
+      }
+
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ priceId: plan.priceIds.monthly }),
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('Failed to start upgrade');
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      toast.error('Failed to upgrade plan');
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -60,6 +113,12 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
   };
 
   const handleSubmit = async () => {
+    // Check brand limits before creating (only for free tier, not editing)
+    if (!isEditing && currentPlan === 'espresso' && brandCount >= 1) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -306,6 +365,17 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
           )}
         </div>
       </div>
+
+      {/* Upgrade Prompt */}
+      {showUpgradePrompt && (
+        <UpgradePrompt
+          currentPlan={currentPlan}
+          currentSlides={0}
+          limit={1}
+          onClose={() => setShowUpgradePrompt(false)}
+          onUpgrade={handleUpgrade}
+        />
+      )}
     </div>
   );
 }
