@@ -3,6 +3,8 @@ import { VectorMemoryService } from '../../src/services/VectorMemoryService.js';
 import { RAGService } from '../../src/services/RAGService.js';
 import { ProviderFactory } from '../../src/services/providers/ProviderFactory.js';
 import { AI_AGENT } from '../../src/config/aiAgent.js';
+import { UserContextManager } from '../utils/user-context.js';
+import { webSearch } from '../utils/web-search.js';
 
 const router = Router();
 
@@ -11,7 +13,7 @@ const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 router.post('/ai-chat-stream', async (req, res) => {
   try {
-    const { messages, userId, presentationContext } = req.body;
+    const { messages, userId, presentationContext, workspaceId, enableResearch } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
@@ -35,8 +37,33 @@ router.post('/ai-chat-stream', async (req, res) => {
       content: m.content,
     }));
 
-    // Build system prompt with presentation context
+    // Load user context for personalization
+    const userProfile = await UserContextManager.getUserProfile(userId, workspaceId);
+
+    // Perform web search if research mode is enabled
+    let searchResults = '';
+    if (enableResearch && userMessage.length > 10) {
+      try {
+        const search = await webSearch.search(userMessage, 5);
+        searchResults = webSearch.formatForAI(search);
+      } catch (error) {
+        console.error('Web search error:', error);
+        // Continue without search results
+      }
+    }
+
+    // Build enhanced system prompt with user context and search results
     let systemPrompt = AI_AGENT.systemPrompt;
+    
+    if (userProfile) {
+      systemPrompt += `\n\n${userProfile}`;
+    }
+    
+    if (searchResults) {
+      systemPrompt += `\n\n## Web Search Results\n${searchResults}`;
+      systemPrompt += `\n\nUse the above web search results to provide accurate, up-to-date information in your response.`;
+    }
+    
     if (presentationContext) {
       systemPrompt += `\n\n## Current Presentation Context:\n${JSON.stringify(presentationContext, null, 2)}`;
     }

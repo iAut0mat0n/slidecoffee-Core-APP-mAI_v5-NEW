@@ -46,7 +46,7 @@ function getFallbackProvider(): ActiveAIProvider {
       provider: 'claude-haiku',
       apiKey: process.env.ANTHROPIC_API_KEY,
       apiUrl: 'https://api.anthropic.com',
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       config: {},
     };
   }
@@ -62,12 +62,12 @@ function getFallbackProvider(): ActiveAIProvider {
     };
   }
 
-  // Default to Claude Haiku (will use env var when available)
+  // Default to Claude Haiku 4.5 (will use env var when available)
   return {
     provider: 'claude-haiku',
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     apiUrl: 'https://api.anthropic.com',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     config: {},
   };
 }
@@ -107,7 +107,7 @@ function getDefaultModel(provider: string): string {
     case 'claude':
       return 'claude-3-5-sonnet-20241022';
     case 'claude-haiku':
-      return 'claude-3-5-haiku-20241022';
+      return 'claude-haiku-4-5';
     case 'gpt4':
       return 'gpt-4-turbo';
     default:
