@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Check, Loader2, Play, Share2 } from 'lucide-react'
 import { useProject, useUpdateProject } from '../lib/queries'
 import { toast } from 'sonner'
 import { useAuth } from '../contexts/AuthContext'
 import { PresenceIndicator } from '../components/PresenceIndicator'
+import PresentationSlideshow from '../components/PresentationSlideshow'
+import ShareModal from '../components/ShareModal'
 
 interface Slide {
   id?: number
@@ -27,6 +29,8 @@ export default function ProjectEditor() {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showPresentation, setShowPresentation] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   useEffect(() => {
     if (project) {
@@ -182,7 +186,24 @@ export default function ProjectEditor() {
             <Save className="w-4 h-4" />
             Save
           </button>
-          <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </button>
+          <button
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                saveProject().then(() => setShowPresentation(true))
+              } else {
+                setShowPresentation(true)
+              }
+            }}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg flex items-center gap-2"
+          >
+            <Play className="w-4 h-4" />
             Present
           </button>
         </div>
@@ -307,6 +328,25 @@ export default function ProjectEditor() {
           </div>
         </div>
       </div>
+
+      {/* Slideshow Presentation */}
+      {showPresentation && (
+        <PresentationSlideshow
+          slides={slides}
+          projectName={title}
+          onClose={() => setShowPresentation(false)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {id && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          presentationId={id}
+          presentationTitle={title}
+        />
+      )}
     </div>
   )
 }

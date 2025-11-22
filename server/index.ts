@@ -14,6 +14,7 @@ import { authRouter } from './routes/auth.js';
 import stripeRouter from './routes/stripe.js';
 import stripeWebhookRouter from './routes/stripe-webhook.js';
 import { adminRouter } from './routes/admin.js';
+import { presentationsRouter } from './routes/presentations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +71,7 @@ app.use('/api', projectsRouter);
 app.use('/api', templatesWorkspacesRouter);
 app.use('/api', authRouter);
 app.use('/api', adminRouter);
+app.use('/api', presentationsRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

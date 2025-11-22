@@ -66,6 +66,7 @@ import OnboardingWorkspace from './pages/OnboardingWorkspace'
 import OnboardingBrand from './pages/OnboardingBrand'
 import SlideEditor from './pages/SlideEditor'
 import ProjectEditor from './pages/ProjectEditor'
+import PresentView from './pages/PresentView'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -333,6 +334,9 @@ function App() {
         <Route path="/insights" element={<Insights />} />
         
         {/* Footer Pages - Company */}
+        {/* Public Presentation View */}
+        <Route path="/present/:shareToken" element={<PresentView />} />
+        
         <Route path="/about" element={<About />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/team" element={<Team />} />
