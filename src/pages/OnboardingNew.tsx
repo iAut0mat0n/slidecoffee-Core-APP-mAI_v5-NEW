@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CoffeeCupIcon from '../components/CoffeeCupIcon';
 
 export default function OnboardingNew() {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export default function OnboardingNew() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="text-3xl">☕</div>
+            <CoffeeCupIcon className="w-8 h-8" />
             <h1 className="text-xl font-bold">SlideCoffee</h1>
           </div>
           

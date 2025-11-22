@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import CoffeeCupIcon from '../components/CoffeeCupIcon';
 
 export default function PresentationViewer() {
   const { id } = useParams();
@@ -43,7 +44,7 @@ export default function PresentationViewer() {
         <div className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="text-2xl">☕</div>
+              <CoffeeCupIcon className="w-7 h-7" />
               <span className="font-semibold">SlideCoffee</span>
             </div>
             <div className="h-6 w-px bg-gray-600" />

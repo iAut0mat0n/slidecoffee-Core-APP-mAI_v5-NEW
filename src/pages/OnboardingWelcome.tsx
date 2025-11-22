@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import CoffeeCupIcon from '../components/CoffeeCupIcon';
 
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function OnboardingWelcome() {
       {/* Header */}
       <div className="p-6">
         <div className="flex items-center gap-2 text-white">
-          <span className="text-2xl">☕</span>
+          <CoffeeCupIcon className="w-7 h-7" />
           <span className="text-xl font-semibold">SlideCoffee</span>
         </div>
       </div>

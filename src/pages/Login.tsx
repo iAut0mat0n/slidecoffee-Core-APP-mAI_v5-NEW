@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import AppLogo from '../components/AppLogo';
+import CoffeeCupIcon from '../components/CoffeeCupIcon';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -40,10 +42,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header with Logo */}
       <div className="p-6">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">☕</span>
-          <span className="text-xl font-semibold text-gray-900">SlideCoffee</span>
-        </div>
+        <AppLogo />
       </div>
 
       {/* Main Content */}
@@ -54,7 +53,7 @@ export default function Login() {
             {/* Icon */}
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl">☕</span>
+                <CoffeeCupIcon className="w-10 h-10" />
               </div>
             </div>
 

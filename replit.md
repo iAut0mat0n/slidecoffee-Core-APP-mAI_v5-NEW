@@ -41,7 +41,16 @@ SlideCoffee is built as a full-stack application with a clear separation between
 
 ## Recent Updates (November 22, 2025)
 
-### **Comprehensive Input Validation Across All Text Fields** (Latest)
+### **Brand-Consistent Logo Implementation** (Latest)
+-   **Created CoffeeCupIcon component**: Purple coffee cup SVG icon matching the SlideCoffee brand (w/ steam)
+-   **Updated AppLogo component**: Now displays CoffeeCupIcon instead of ☕ emoji, with flexible sizing props
+-   **Updated favicon**: Created `public/favicon.svg` with branded purple coffee cup icon
+-   **Updated index.html**: Page title now "SlideCoffee - AI-Powered Presentations" with new favicon
+-   **Consistent branding across all pages**: Login, Signup, SignupNew, PresentationViewer, OnboardingWelcome, OnboardingNew
+-   **Color scheme**: Purple (#8B5CF6) coffee cup with outlined design matching brand identity
+-   **Maintains fallback**: Custom logo URL from system settings takes precedence when configured
+
+### **Comprehensive Input Validation Across All Text Fields**
 -   **Created validation utility** (`server/utils/validation.ts`) with industry-standard MAX_LENGTHS constants
 -   **Standards implemented**: Email (254), Passwords (8-72), Names (100), Titles (255), Descriptions (1000), Messages (2000-5000), API keys (500)
 -   **Backend validation added** to all critical user-facing routes:
