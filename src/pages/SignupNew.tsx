@@ -46,6 +46,7 @@ export default function SignupNew() {
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="John Doe"
+                maxLength={100}
                 required
               />
             </div>
@@ -60,6 +61,7 @@ export default function SignupNew() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="you@example.com"
+                maxLength={254}
                 required
               />
             </div>
@@ -76,8 +78,9 @@ export default function SignupNew() {
                 placeholder="••••••••"
                 required
                 minLength={8}
+                maxLength={72}
               />
-              <p className="text-xs text-gray-500 mt-1">At least 8 characters</p>
+              <p className="text-xs text-gray-500 mt-1">8-72 characters</p>
             </div>
 
             <button

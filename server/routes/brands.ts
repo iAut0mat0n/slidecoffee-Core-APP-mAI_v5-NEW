@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -47,6 +48,12 @@ router.post('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
     const { supabase } = await getAuthenticatedSupabaseClient(req);
     const workspaceId = req.user?.workspaceId;
     const userPlan = req.user?.plan || 'espresso';
+
+    // Validate input lengths
+    const nameError = validateLength(req.body.name, 'Brand name', MAX_LENGTHS.BRAND_NAME, 1);
+    if (nameError) {
+      return res.status(400).json({ error: nameError.message });
+    }
 
     // Enforce brand limits (Espresso: 1 brand, paid plans: unlimited)
     if (userPlan === 'espresso') {

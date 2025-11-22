@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
+import { validateFields, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -17,8 +18,14 @@ router.post('/create', requireAuth, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!subject || !message) {
-      return res.status(400).json({ error: 'Subject and message are required' });
+    // Validate input lengths
+    const errors = validateFields([
+      { value: subject, name: 'Subject', maxLength: MAX_LENGTHS.TICKET_SUBJECT, minLength: 1 },
+      { value: message, name: 'Message', maxLength: MAX_LENGTHS.TICKET_MESSAGE, minLength: 1 },
+    ]);
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors[0].message, errors });
     }
 
     // Get authenticated Supabase client
@@ -175,8 +182,13 @@ router.post('/:ticketId/reply', requireAuth, async (req: AuthRequest, res: Respo
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    // Validate reply message length
+    const errors = validateFields([
+      { value: message, name: 'Message', maxLength: MAX_LENGTHS.TICKET_REPLY, minLength: 1 },
+    ]);
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors[0].message });
     }
 
     // Get authenticated Supabase client

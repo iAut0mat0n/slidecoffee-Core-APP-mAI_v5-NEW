@@ -16,7 +16,7 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
   const createBrand = useCreateBrand();
   const updateBrand = useUpdateBrand();
   const { data: workspaces } = useWorkspaces();
-  const { data: existingBrand } = useBrand(brandId || '', { enabled: !!brandId });
+  const { data: existingBrand } = useBrand(brandId || '');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [brandData, setBrandData] = useState({
@@ -208,6 +208,7 @@ export default function BrandCreationModal({ isOpen, onClose, brandId }: BrandCr
                   onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="My Company"
+                  maxLength={100}
                   required
                 />
               </div>

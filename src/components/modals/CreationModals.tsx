@@ -34,6 +34,7 @@ export function BrandCreateModal({ isOpen, onClose, onSave }: { isOpen: boolean;
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="e.g., Acme Inc"
+              maxLength={100}
               required
             />
           </div>
@@ -146,6 +147,7 @@ export function ProjectCreateModal({ isOpen, onClose, onSave }: { isOpen: boolea
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="e.g., Q4 Sales Deck"
+              maxLength={255}
               required
             />
           </div>
@@ -160,6 +162,7 @@ export function ProjectCreateModal({ isOpen, onClose, onSave }: { isOpen: boolea
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="What's this presentation about?"
               rows={3}
+              maxLength={1000}
             />
           </div>
 
