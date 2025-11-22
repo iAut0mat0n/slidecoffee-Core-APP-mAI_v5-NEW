@@ -53,6 +53,7 @@ SlideCoffee is built as a full-stack application with a clear separation between
 -   AI can now research topics and provide source-backed insights
 -   Research mode toggle in AI Agent UI with visual indicators
 -   Web search results automatically formatted and included in AI context
+-   **Security**: Query sanitization, 10s timeout, size limits, rate limiting
 
 ### User-Specific AI Learning
 -   Created `v2_user_context` database table for storing user-specific AI memory
@@ -61,9 +62,22 @@ SlideCoffee is built as a full-stack application with a clear separation between
 -   API endpoints for managing user context (`/api/user-context`)
 -   Enables personalized AI responses based on user history and preferences
 -   Context is workspace-scoped for proper data isolation
+-   **Security**: Input validation, size limits (50KB), type whitelisting, authentication required
 
 ### AI Chat Enhancements
 -   Enhanced system prompts with user profile information
 -   Integrated web search results into AI responses when research mode enabled
 -   Backend automatically enriches AI context with user preferences and insights
 -   Improved streaming AI chat with research and personalization support
+-   **Security**: Authentication required, rate limiting (20 req/min), payload limits, error sanitization
+
+### Security Hardening (November 22, 2025)
+-   **CRITICAL FIX**: Added authentication to `/api/ai-chat-stream` endpoint to prevent user impersonation
+-   UserId and workspaceId now derived from authenticated session (never trusted from request body)
+-   Comprehensive input validation across all new features
+-   Rate limiting implemented (20 requests/minute per user)
+-   Error message sanitization to prevent information leakage
+-   Database constraints on v2_user_context (CHECK, size limits, indexes)
+-   **PRODUCTION REQUIREMENT**: Row-Level Security (RLS) policies created but NOT enabled in development
+-   See `DEPLOYMENT_SECURITY_CHECKLIST.md` and `server/database/SECURITY.md` for production deployment guide
+-   RLS policies available in `server/database/rls-policies.sql` - **MUST be applied before production deployment**

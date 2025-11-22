@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// SECURITY: Use service role key for backend operations
+// WARNING: This key bypasses RLS and should NEVER be exposed to clients
+// Production: Enable RLS on v2_user_context table for defense-in-depth (see server/database/rls-policies.sql)
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
