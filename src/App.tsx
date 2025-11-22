@@ -65,6 +65,7 @@ import OnboardingWelcome from './pages/OnboardingWelcome'
 import OnboardingWorkspace from './pages/OnboardingWorkspace'
 import OnboardingBrand from './pages/OnboardingBrand'
 import SlideEditor from './pages/SlideEditor'
+import ProjectEditor from './pages/ProjectEditor'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -86,6 +87,11 @@ function App() {
         <Route path="/onboarding/brand" element={<OnboardingBrand />} />
         
         {/* Editor Routes */}
+        <Route path="/projects/:id/editor" element={
+          <ProtectedRoute>
+            <ProjectEditor />
+          </ProtectedRoute>
+        } />
         <Route path="/editor/slide/:id" element={
           <ProtectedRoute>
             <SlideEditor />

@@ -11,6 +11,8 @@ import { brandsRouter } from './routes/brands.js';
 import { projectsRouter } from './routes/projects.js';
 import { templatesWorkspacesRouter } from './routes/templates-workspaces.js';
 import { authRouter } from './routes/auth.js';
+import stripeRouter from './routes/stripe.js';
+import stripeWebhookRouter from './routes/stripe-webhook.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +23,7 @@ const PORT = parseInt(process.env.BACKEND_PORT || '3001', 10);
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5000',
-  'http://0.0.0.0:5000',
+  'http:// 0.0.0.0:5000',
   /\.replit\.dev$/,
   /\.repl\.co$/,
   /\.netlify\.app$/,
@@ -49,9 +51,14 @@ app.use(cors({
   credentials: true,
 }));
 
+// Stripe webhook MUST use raw body for signature verification
+app.use('/api', stripeWebhookRouter);
+
+// Regular JSON parsing for all other routes
 app.use(express.json());
 
 // API routes (matching Netlify Functions paths)
+app.use('/api', stripeRouter);
 app.use('/api', aiChatRouter);
 app.use('/api', aiChatStreamRouter);
 app.use('/api', generateSlidesRouter);
