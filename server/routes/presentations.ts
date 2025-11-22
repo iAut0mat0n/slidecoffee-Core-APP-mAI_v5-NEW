@@ -1,6 +1,6 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { requireAuth as sharedRequireAuth, AuthRequest } from '../middleware/auth.js';
-import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
+import { getAuthenticatedSupabaseClient, getServiceRoleClient } from '../utils/supabase-auth.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -154,14 +154,21 @@ router.post('/presentations/:id/share', sharedRequireAuth, async (req: AuthReque
 });
 
 // Get share settings for a presentation
-router.get('/presentations/:id/share', requireAuth, async (req: Request, res: Response) => {
+router.get('/presentations/:id/share', sharedRequireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const user = (req as any).user;
-    const workspaceId = (req as any).workspaceId;
+    const userId = req.user?.id;
+    const workspaceId = req.user?.workspaceId;
+
+    if (!userId || !workspaceId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get authenticated Supabase client
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
 
     // Verify user owns this presentation
-    const { authorized, presentation, error: authError } = await verifyPresentationAccess(id, user.id, workspaceId);
+    const { authorized, presentation, error: authError } = await verifyPresentationAccess(supabase, id, userId, workspaceId);
     if (!authorized) {
       return res.status(presentation ? 403 : 404).json({ error: authError });
     }
@@ -197,14 +204,21 @@ router.get('/presentations/:id/share', requireAuth, async (req: Request, res: Re
 });
 
 // Revoke share link
-router.delete('/presentations/:id/share', requireAuth, async (req: Request, res: Response) => {
+router.delete('/presentations/:id/share', sharedRequireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const user = (req as any).user;
-    const workspaceId = (req as any).workspaceId;
+    const userId = req.user?.id;
+    const workspaceId = req.user?.workspaceId;
+
+    if (!userId || !workspaceId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get authenticated Supabase client
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
 
     // Verify user owns this presentation
-    const { authorized, presentation, error: authError } = await verifyPresentationAccess(id, user.id, workspaceId);
+    const { authorized, presentation, error: authError } = await verifyPresentationAccess(supabase, id, userId, workspaceId);
     if (!authorized) {
       return res.status(presentation ? 403 : 404).json({ error: authError });
     }
@@ -236,15 +250,22 @@ router.delete('/presentations/:id/share', requireAuth, async (req: Request, res:
 });
 
 // Update share settings (PATCH handler)
-router.patch('/presentations/:id/share', requireAuth, async (req: Request, res: Response) => {
+router.patch('/presentations/:id/share', sharedRequireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { enabled, access, password, expiresAt } = req.body;
-    const user = (req as any).user;
-    const workspaceId = (req as any).workspaceId;
+    const userId = req.user?.id;
+    const workspaceId = req.user?.workspaceId;
+
+    if (!userId || !workspaceId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get authenticated Supabase client
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
 
     // Verify user owns this presentation
-    const { authorized, presentation, error: authError } = await verifyPresentationAccess(id, user.id, workspaceId);
+    const { authorized, presentation, error: authError } = await verifyPresentationAccess(supabase, id, userId, workspaceId);
     if (!authorized) {
       return res.status(presentation ? 403 : 404).json({ error: authError });
     }
@@ -369,6 +390,9 @@ router.post('/present/:shareToken/verify', async (req: Request, res: Response) =
       return res.status(403).json({ error: 'Share link has expired' });
     }
 
+    // Public endpoint - use service-role client
+    const supabase = getServiceRoleClient();
+    
     const { data, error } = await supabase
       .from('v2_presentations')
       .select('*')
@@ -437,6 +461,9 @@ router.get('/present/:shareToken', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Share link has expired' });
     }
 
+    // Public endpoint - use service-role client
+    const supabase = getServiceRoleClient();
+    
     const { data, error } = await supabase
       .from('v2_presentations')
       .select('*')

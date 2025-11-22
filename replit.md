@@ -41,6 +41,21 @@ SlideCoffee is built as a full-stack application with a clear separation between
 
 ## Recent Updates (November 22, 2025)
 
+### **Production-Ready In-App Upgrade System with Complete Security Refactoring** (Latest)
+-   **Security Architecture Overhaul**: Eliminated service-role key from all user request handling
+-   **Authenticated Supabase Client Helper**: Created `server/utils/supabase-auth.ts` for RLS-enforced database access
+-   **Server-Side Limit Enforcement**: All creation endpoints check plan limits before allowing operations
+    -   Brand creation: Espresso (free) limited to 1 brand, returns 403 with upgrade prompt
+    -   Slide generation: Monthly limits enforced (Espresso: 5, Americano: 75, Cappuccino: 450)
+    -   Presentation creation: Monthly limits enforced per plan tier
+-   **Refactored Routes**: All routes now use authenticated client (brands, presentations, support-tickets, usage, generate-slides)
+-   **Usage Tracking API**: `/api/usage/current` returns current usage + limits for authenticated workspace
+-   **Billing Settings UI**: Complete subscription management with plan comparison and Stripe checkout
+-   **Upgrade Prompts**: Contextual prompts when users hit limits with direct Stripe checkout links
+-   **Plan Normalization**: Legacy plan names (starter/professional/enterprise) auto-mapped to coffee names
+-   **No Horizontal Data Leakage**: Proper tenant isolation via RLS, workspace-scoped queries
+-   **Production Deployment Ready**: Comprehensive security fixes applied, ready for real billing
+
 ### Brew AI Chatbot Widget
 -   Created floating chat widget (bottom right corner) that appears globally for logged-in users
 -   Integrated with `/api/ai-chat-stream` endpoint for streaming AI conversations
