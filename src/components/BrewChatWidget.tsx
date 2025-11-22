@@ -18,7 +18,10 @@ export default function BrewChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [enableResearch, setEnableResearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // Don't render widget if not authenticated
+  if (!user || loading) return null;
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -41,7 +44,7 @@ export default function BrewChatWidget() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !user) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -55,6 +58,12 @@ export default function BrewChatWidget() {
     setIsLoading(true);
 
     try {
+      // Include the new user message in the request
+      const allMessages = [...messages, userMessage].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       const response = await fetch('/api/ai-chat-stream', {
         method: 'POST',
         headers: {
@@ -62,10 +71,7 @@ export default function BrewChatWidget() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: allMessages,
           enableResearch,
         }),
       });

@@ -65,7 +65,7 @@ export default function OnboardingBrand() {
         workspace_id: workspaceId,
       });
       
-      toast.success('Brand created successfully!');
+      // Only navigate to plan selection after successful brand creation
       navigate('/onboarding/plan');
     } catch (error: any) {
       toast.error(error.message || 'Failed to create brand');

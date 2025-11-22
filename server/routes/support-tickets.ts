@@ -2,10 +2,11 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Use ANON key so RLS policies are enforced
+// User's JWT token will be passed via session for proper RLS enforcement
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -57,8 +58,9 @@ router.get('/my-tickets', requireAuth, async (req: AuthRequest, res: Response) =
 
     const { data: tickets, error } = await supabase
       .from('v2_support_tickets')
-      .select('*, v2_support_ticket_replies(count)')
+      .select('*')
       .eq('user_id', userId)
+      .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -80,9 +82,12 @@ router.get('/all', requireAuth, async (req: AuthRequest, res: Response) => {
     }
 
     const { status, priority, category } = req.query;
+    const { workspaceId } = req;
+    
     let query = supabase
       .from('v2_support_tickets')
       .select('*')
+      .eq('workspace_id', workspaceId!) // CRITICAL: workspace scoping
       .order('created_at', { ascending: false });
 
     if (status) query = query.eq('status', status);
@@ -117,10 +122,12 @@ router.patch('/:ticketId/status', requireAuth, async (req: AuthRequest, res: Res
       updateData.resolved_at = new Date().toISOString();
     }
 
+    // Workspace scoping for admin operations
     const { data: ticket, error } = await supabase
       .from('v2_support_tickets')
       .update(updateData)
       .eq('id', ticketId)
+      .eq('workspace_id', req.workspaceId!) // CRITICAL: workspace scoping
       .select()
       .single();
 
@@ -142,6 +149,25 @@ router.post('/:ticketId/reply', requireAuth, async (req: AuthRequest, res: Respo
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Verify ticket ownership + workspace scoping
+    const { data: ticket } = await supabase
+      .from('v2_support_tickets')
+      .select('user_id, workspace_id')
+      .eq('id', ticketId)
+      .single();
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.workspace_id !== workspaceId) {
+      return res.status(403).json({ error: 'Access denied: wrong workspace' });
+    }
+
+    if (ticket.user_id !== userId && user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized to reply to this ticket' });
     }
 
     const { data: reply, error } = await supabase
@@ -168,6 +194,26 @@ router.post('/:ticketId/reply', requireAuth, async (req: AuthRequest, res: Respo
 router.get('/:ticketId/replies', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { ticketId } = req.params;
+
+    // Verify ticket ownership + workspace scoping
+    const { user: reqUser, userId: reqUserId, workspaceId: reqWorkspaceId } = req;
+    const { data: ticket } = await supabase
+      .from('v2_support_tickets')
+      .select('user_id, workspace_id')
+      .eq('id', ticketId)
+      .single();
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.workspace_id !== reqWorkspaceId) {
+      return res.status(403).json({ error: 'Access denied: wrong workspace' });
+    }
+
+    if (ticket.user_id !== reqUserId && reqUser?.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized to view these replies' });
+    }
 
     const { data: replies, error } = await supabase
       .from('v2_support_ticket_replies')
