@@ -41,6 +41,35 @@ SlideCoffee is built as a full-stack application with a clear separation between
 
 ## Recent Updates (November 22, 2025)
 
+### Brew AI Chatbot Widget
+-   Created floating chat widget (bottom right corner) that appears globally for logged-in users
+-   Integrated with `/api/ai-chat-stream` endpoint for streaming AI conversations
+-   Features: conversation history, research mode toggle, quick support contact
+-   Displays Brew's personality with coffee-themed branding and green status indicator
+-   Auto-greets users with randomized welcome messages from AI_AGENT config
+-   Supports Shift+Enter for multi-line messages, Enter to send
+
+### Product-Centric Onboarding with Plan Pre-Selection
+-   Added `/onboarding/plan` step after brand setup (before dashboard)
+-   **Americano plan pre-selected by default** to drive paid conversions (recommended badge)
+-   Three-tier display: Espresso (free), Americano ($12/mo, recommended), Cappuccino ($29/mo, popular)
+-   Monthly/Annual billing toggle with 17% savings indicator
+-   Seamless Stripe checkout integration for paid plans
+-   Free plan users skip directly to dashboard without payment
+-   "Skip for now" option allows users to start free and upgrade later
+-   Trust indicators: No credit card for free, cancel anytime, 30-day guarantee
+
+### Support Ticket System
+-   Database schema: `v2_support_tickets` and `v2_support_ticket_replies` tables
+-   Ticket fields: subject, message, status (open/in_progress/resolved/closed), priority (low/medium/high/urgent), category
+-   API endpoints at `/api/support-tickets/*` for create, list, update status, add replies
+-   Admin panel "Support Tickets" tab with filtering by status
+-   Ticket management UI: view all tickets, update status, see priority badges
+-   User identification: captures user_id, workspace_id, email, and name with each ticket
+-   Authentication-protected routes (admin-only for management endpoints)
+
+## Recent Updates (November 22, 2025) - Previous Features
+
 ### Claude Haiku 4.5 Upgrade
 -   Upgraded from Claude 3.5 Haiku to Claude Haiku 4.5 (latest October 2025 release)
 -   Model identifiers updated across the application: `claude-haiku-4-5`

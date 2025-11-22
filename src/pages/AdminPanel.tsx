@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText, Key } from 'lucide-react'
+import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText, Key, MessageSquare } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, type AISettings } from '../lib/supabase'
 import { adminAPI } from '../lib/api-client'
 import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
+import SupportTicketsAdmin from '../components/SupportTicketsAdmin'
 
-type Tab = 'overview' | 'users' | 'subscriptions' | 'analytics' | 'ai-settings' | 'database' | 'logs'
+type Tab = 'overview' | 'users' | 'subscriptions' | 'analytics' | 'ai-settings' | 'database' | 'logs' | 'support-tickets'
 
 export default function AdminPanel() {
   const { user } = useAuth()
@@ -108,6 +109,7 @@ export default function AdminPanel() {
     { id: 'overview' as Tab, label: 'Overview', icon: BarChart3 },
     { id: 'users' as Tab, label: 'Users', icon: Users },
     { id: 'subscriptions' as Tab, label: 'Subscriptions', icon: CreditCard },
+    { id: 'support-tickets' as Tab, label: 'Support Tickets', icon: MessageSquare },
     { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
     { id: 'ai-settings' as Tab, label: 'AI Settings', icon: Zap },
     { id: 'database' as Tab, label: 'Database', icon: Database },
@@ -468,6 +470,8 @@ export default function AdminPanel() {
                 </div>
               </Card>
             )}
+
+            {activeTab === 'support-tickets' && <SupportTicketsAdmin />}
 
             {activeTab === 'database' && (
               <Card className="p-8">
