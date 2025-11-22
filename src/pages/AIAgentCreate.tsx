@@ -186,7 +186,7 @@ Create 6-8 slides. Be specific and actionable.`
         description: parsedPlan.summary || '',
         slides: slidesResult.slides,
         created_by: user.id,
-        workspace_id: null, // TODO: Get user's default workspace
+        workspace_id: user.default_workspace_id,
         thumbnail: null,
         status: 'draft',
         created_at: new Date().toISOString(),

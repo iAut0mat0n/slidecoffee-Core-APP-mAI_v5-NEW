@@ -24,19 +24,18 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     if (!token && req.headers.cookie) {
       const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
+        acc[key] = decodeURIComponent(value);
         return acc;
       }, {} as Record<string, string>);
 
-      // Supabase stores access token in sb-<project-ref>-auth-token cookie
-      const supabaseAuthCookie = Object.keys(cookies).find(key => key.includes('sb-') && key.includes('-auth-token'));
-      if (supabaseAuthCookie) {
-        try {
-          const cookieData = JSON.parse(decodeURIComponent(cookies[supabaseAuthCookie]));
-          token = cookieData.access_token || cookieData[0]; // Handle both object and array formats
-        } catch (e) {
-          console.error('Failed to parse Supabase auth cookie:', e);
-        }
+      // Supabase stores access token in sb-<project-ref>-access-token cookie
+      // Find cookie with pattern: sb-*-access-token
+      const accessTokenCookieName = Object.keys(cookies).find(key => 
+        key.startsWith('sb-') && key.endsWith('-access-token')
+      );
+      
+      if (accessTokenCookieName) {
+        token = cookies[accessTokenCookieName];
       }
     }
 
@@ -51,23 +50,27 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Fetch user's workspace (default workspace for now)
+    // Fetch user's workspace and role (for admin checks)
     const { data: userRecord, error: userError } = await supabase
       .from('v2_users')
-      .select('id, email, default_workspace_id')
+      .select('id, email, name, role, plan, default_workspace_id, subscription_status')
       .eq('id', user.id)
       .single();
 
     if (userError) {
-      console.error('Error fetching user workspace:', userError);
+      console.error('Error fetching user profile:', userError);
     }
 
     // Attach user info to request
     req.user = {
       id: user.id,
       email: user.email || '',
+      name: userRecord?.name,
+      role: userRecord?.role || 'user',
+      plan: userRecord?.plan || 'starter',
+      subscription_status: userRecord?.subscription_status,
       workspaceId: userRecord?.default_workspace_id,
-    };
+    } as any;
 
     next();
   } catch (error) {

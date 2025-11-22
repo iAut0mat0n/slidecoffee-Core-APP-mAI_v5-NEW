@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, type AISettings } from '../lib/supabase'
+import { adminAPI } from '../lib/api-client'
 import Button from '../components/Button'
 import Card from '../components/Card'
 // import Input from '../components/Input'
@@ -15,6 +16,14 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [aiSettings, setAiSettings] = useState<AISettings[]>([])
   const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<any[]>([])
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [stats, setStats] = useState<any>({
+    totalUsers: 0,
+    activeSubscriptions: 0,
+    totalProjects: 0,
+    creditsUsed: 0,
+  })
 
   useEffect(() => {
     // Check if user is admin
@@ -23,20 +32,25 @@ export default function AdminPanel() {
       return
     }
     
-    loadAISettings()
+    loadData()
   }, [user])
 
-  const loadAISettings = async () => {
+  const loadData = async () => {
+    setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('v2_ai_settings')
-        .select('*')
-        .order('provider')
+      const [aiData, usersData, subsData, statsData] = await Promise.all([
+        supabase.from('v2_ai_settings').select('*').order('provider'),
+        adminAPI.getUsers().catch(() => []),
+        adminAPI.getSubscriptions().catch(() => []),
+        adminAPI.getStats().catch(() => ({ totalUsers: 0, activeSubscriptions: 0, totalProjects: 0, creditsUsed: 0 })),
+      ])
       
-      if (error) throw error
-      setAiSettings(data || [])
+      if (!aiData.error) setAiSettings(aiData.data || [])
+      setUsers(usersData)
+      setSubscriptions(subsData)
+      setStats(statsData)
     } catch (error) {
-      console.error('Error loading AI settings:', error)
+      console.error('Error loading admin data:', error)
     } finally {
       setLoading(false)
     }
@@ -57,7 +71,7 @@ export default function AdminPanel() {
         .eq('id', providerId)
       
       if (error) throw error
-      loadAISettings()
+      loadData()
     } catch (error) {
       console.error('Error toggling provider:', error)
     }
@@ -128,23 +142,23 @@ export default function AdminPanel() {
                 <div className="grid grid-cols-4 gap-6">
                   <Card className="p-6">
                     <div className="text-sm text-gray-600 mb-1">Total Users</div>
-                    <div className="text-3xl font-bold text-gray-900">0</div>
-                    <div className="text-sm text-green-600 mt-1">+0 this month</div>
-                  </Card>
-                  <Card className="p-6">
-                    <div className="text-sm text-gray-600 mb-1">Active Subscriptions</div>
-                    <div className="text-3xl font-bold text-gray-900">0</div>
-                    <div className="text-sm text-green-600 mt-1">+0 this month</div>
-                  </Card>
-                  <Card className="p-6">
-                    <div className="text-sm text-gray-600 mb-1">Total Presentations</div>
-                    <div className="text-3xl font-bold text-gray-900">0</div>
+                    <div className="text-3xl font-bold text-gray-900">{stats.totalUsers}</div>
                     <div className="text-sm text-gray-600 mt-1">All time</div>
                   </Card>
                   <Card className="p-6">
-                    <div className="text-sm text-gray-600 mb-1">Credits Used</div>
-                    <div className="text-3xl font-bold text-gray-900">0</div>
-                    <div className="text-sm text-gray-600 mt-1">This month</div>
+                    <div className="text-sm text-gray-600 mb-1">Active Subscriptions</div>
+                    <div className="text-3xl font-bold text-gray-900">{stats.activeSubscriptions}</div>
+                    <div className="text-sm text-gray-600 mt-1">Pro & Enterprise</div>
+                  </Card>
+                  <Card className="p-6">
+                    <div className="text-sm text-gray-600 mb-1">Total Projects</div>
+                    <div className="text-3xl font-bold text-gray-900">{stats.totalProjects}</div>
+                    <div className="text-sm text-gray-600 mt-1">All time</div>
+                  </Card>
+                  <Card className="p-6">
+                    <div className="text-sm text-gray-600 mb-1">AI Provider</div>
+                    <div className="text-xl font-bold text-gray-900">{aiSettings.find(s => s.is_active)?.provider || 'None'}</div>
+                    <div className="text-sm text-gray-600 mt-1">Currently active</div>
                   </Card>
                 </div>
 
@@ -180,18 +194,97 @@ export default function AdminPanel() {
             {activeTab === 'users' && (
               <Card className="p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">User Management</h2>
-                <div className="text-center py-12 text-gray-500">
-                  No users to display
-                </div>
+                {users.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Email</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Name</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Role</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Plan</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Status</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {users.map((u) => (
+                          <tr key={u.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">{u.email}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{u.name || '-'}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                                {u.role}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{u.plan || 'starter'}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${u.subscription_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                {u.subscription_status || 'free'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{new Date(u.created_at).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    {loading ? 'Loading users...' : 'No users to display'}
+                  </div>
+                )}
               </Card>
             )}
 
             {activeTab === 'subscriptions' && (
               <Card className="p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Subscription Management</h2>
-                <div className="text-center py-12 text-gray-500">
-                  No subscriptions to display
-                </div>
+                {subscriptions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">User</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Plan</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Status</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Period End</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">Stripe ID</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {subscriptions.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="text-sm font-medium text-gray-900">{sub.name || sub.email}</div>
+                              <div className="text-xs text-gray-500">{sub.email}</div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                {sub.plan}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${sub.subscription_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {sub.subscription_status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {sub.subscription_current_period_end ? new Date(sub.subscription_current_period_end).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-500 font-mono">
+                              {sub.stripe_subscription_id?.substring(0, 20)}...
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    {loading ? 'Loading subscriptions...' : 'No active subscriptions'}
+                  </div>
+                )}
               </Card>
             )}
 

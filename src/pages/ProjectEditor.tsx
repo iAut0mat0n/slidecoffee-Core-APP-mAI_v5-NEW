@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Save, Check, Loader2 } from 'lucide-react'
 import { useProject, useUpdateProject } from '../lib/queries'
 import { toast } from 'sonner'
+import { useAuth } from '../contexts/AuthContext'
+import { PresenceIndicator } from '../components/PresenceIndicator'
 
 interface Slide {
   id?: number
@@ -15,6 +17,7 @@ interface Slide {
 export default function ProjectEditor() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: project, isLoading } = useProject(id!)
   const updateProject = useUpdateProject()
 
@@ -162,7 +165,15 @@ export default function ProjectEditor() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {user && id && (
+            <PresenceIndicator 
+              projectId={id} 
+              currentUserId={user.id}
+              currentUserName={user.name || user.email || 'Anonymous'}
+              currentUserAvatar={user.avatar_url}
+            />
+          )}
           <button
             onClick={saveProject}
             disabled={!hasUnsavedChanges || isSaving}

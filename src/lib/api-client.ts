@@ -1,4 +1,5 @@
 // API Client for Express backend
+import { supabase } from './supabase';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -18,12 +19,21 @@ async function fetchAPI<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Get current Supabase session to include access token in requests
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options?.headers as Record<string, string>,
+  };
+  
+  // Add Authorization header if session exists
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+  
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
     credentials: 'include',
   });
 
@@ -98,6 +108,17 @@ export const workspacesAPI = {
   create: (data: any) => fetchAPI<any>('/workspaces', {
     method: 'POST',
     body: JSON.stringify(data),
+  }),
+};
+
+// Admin API
+export const adminAPI = {
+  getUsers: () => fetchAPI<any[]>('/admin/users'),
+  getSubscriptions: () => fetchAPI<any[]>('/admin/subscriptions'),
+  getStats: () => fetchAPI<any>('/admin/stats'),
+  updateUserRole: (userId: string, role: string) => fetchAPI<any>(`/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
   }),
 };
 

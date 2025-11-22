@@ -15,6 +15,8 @@ export type User = {
   role: 'user' | 'admin'
   credits: number
   plan: 'starter' | 'professional' | 'enterprise' | 'free' | 'pro' | 'business'
+  default_workspace_id?: string | null
+  subscription_status?: string | null
   created_at: string
   updated_at: string
 }
