@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { streamChatMessage } from '../lib/api-stream'
 import { generateSlides } from '../lib/api'
 import { toast } from 'sonner'
+import { useCreateProject } from '../lib/queries'
 
 interface Message {
   id: string
@@ -26,6 +27,7 @@ type AgentPhase = 'research' | 'outline' | 'generating' | 'complete'
 export default function AIAgentCreate() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const createProject = useCreateProject()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -175,11 +177,31 @@ Create 6-8 slides. Be specific and actionable.`
         await new Promise(resolve => setTimeout(resolve, 300))
       }
       
-      // Phase 4: Complete
+      // Phase 4: Save to Database
       setCurrentPhase('complete')
-      addAgentMessage(`🎉 Your presentation is ready! Created ${slidesResult.slides.length} slides. You can now review and edit them.`)
+      addAgentMessage('Saving your presentation...')
       
+      const projectData = {
+        title: parsedPlan.title || 'Untitled Presentation',
+        description: parsedPlan.summary || '',
+        slides: slidesResult.slides,
+        created_by: user.id,
+        workspace_id: null, // TODO: Get user's default workspace
+        thumbnail: null,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      const savedProject = await createProject.mutateAsync(projectData)
+      
+      addAgentMessage(`🎉 Your presentation is ready! Created ${slidesResult.slides.length} slides and saved to your projects.`)
       toast.success('Presentation created successfully!')
+      
+      // Redirect to editor after 2 seconds
+      setTimeout(() => {
+        navigate(`/projects/${savedProject.id}/editor`)
+      }, 2000)
       
     } catch (error) {
       console.error('AI Generation Error:', error)

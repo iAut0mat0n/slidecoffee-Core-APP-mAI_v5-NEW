@@ -47,23 +47,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loadUser = async () => {
-    const userData = await getCurrentUser()
-    setUser(userData)
-    
-    // Check if user has completed onboarding by checking for workspaces
-    if (userData) {
-      const { data: workspaces } = await supabase
-        .from('v2_workspaces')
-        .select('id')
-        .eq('created_by', userData.id)
-        .limit(1)
+    try {
+      const userData = await getCurrentUser()
+      setUser(userData)
       
-      setIsOnboarded(!!workspaces && workspaces.length > 0)
-    } else {
+      // Check if user has completed onboarding by checking for workspaces
+      if (userData) {
+        const { data: workspaces, error } = await supabase
+          .from('v2_workspaces')
+          .select('id')
+          .eq('created_by', userData.id)
+          .limit(1)
+        
+        if (error) {
+          console.error('Failed to check onboarding status:', error)
+          // Default to not onboarded on error (safer)
+          setIsOnboarded(false)
+        } else {
+          const hasWorkspace = !!workspaces && workspaces.length > 0
+          setIsOnboarded(hasWorkspace)
+          
+          // Cache onboarding status
+          if (hasWorkspace) {
+            localStorage.setItem(`onboarded_${userData.id}`, 'true')
+          }
+        }
+      } else {
+        setIsOnboarded(false)
+      }
+    } catch (error) {
+      console.error('Error loading user:', error)
+      setUser(null)
       setIsOnboarded(false)
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   const signIn = async (email: string, password: string) => {
