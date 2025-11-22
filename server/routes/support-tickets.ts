@@ -54,13 +54,13 @@ router.post('/create', requireAuth, async (req: AuthRequest, res: Response) => {
 // Get user's tickets
 router.get('/my-tickets', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req;
+    const { userId, workspaceId } = req;
 
     const { data: tickets, error } = await supabase
       .from('v2_support_tickets')
       .select('*')
       .eq('user_id', userId)
-      .eq('workspace_id', workspaceId)
+      .eq('workspace_id', workspaceId!)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -143,7 +143,7 @@ router.patch('/:ticketId/status', requireAuth, async (req: AuthRequest, res: Res
 // Add reply to ticket
 router.post('/:ticketId/reply', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, user } = req;
+    const { userId, user, workspaceId } = req;
     const { ticketId } = req.params;
     const { message } = req.body;
 

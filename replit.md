@@ -67,6 +67,8 @@ SlideCoffee is built as a full-stack application with a clear separation between
 -   Ticket management UI: view all tickets, update status, see priority badges
 -   User identification: captures user_id, workspace_id, email, and name with each ticket
 -   Authentication-protected routes (admin-only for management endpoints)
+-   **Security**: Workspace-scoped queries, ownership checks on all endpoints, RLS policies for production
+-   **Production Deployment**: Apply RLS policies from `supabase/migrations/add_support_tickets_rls.sql` before production use
 
 ## Recent Updates (November 22, 2025) - Previous Features
 
