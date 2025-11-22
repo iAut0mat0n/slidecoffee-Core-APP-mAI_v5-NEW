@@ -66,7 +66,7 @@ export default function OnboardingBrand() {
       });
       
       toast.success('Brand created successfully!');
-      navigate('/dashboard');
+      navigate('/onboarding/plan');
     } catch (error: any) {
       toast.error(error.message || 'Failed to create brand');
     } finally {

@@ -64,15 +64,20 @@ import ForgotPassword from './pages/ForgotPassword'
 import OnboardingWelcome from './pages/OnboardingWelcome'
 import OnboardingWorkspace from './pages/OnboardingWorkspace'
 import OnboardingBrand from './pages/OnboardingBrand'
+import OnboardingPlan from './pages/OnboardingPlan'
 import SlideEditor from './pages/SlideEditor'
 import ProjectEditor from './pages/ProjectEditor'
 import PresentView from './pages/PresentView'
 
 import ProtectedRoute from './components/ProtectedRoute'
+import BrewChatWidget from './components/BrewChatWidget'
 
 function App() {
   return (
     <BrowserRouter>
+      {/* Brew AI Chat Widget - Shows globally */}
+      <BrewChatWidget />
+      
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         
@@ -86,6 +91,7 @@ function App() {
         <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
         <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
         <Route path="/onboarding/brand" element={<OnboardingBrand />} />
+        <Route path="/onboarding/plan" element={<OnboardingPlan />} />
         
         {/* Editor Routes */}
         <Route path="/projects/:id/editor" element={
