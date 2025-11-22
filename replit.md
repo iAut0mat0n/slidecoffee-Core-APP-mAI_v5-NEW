@@ -41,7 +41,30 @@ SlideCoffee is built as a full-stack application with a clear separation between
 
 ## Recent Updates (November 22, 2025)
 
-### **Production-Ready In-App Upgrade System with Complete Security Refactoring** (Latest)
+### **Comprehensive Input Validation Across All Text Fields** (Latest)
+-   **Created validation utility** (`server/utils/validation.ts`) with industry-standard MAX_LENGTHS constants
+-   **Standards implemented**: Email (254), Passwords (8-72), Names (100), Titles (255), Descriptions (1000), Messages (2000-5000), API keys (500)
+-   **Backend validation added** to all critical user-facing routes:
+    -   Brands: Brand name (100 chars)
+    -   Support tickets: Subject (200), message (5000), reply (2000)
+    -   Workspaces: Workspace name (100)
+    -   Projects: Project name (255), description (1000)
+    -   Presentations: Title (255), summary (1000), share password (8-72)
+    -   AI chat: Message (100KB), query (500)
+-   **Admin routes secured** with validation + authorization:
+    -   AI settings: API key (500), model (100) with `requireAdmin`
+    -   System settings: Logo upload with filename (255), image size (1MB max), `requireAuth` + `requireAdmin`
+-   **Frontend validation** added to all user-facing forms:
+    -   Authentication: Login, Signup, SignupNew (email, password, name limits)
+    -   Onboarding: Workspace creation (name limit)
+    -   Brands: Brand creation modal (name limit)
+    -   Presentations: Creation modals (title, description limits)
+    -   User Profile: Name, email, bio, password change (all with proper limits)
+    -   Sharing: Share password (8-72 chars with minLength/maxLength)
+-   **Security benefits**: Two-layer validation (client UX + server enforcement), DoS prevention via size limits, buffer overflow protection, injection attack surface reduction
+-   **Production-ready** for all user-facing text input across the application
+
+### **Production-Ready In-App Upgrade System with Complete Security Refactoring**
 -   **Security Architecture Overhaul**: Eliminated service-role key from all user request handling
 -   **Authenticated Supabase Client Helper**: Created `server/utils/supabase-auth.ts` for RLS-enforced database access
 -   **Server-Side Limit Enforcement**: All creation endpoints check plan limits before allowing operations

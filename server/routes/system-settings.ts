@@ -1,8 +1,18 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+// Admin middleware - check if user is admin
+const requireAdmin = async (req: Request, res: Response, next: any) => {
+  const user = (req as any).user;
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -34,7 +44,7 @@ router.get('/system/settings', async (req: Request, res: Response) => {
 });
 
 // POST /api/system/upload-logo - Upload logo (admin only)
-router.post('/system/upload-logo', async (req: Request, res: Response) => {
+router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { base64Image, filename } = req.body;
 
@@ -48,8 +58,14 @@ router.post('/system/upload-logo', async (req: Request, res: Response) => {
       return res.status(400).json({ message: filenameError.message });
     }
 
-    // TODO: Add admin authentication check here
-    // For now, allowing all authenticated users
+    // Validate base64 image size (1MB max to prevent DoS)
+    const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
+    const estimatedSize = base64Image.length * 0.75; // Base64 is ~33% larger than binary
+    if (estimatedSize > MAX_IMAGE_SIZE) {
+      return res.status(400).json({ 
+        message: `Image size exceeds maximum allowed size of ${MAX_IMAGE_SIZE / (1024 * 1024)}MB` 
+      });
+    }
 
     // Convert base64 to buffer
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
