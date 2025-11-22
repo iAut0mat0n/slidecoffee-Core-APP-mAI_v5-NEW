@@ -1,0 +1,288 @@
+# SlideCoffee Final Pricing (Adjusted)
+
+**Date:** November 21, 2025  
+**Status:** Ready for Stripe creation
+
+---
+
+## ✅ Final Pricing Structure
+
+### ☕ **Espresso (Free)**
+
+**Price:** $0/month
+
+**Includes:**
+- **0.5 Brew** (5 slides) - one-time
+- **No Shots** (no edits)
+- Watermark on exports
+- Basic templates
+- PDF export only
+
+**Total slides:** **5 slides** (half presentation)
+
+**Cost to you:** $0.048 (5 × $0.0095)  
+**Margin:** N/A (minimal loss, lead generation)
+
+**Message:** "Try 5 slides to see our quality"
+
+---
+
+### ☕ **Americano (Starter)**
+
+**Price:**
+- **$12/month** (monthly)
+- **$10/month** ($120/year - 17% discount)
+
+**Includes:**
+- **7 Brews/month** (7 presentations)
+- **5 Shots/month** (5 edits)
+- No watermark
+- PDF + PPTX export
+- Basic analytics
+- All templates
+- Email support
+
+**Total slides:** 70 slides + 5 edits = **75 slides/month**
+
+**Cost to you:** $0.71 (75 × $0.0095)
+
+**Profit:**
+- Monthly: $12 - $0.71 = **$11.29**
+- Annual: $10 - $0.71 = **$9.29**
+
+**Margin:**
+- Monthly: **94%** ✅
+- Annual: **93%** ✅
+
+**Message:** "Perfect for weekly presentations"
+
+---
+
+### ☕ **Cappuccino (Pro)**
+
+**Price:**
+- **$29/month** (monthly)
+- **$24/month** ($288/year - 17% discount)
+
+**Includes:**
+- **30 Brews/month** (30 presentations)
+- **Unlimited Shots** (assume 150 edits)
+- Everything in Americano, plus:
+  - **Premium AI models** (Claude Sonnet for 20% of slides)
+  - Custom branding & fonts
+  - Advanced analytics
+  - Priority support
+  - API access (coming soon)
+  - Remove "Made with SlideCoffee" footer
+
+**Total slides:** 300 slides + 150 edits = **450 slides/month**
+
+**Cost to you:**
+- 240 slides × $0.0095 (Haiku) = $2.28
+- 60 slides × $0.0285 (Sonnet) = $1.71
+- 150 edits × $0.0095 = $1.43
+- **Total:** $5.42
+
+**Profit:**
+- Monthly: $29 - $5.42 = **$23.58**
+- Annual: $24 - $5.42 = **$18.58**
+
+**Margin:**
+- Monthly: **81%** ✅
+- Annual: **77%** ✅
+
+**Message:** "Daily presentations with premium AI"
+
+---
+
+### ☕ **Cold Brew (Team)**
+
+**Price:**
+- **$59/month base** (monthly) - includes 3 seats
+- **$49/month base** ($588/year - 17% discount) - includes 3 seats
+- **+ $12/month per additional seat** (up to 20 seats)
+
+**Includes:**
+- **60 Brews/month** (shared across team)
+- **Unlimited Shots** (assume 200 edits)
+- **3-20 team seats** (adjustable)
+- Everything in Cappuccino, plus:
+  - Team workspace
+  - Collaboration features (comments, @mentions)
+  - Shared brand library
+  - Team analytics
+  - Version history
+  - Priority support
+
+**Total slides:** 600 slides + 200 edits = **800 slides/month**
+
+**Cost to you:**
+- 480 slides × $0.0095 (Haiku) = $4.56
+- 120 slides × $0.0285 (Sonnet) = $3.42
+- 200 edits × $0.0095 = $1.90
+- **Total:** $9.88
+
+**Profit:**
+- Monthly base: $59 - $9.88 = **$49.12**
+- Annual base: $49 - $9.88 = **$39.12**
+- Per additional seat: $12 - $1 = **$11**
+
+**Margin:**
+- Monthly: **83%** ✅
+- Annual: **80%** ✅
+- Additional seats: **92%** ✅
+
+**Message:** "Team collaboration made easy"
+
+---
+
+### ☕ **French Press (Enterprise)**
+
+**Price:** Starting at **$199/month** (custom pricing)
+
+**Includes:**
+- **Unlimited Brews** (fair use: ~200/month)
+- **Unlimited Shots**
+- **Unlimited seats**
+- Everything in Cold Brew, plus:
+  - White-label options
+  - Custom domain
+  - Dedicated account manager
+  - SLA guarantees (99.9% uptime)
+  - Custom integrations
+  - On-premise deployment (optional)
+  - Training & onboarding
+
+**Total slides:** ~2,000 slides + 500 edits = **2,500 slides/month**
+
+**Cost to you:**
+- 1,600 slides × $0.0095 (Haiku) = $15.20
+- 400 slides × $0.0285 (Sonnet) = $11.40
+- 500 edits × $0.0095 = $4.75
+- **Total:** $31.35
+
+**Profit:** $199 - $31.35 = **$167.65**
+
+**Margin:** **84%** ✅
+
+**Message:** "Enterprise-grade unlimited access"
+
+---
+
+## 📊 Final Summary Table
+
+| Plan | Price (Monthly) | Price (Annual) | Brews | Total Slides | Cost | Profit (Monthly) | Profit (Annual) | Margin (Monthly) | Margin (Annual) |
+|------|-----------------|----------------|-------|--------------|------|------------------|-----------------|------------------|-----------------|
+| **Espresso** | $0 | $0 | 0.5 (one-time) | 5 | $0.048 | -$0.048 | -$0.048 | N/A | N/A |
+| **Americano** | $12 | $10 | 7/month | 75 | $0.71 | $11.29 | $9.29 | **94%** ✅ | **93%** ✅ |
+| **Cappuccino** | $29 | $24 | 30/month | 450 | $5.42 | $23.58 | $18.58 | **81%** ✅ | **77%** ✅ |
+| **Cold Brew** | $59 | $49 | 60/month | 800 | $9.88 | $49.12 | $39.12 | **83%** ✅ | **80%** ✅ |
+| **French Press** | $199+ | Custom | 200/month | 2,500 | $31.35 | $167.65+ | Variable | **84%** ✅ | **80%+** ✅ |
+
+**All paid plans have 77-94% margins!** 🎉
+
+---
+
+## 🎯 Credit System
+
+**Brews (Presentations):**
+- 1 Brew = 1 full presentation (10 slides) = **10 credits**
+
+**Shots (Edits):**
+- 1 Shot = 1 AI edit (single slide or text change) = **1 credit**
+
+| Plan | Total Credits | Brews | Shots | Rollover |
+|------|---------------|-------|-------|----------|
+| **Espresso** | 5 | 0.5 (5 credits) | 0 | ❌ No |
+| **Americano** | 75 | 7 (70 credits) | 5 | ✅ Yes (up to 2x) |
+| **Cappuccino** | 450 | 30 (300 credits) | 150 | ✅ Yes (up to 2x) |
+| **Cold Brew** | 800 | 60 (600 credits) | 200 | ✅ Yes (up to 2x) |
+| **French Press** | Unlimited | Unlimited | Unlimited | N/A |
+
+---
+
+## 💰 Credit Top-Ups (Optional)
+
+**For users who need more:**
+
+- **50 credits** = $5 (5 Brews) - **90% margin**
+- **100 credits** = $9 (10 Brews) - **89% margin**
+- **300 credits** = $25 (30 Brews) - **86% margin**
+
+---
+
+## 🎯 Competitive Positioning
+
+| Feature | **SlideCoffee** | **Gamma** | Our Advantage |
+|---------|-----------------|-----------|---------------|
+| **Free** | 5 slides (one-time) | 10 presentations | Minimal loss, quality focus |
+| **Starter** | 7/mo for $12 (75 slides) | 25/mo for $8 | **94% margin**, premium quality |
+| **Pro** | 30/mo for $29 | 100/mo for $20 | Premium AI (Sonnet), 81% margin |
+| **Team** | 60/mo for $59 (3 seats) | Unlimited for $20/user | **Better value!** ($59 vs $60) |
+
+---
+
+## 💡 Value Propositions
+
+**Espresso (Free):**
+- "Try 5 slides to see our quality"
+- Minimal loss ($0.048)
+- Perfect for testing
+
+**Americano ($12/mo):**
+- 7 presentations/month = ~1-2 per week
+- **94% margin** 🔥
+- "Perfect for weekly presentations"
+- Target: Solo creators, students, freelancers
+
+**Cappuccino ($29/mo):**
+- 30 presentations/month = ~1 per day
+- **81% margin**
+- "Daily presentations with premium AI"
+- Target: Consultants, agencies, power users
+
+**Cold Brew ($59/mo):**
+- 60 presentations/month = ~2 per day (team shared)
+- **83% margin**
+- "Team collaboration made easy"
+- Target: Small teams (3-5 people), agencies
+
+**French Press ($199+/mo):**
+- 200+ presentations/month = ~6-7 per day
+- **84% margin**
+- "Enterprise-grade unlimited access"
+- Target: Large organizations (20+ people)
+
+---
+
+## ✅ Ready for Stripe Creation
+
+**Final Plans:**
+
+1. ✅ **Espresso (Free)** - 0.5 Brew (5 slides, one-time)
+2. ✅ **Americano** - $12/mo or $10/mo annual - 7 Brews + 5 Shots (75 slides/month)
+3. ✅ **Cappuccino** - $29/mo or $24/mo annual - 30 Brews + Unlimited Shots (450 slides/month)
+4. ✅ **Cold Brew** - $59/mo or $49/mo annual (3 seats) + $12/seat - 60 Brews + Unlimited Shots (800 slides/month)
+5. ✅ **French Press** - $199+/mo (custom) - Unlimited
+
+**Plus credit top-ups:**
+- 50 credits = $5 (5 Brews)
+- 100 credits = $9 (10 Brews)
+- 300 credits = $25 (30 Brews)
+
+---
+
+## 🚀 Stripe Products Created
+
+**All products have been created in Stripe!**
+
+See `stripe_product_ids.json` for all product and price IDs.
+
+**Key improvements:**
+- ✅ Espresso: 5 slides (minimal loss of $0.048)
+- ✅ Americano: 75 slides (94% margin!)
+- ✅ All other plans: 77-84% margins
+- ✅ Competitive but premium positioning
+
+**Ready to integrate into SlideCoffee app!** 🚀
+

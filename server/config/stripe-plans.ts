@@ -6,18 +6,19 @@
 export const STRIPE_CONFIG = {
   // Subscription Plans
   plans: {
-    // FREE TIER - No Stripe product (built-in free tier)
-    starter: {
-      id: 'starter',
-      name: 'Free',
+    // FREE TIER - Espresso (5 slides one-time, not in Stripe)
+    espresso: {
+      id: 'espresso',
+      name: 'Espresso',
       stripeProductId: null, // No Stripe product for free tier
       limits: {
         slidesPerMonth: 5,
-        presentationsPerMonth: 5,
+        presentationsPerMonth: 1, // 0.5 Brew = 5 slides one-time
         templatesAccess: 'basic',
         aiGeneration: false,
         brandGuidelines: false,
         exportFormats: ['pdf'],
+        watermark: true,
       },
       price: {
         monthly: 0,
@@ -25,94 +26,107 @@ export const STRIPE_CONFIG = {
       },
       priceIds: null,
       features: [
-        '5 slides per month',
+        '5 slides (one-time)',
         'Basic templates',
         'Export to PDF',
-        'Community support',
+        'Watermark on exports',
       ],
     },
 
-    // BASIC PAID TIER - Americano (Entry-level Paid)
+    // STARTER TIER - Americano ($12/mo or $10/mo annual)
     americano: {
       id: 'americano',
       name: 'Americano',
       stripeProductId: 'prod_TTKyaYbvgAmwtn',
       limits: {
-        slidesPerMonth: 20,
-        presentationsPerMonth: 20,
-        templatesAccess: 'standard',
+        slidesPerMonth: 75, // 7 Brews (70 slides) + 5 Shots (5 edits)
+        presentationsPerMonth: 7,
+        editsPerMonth: 5,
+        templatesAccess: 'all',
         aiGeneration: true,
         brandGuidelines: false,
         exportFormats: ['pdf', 'pptx'],
+        watermark: false,
       },
       price: {
-        monthly: 15,
-        annual: 150,
+        monthly: 12,
+        annual: 120, // $10/month billed annually
       },
       priceIds: {
         monthly: 'price_1SWOIHQqJZwsptkv3oF47C38',
         annual: 'price_1SWOIHQqJZwsptkvgEmFNhiP',
       },
       features: [
-        '20 slides per month',
-        'Standard templates',
+        '7 presentations/month (70 slides)',
+        '5 edits/month',
+        'All templates',
         'AI generation',
-        'Export to PPT/PDF',
+        'No watermark',
+        'PDF + PPTX export',
         'Email support',
+        'Basic analytics',
       ],
     },
 
-    // PRO TIER - Cappuccino (Popular Choice)
+    // PRO TIER - Cappuccino ($29/mo or $24/mo annual)
     cappuccino: {
       id: 'cappuccino',
       name: 'Cappuccino',
       stripeProductId: 'prod_TTKyHIKHMtBAZT',
       limits: {
-        slidesPerMonth: -1, // unlimited
-        presentationsPerMonth: -1, // unlimited
+        slidesPerMonth: 450, // 30 Brews (300 slides) + Unlimited Shots (~150 edits)
+        presentationsPerMonth: 30,
+        editsPerMonth: -1, // unlimited
         templatesAccess: 'all',
         aiGeneration: true,
+        premiumAI: true, // Claude Sonnet for 20% of slides
         brandGuidelines: true,
         exportFormats: ['pdf', 'pptx'],
+        watermark: false,
       },
       price: {
         monthly: 29,
-        annual: 290,
+        annual: 288, // $24/month billed annually
       },
       priceIds: {
         monthly: 'price_1SWOIHQqJZwsptkvCtKZFZkL',
         annual: 'price_1SWOIIQqJZwsptkvNH0h35bE',
       },
       features: [
-        'Unlimited slides',
-        'Unlimited presentations',
-        'All templates',
-        'AI generation',
-        'Brand guidelines',
+        '30 presentations/month (300 slides)',
+        'Unlimited edits',
+        'Premium AI models (Claude Sonnet)',
+        'Custom branding & fonts',
+        'Advanced analytics',
         'Priority support',
-        'Export to PPT/PDF',
+        'API access (coming soon)',
+        'Remove footer branding',
       ],
     },
 
-    // ENTERPRISE TIER - ColdBrew (Premium with Teams)
+    // TEAM TIER - Cold Brew ($59/mo or $49/mo annual + $12/seat)
     coldBrew: {
       id: 'coldbrew',
       name: 'Cold Brew',
       stripeProductId: 'prod_TTKyq85JXkP37m',
       limits: {
-        slidesPerMonth: -1, // unlimited
-        presentationsPerMonth: -1, // unlimited
+        slidesPerMonth: 800, // 60 Brews (600 slides) + Unlimited Shots (~200 edits)
+        presentationsPerMonth: 60,
+        editsPerMonth: -1, // unlimited
         templatesAccess: 'all',
         aiGeneration: true,
+        premiumAI: true,
         brandGuidelines: true,
         exportFormats: ['pdf', 'pptx'],
-        teamSeats: true,
-        customBranding: true,
-        apiAccess: true,
+        watermark: false,
+        teamSeats: 3, // Base includes 3 seats
+        maxSeats: 20,
+        collaboration: true,
       },
       price: {
-        monthly: 99,
-        annual: 990,
+        monthly: 59,
+        annual: 588, // $49/month billed annually
+        additionalSeat: 12, // $12/month per additional seat
       },
       priceIds: {
         monthly: 'price_1SWOIIQqJZwsptkvAkTmhZjI',
@@ -120,44 +134,56 @@ export const STRIPE_CONFIG = {
         additionalSeat: 'price_1SWOIJQqJZwsptkvSncvRXJ0',
       },
       features: [
-        'Everything in Pro',
-        'Custom branding',
-        'Team collaboration',
-        'Additional seats available',
-        'API access',
-        'SSO',
-        'Dedicated support',
-        'SLA guarantee',
-        'Advanced analytics',
+        '60 presentations/month (shared)',
+        'Unlimited edits',
+        '3-20 team seats',
+        'Team workspace',
+        'Collaboration (comments, @mentions)',
+        'Shared brand library',
+        'Team analytics',
+        'Version history',
+        'Priority support',
       ],
     },
 
-    // SPECIAL TIER - FrenchPress (One-time or special offer)
+    // ENTERPRISE TIER - French Press ($199+/mo custom pricing)
     frenchPress: {
       id: 'frenchpress',
-      name: 'French Press Special',
-      stripeProductId: 'prod_TTKyO8ROj7J6gr', // frenchPress
+      name: 'French Press',
+      stripeProductId: 'prod_TTKyO8ROj7J6gr',
       limits: {
-        slidesPerMonth: 10, // One-time 10 slide offer
-        presentationsPerMonth: 10,
-        templatesAccess: 'basic',
-        aiGeneration: false,
-        brandGuidelines: false,
-        exportFormats: ['pdf'],
+        slidesPerMonth: -1, // Unlimited (fair use ~2,500/month)
+        presentationsPerMonth: -1, // Unlimited
+        editsPerMonth: -1, // Unlimited
+        templatesAccess: 'all',
+        aiGeneration: true,
+        premiumAI: true,
+        brandGuidelines: true,
+        exportFormats: ['pdf', 'pptx'],
+        watermark: false,
+        teamSeats: -1, // Unlimited
+        collaboration: true,
+        enterprise: true,
       },
       price: {
-        monthly: 9, // Special pricing
+        monthly: 199, // Starting price, custom pricing
       },
       priceIds: {
         monthly: 'price_1SWOIJQqJZwsptkvWfIpodet',
       },
       features: [
-        '10 slides one-time',
-        'Basic templates',
-        'Export to PDF',
-        'Email support',
+        'Unlimited presentations',
+        'Unlimited edits',
+        'Unlimited seats',
+        'White-label options',
+        'Custom domain',
+        'Dedicated account manager',
+        'SLA guarantees (99.9% uptime)',
+        'Custom integrations',
+        'On-premise deployment (optional)',
+        'Training & onboarding',
       ],
-      isOneTime: true, // Special flag for one-time offers
+      isEnterprise: true,
     },
   },
 
@@ -200,7 +226,7 @@ export function getPlanConfig(planId: string) {
 // Helper function to get plan limits
 export function getPlanLimits(planId: string) {
   const plan = getPlanConfig(planId);
-  return plan?.limits || STRIPE_CONFIG.plans.starter.limits;
+  return plan?.limits || STRIPE_CONFIG.plans.espresso.limits;
 }
 
 // Helper function to check if user can create more slides

@@ -91,11 +91,11 @@ router.get('/plans', (req: Request, res: Response) => {
   try {
     const plans = [
       {
-        id: STRIPE_CONFIG.plans.starter.id,
-        name: STRIPE_CONFIG.plans.starter.name,
-        price: STRIPE_CONFIG.plans.starter.price,
-        features: STRIPE_CONFIG.plans.starter.features,
-        limits: STRIPE_CONFIG.plans.starter.limits,
+        id: STRIPE_CONFIG.plans.espresso.id,
+        name: STRIPE_CONFIG.plans.espresso.name,
+        price: STRIPE_CONFIG.plans.espresso.price,
+        features: STRIPE_CONFIG.plans.espresso.features,
+        limits: STRIPE_CONFIG.plans.espresso.limits,
         priceIds: null, // Free plan has no price IDs
       },
       {
@@ -122,6 +122,15 @@ router.get('/plans', (req: Request, res: Response) => {
         features: STRIPE_CONFIG.plans.coldBrew.features,
         limits: STRIPE_CONFIG.plans.coldBrew.limits,
         priceIds: STRIPE_CONFIG.plans.coldBrew.priceIds,
+      },
+      {
+        id: STRIPE_CONFIG.plans.frenchPress.id,
+        name: STRIPE_CONFIG.plans.frenchPress.name,
+        price: STRIPE_CONFIG.plans.frenchPress.price,
+        features: STRIPE_CONFIG.plans.frenchPress.features,
+        limits: STRIPE_CONFIG.plans.frenchPress.limits,
+        priceIds: STRIPE_CONFIG.plans.frenchPress.priceIds,
+        isEnterprise: true,
       },
     ];
 

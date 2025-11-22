@@ -21,43 +21,33 @@ export default function UpgradePrompt({
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const isAtLimit = currentSlides >= limit;
-  const isNearLimit = currentSlides >= limit * 0.8;
 
-  // One-time offer: 10 slides for $9
-  const oneTimeOffer = {
-    name: 'French Press Special',
-    price: 9,
-    slides: 10,
-    description: 'One-time offer: Create 10 more slides',
-    planId: 'frenchpress',
-  };
-
-  // Subscription upgrade options
+  // Subscription upgrade options based on actual pricing
   const upgradePlans = [
     {
       id: 'americano',
       name: 'Americano',
-      monthlyPrice: 15,
-      annualPrice: 150,
-      slides: 20,
-      features: ['20 slides/month', 'AI generation', 'Standard templates', 'PPT export'],
+      monthlyPrice: 12,
+      annualPrice: 120,
+      slides: 75,
+      features: ['7 presentations/month (70 slides)', '5 edits/month', 'All templates', 'AI generation', 'No watermark', 'PDF + PPTX export'],
     },
     {
       id: 'cappuccino',
       name: 'Cappuccino',
       monthlyPrice: 29,
-      annualPrice: 290,
-      slides: '∞',
-      features: ['Unlimited slides', 'All templates', 'AI generation', 'Brand guidelines', 'Priority support'],
+      annualPrice: 288,
+      slides: 450,
+      features: ['30 presentations/month (300 slides)', 'Unlimited edits', 'Premium AI (Claude Sonnet)', 'Custom branding', 'Advanced analytics', 'Priority support'],
       popular: true,
     },
     {
       id: 'coldbrew',
       name: 'Cold Brew',
-      monthlyPrice: 99,
-      annualPrice: 990,
-      slides: '∞',
-      features: ['Everything in Cappuccino', 'Team collaboration', 'Custom branding', 'API access', 'SSO'],
+      monthlyPrice: 59,
+      annualPrice: 588,
+      slides: 800,
+      features: ['60 presentations/month (600 slides)', 'Unlimited edits', '3-20 team seats', 'Team collaboration', 'Shared brand library', 'Priority support'],
     },
   ];
 
@@ -89,8 +79,8 @@ export default function UpgradePrompt({
         </div>
 
         <div className="p-6">
-          {/* One-time offer section (shown when user hits 10 slides on free plan) */}
-          {showOneTimeOffer && currentPlan === 'starter' && currentSlides >= 10 && (
+          {/* One-time offer section (shown when user hits limit on free plan) */}
+          {showOneTimeOffer && currentPlan === 'espresso' && currentSlides >= limit && (
             <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-6">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-amber-100 rounded-lg">
@@ -98,26 +88,26 @@ export default function UpgradePrompt({
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    🎁 Special One-Time Offer!
+                    ☕ Upgrade to Americano
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Get <strong>10 more slides</strong> right now for just <strong>${oneTimeOffer.price}</strong>!
+                    Get <strong>7 presentations per month (75 slides)</strong> for just <strong>$12/month</strong>!
                   </p>
                   <button
-                    onClick={() => handleUpgrade(oneTimeOffer.planId)}
+                    onClick={() => handleUpgrade('americano')}
                     className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
-                    Get 10 Slides for ${oneTimeOffer.price}
+                    Upgrade to Americano
                     <ArrowRight className="w-5 h-5" />
                   </button>
-                  <p className="text-sm text-gray-600 mt-2">Limited time offer · One-time purchase</p>
+                  <p className="text-sm text-gray-600 mt-2">Perfect for weekly presentations</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Divider */}
-          {showOneTimeOffer && currentPlan === 'starter' && currentSlides >= 10 && (
+          {showOneTimeOffer && currentPlan === 'espresso' && currentSlides >= limit && (
             <div className="relative mb-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
@@ -159,13 +149,13 @@ export default function UpgradePrompt({
                       <span className="text-gray-600">/month</span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      or ${plan.annualPrice}/year (save ${plan.monthlyPrice * 12 - plan.annualPrice})
+                      or ${plan.annualPrice}/year
                     </div>
                   </div>
 
                   <div className="mb-4">
                     <div className="text-sm font-semibold text-gray-700 mb-2">
-                      {plan.slides === '∞' ? 'Unlimited slides' : `${plan.slides} slides/month`}
+                      {plan.slides} slides/month
                     </div>
                   </div>
 
