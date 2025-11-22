@@ -20,8 +20,37 @@ export async function* streamChatMessage(
   }
 ): AsyncGenerator<StreamEvent, void, unknown> {
   // Get auth token from localStorage (Supabase session)
-  const session = localStorage.getItem('supabase.auth.token');
-  const token = session ? JSON.parse(session)?.access_token : null;
+  // Support both v1 (supabase.auth.token) and v2 (sb-<project>-auth-token) formats
+  let token = null;
+  
+  // Try v1 format first
+  const sessionV1 = localStorage.getItem('supabase.auth.token');
+  if (sessionV1) {
+    try {
+      token = JSON.parse(sessionV1)?.access_token;
+    } catch (e) {
+      console.error('Failed to parse v1 Supabase token:', e);
+    }
+  }
+  
+  // Fallback to v2 format (sb-<project>-auth-token)
+  if (!token) {
+    const authKeys = Object.keys(localStorage).filter(key => 
+      key.startsWith('sb-') && key.endsWith('-auth-token')
+    );
+    
+    if (authKeys.length > 0) {
+      try {
+        const sessionV2 = localStorage.getItem(authKeys[0]);
+        if (sessionV2) {
+          const parsed = JSON.parse(sessionV2);
+          token = parsed?.access_token || parsed?.currentSession?.access_token;
+        }
+      } catch (e) {
+        console.error('Failed to parse v2 Supabase token:', e);
+      }
+    }
+  }
 
   const response = await fetch(getApiUrl('ai-chat-stream'), {
     method: 'POST',
