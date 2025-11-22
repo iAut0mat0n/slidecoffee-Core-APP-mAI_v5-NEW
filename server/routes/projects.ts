@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -42,6 +43,20 @@ router.get('/projects/:id', async (req: Request, res: Response) => {
 // POST /api/projects - Create project
 router.post('/projects', async (req: Request, res: Response) => {
   try {
+    // Validate project name
+    const nameError = validateLength(req.body.name, 'Project name', MAX_LENGTHS.PRESENTATION_TITLE, 1);
+    if (nameError) {
+      return res.status(400).json({ error: nameError.message });
+    }
+
+    // Validate description if provided
+    if (req.body.description) {
+      const descError = validateLength(req.body.description, 'Description', MAX_LENGTHS.PRESENTATION_DESCRIPTION, 0, false);
+      if (descError) {
+        return res.status(400).json({ error: descError.message });
+      }
+    }
+
     const { data, error} = await supabase
       .from('v2_projects')
       .insert([req.body])
@@ -58,6 +73,22 @@ router.post('/projects', async (req: Request, res: Response) => {
 // PUT /api/projects/:id - Update project
 router.put('/projects/:id', async (req: Request, res: Response) => {
   try {
+    // Validate name if provided
+    if (req.body.name) {
+      const nameError = validateLength(req.body.name, 'Project name', MAX_LENGTHS.PRESENTATION_TITLE, 1);
+      if (nameError) {
+        return res.status(400).json({ error: nameError.message });
+      }
+    }
+
+    // Validate description if provided
+    if (req.body.description) {
+      const descError = validateLength(req.body.description, 'Description', MAX_LENGTHS.PRESENTATION_DESCRIPTION, 0, false);
+      if (descError) {
+        return res.status(400).json({ error: descError.message });
+      }
+    }
+
     const { data, error } = await supabase
       .from('v2_projects')
       .update(req.body)

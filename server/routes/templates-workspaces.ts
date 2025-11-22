@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -55,6 +56,12 @@ router.get('/workspaces', async (req: Request, res: Response) => {
 
 router.post('/workspaces', async (req: Request, res: Response) => {
   try {
+    // Validate workspace name
+    const nameError = validateLength(req.body.name, 'Workspace name', MAX_LENGTHS.WORKSPACE_NAME, 1);
+    if (nameError) {
+      return res.status(400).json({ error: nameError.message });
+    }
+
     const { data, error } = await supabase
       .from('v2_workspaces')
       .insert([req.body])

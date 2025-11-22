@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth as sharedRequireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient, getServiceRoleClient } from '../utils/supabase-auth.js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 

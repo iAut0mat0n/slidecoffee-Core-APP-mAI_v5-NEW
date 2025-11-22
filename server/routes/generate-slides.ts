@@ -3,6 +3,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { getActiveAIProvider } from '../utils/ai-settings.js';
 import { STRIPE_CONFIG } from '../config/stripe-plans.js';
+import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
@@ -14,6 +15,21 @@ router.post('/generate-slides', requireAuth, async (req: AuthRequest, res: Respo
 
     if (!plan) {
       return res.status(400).json({ error: 'Presentation plan is required' });
+    }
+
+    // Validate presentation plan text fields
+    if (plan.title) {
+      const titleError = validateLength(plan.title, 'Presentation title', MAX_LENGTHS.PRESENTATION_TITLE, 1);
+      if (titleError) {
+        return res.status(400).json({ error: titleError.message });
+      }
+    }
+
+    if (plan.summary) {
+      const summaryError = validateLength(plan.summary, 'Summary', MAX_LENGTHS.PRESENTATION_DESCRIPTION, 0, false);
+      if (summaryError) {
+        return res.status(400).json({ error: summaryError.message });
+      }
     }
 
     // Get authenticated Supabase client
