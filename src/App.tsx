@@ -62,6 +62,7 @@ import Signup from './pages/Signup'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import VerifyEmail from './pages/VerifyEmail'
+import AuthCallback from './pages/AuthCallback'
 import OnboardingWelcome from './pages/OnboardingWelcome'
 import OnboardingWorkspace from './pages/OnboardingWorkspace'
 import OnboardingBrand from './pages/OnboardingBrand'
@@ -92,6 +93,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         
         {/* Onboarding Routes - Protected by email verification */}
         <Route path="/onboarding" element={
