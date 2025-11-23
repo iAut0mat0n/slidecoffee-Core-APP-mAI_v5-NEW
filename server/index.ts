@@ -34,6 +34,7 @@ const allowedOrigins = [
   'https://app.slidecoffee.ai',
   /\.replit\.dev$/,
   /\.repl\.co$/,
+  /\.replit\.app$/,
   /\.netlify\.app$/,
   /\.onrender\.com$/,
 ];
