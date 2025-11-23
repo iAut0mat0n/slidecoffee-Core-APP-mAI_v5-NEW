@@ -47,7 +47,8 @@ async function fetchAPI<T>(
 
 // System Settings API
 export const systemAPI = {
-  getSettings: () => fetchAPI<Record<string, string>>('/system/settings'),
+  // Public branding - no auth required (logo, favicon, title only)
+  getSettings: () => fetchAPI<Record<string, string>>('/system/public-branding'),
   
   uploadLogo: (data: { base64Image: string; filename: string }) =>
     fetchAPI<{ logoUrl: string }>('/system/upload-logo', {

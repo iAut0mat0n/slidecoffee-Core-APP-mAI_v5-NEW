@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { fileTypeFromBuffer } from 'file-type';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
@@ -65,16 +66,44 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Public-safe system setting keys (branding only)
-const PUBLIC_SETTINGS_KEYS = ['app_logo_url', 'app_favicon_url', 'app_title'];
+// Public-safe branding keys (safe for unauthenticated access)
+const PUBLIC_BRANDING_KEYS = ['app_logo_url', 'app_favicon_url', 'app_title'];
 
-// GET /api/system/settings - Get public system settings (authentication required)
-router.get('/system/settings', requireAuth, async (req: Request, res: Response) => {
+// GET /api/system/public-branding - Get public branding settings (NO authentication required)
+// This endpoint is intentionally public for displaying branding on login pages, etc.
+// ONLY returns whitelisted branding keys - no sensitive configuration
+router.get('/system/public-branding', async (req: Request, res: Response) => {
   try {
     const { data, error} = await supabase
       .from('v2_system_settings')
       .select('*')
-      .in('key', PUBLIC_SETTINGS_KEYS);
+      .in('key', PUBLIC_BRANDING_KEYS);
+
+    if (error) {
+      console.error('Failed to fetch public branding:', error);
+      return res.status(500).json({ message: 'Failed to fetch branding' });
+    }
+
+    // Convert array to key-value object
+    const settings: Record<string, string> = {};
+    data?.forEach((setting: any) => {
+      settings[setting.key] = setting.value;
+    });
+
+    res.json(settings);
+  } catch (error) {
+    console.error('Public branding error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /api/system/settings - Get ALL system settings (admin only with MFA)
+// This endpoint returns ALL settings including sensitive configuration
+router.get('/system/settings', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { data, error} = await supabase
+      .from('v2_system_settings')
+      .select('*');
 
     if (error) {
       console.error('Failed to fetch system settings:', error);
@@ -144,6 +173,30 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
     // Additional validation - check buffer is valid
     if (buffer.length === 0) {
       return res.status(400).json({ message: 'Invalid image data' });
+    }
+
+    // Magic-byte validation - verify actual file type matches MIME type
+    const detectedType = await fileTypeFromBuffer(buffer);
+    if (!detectedType) {
+      return res.status(400).json({ 
+        message: 'Unable to verify file type. File may be corrupted or invalid.' 
+      });
+    }
+
+    // Strict validation - only allow specific image types
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!allowedMimeTypes.includes(detectedType.mime)) {
+      return res.status(400).json({ 
+        message: `Invalid file type detected: ${detectedType.mime}. Only PNG, JPEG, WEBP, and GIF are allowed.` 
+      });
+    }
+
+    // Verify declared MIME type matches actual file type (prevent disguised files)
+    if (detectedType.mime !== mimeType) {
+      console.warn(`⚠️ MIME type mismatch: declared ${mimeType}, actual ${detectedType.mime}`);
+      return res.status(400).json({ 
+        message: 'File type mismatch detected. The file content does not match the declared type.' 
+      });
     }
 
     // Upload to Supabase Storage with normalized filename
