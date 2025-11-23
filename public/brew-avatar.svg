@@ -1,0 +1,74 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple gradient background -->
+  <defs>
+    <linearGradient id="brewGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7e22ce;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="steamGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#e9d5ff;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Coffee cup body (main character) -->
+  <g transform="translate(30, 40)">
+    <!-- Cup body with gradient -->
+    <path d="M 20 20 L 15 70 Q 15 75 20 75 L 80 75 Q 85 75 85 70 L 80 20 Q 80 15 75 15 L 25 15 Q 20 15 20 20 Z" 
+          fill="url(#brewGradient)" 
+          stroke="none"/>
+    
+    <!-- Cup handle -->
+    <path d="M 85 30 Q 95 30 95 45 Q 95 60 85 60" 
+          stroke="url(#brewGradient)" 
+          stroke-width="6" 
+          fill="none" 
+          stroke-linecap="round"/>
+    
+    <!-- Coffee liquid inside cup (darker purple) -->
+    <ellipse cx="50" cy="25" rx="22" ry="6" fill="#6b21a8" opacity="0.6"/>
+    
+    <!-- Robot eyes (two circles) -->
+    <circle cx="40" cy="45" r="8" fill="white"/>
+    <circle cx="60" cy="45" r="8" fill="white"/>
+    
+    <!-- Eye pupils (giving it personality) -->
+    <circle cx="42" cy="46" r="4" fill="#1f2937"/>
+    <circle cx="62" cy="46" r="4" fill="#1f2937"/>
+    
+    <!-- Cute smile -->
+    <path d="M 35 58 Q 50 65 65 58" 
+          stroke="white" 
+          stroke-width="3" 
+          fill="none" 
+          stroke-linecap="round"/>
+    
+    <!-- Steam wisps (3 wavy lines) -->
+    <path d="M 35 8 Q 33 4 35 0" 
+          stroke="url(#steamGradient)" 
+          stroke-width="2.5" 
+          fill="none" 
+          stroke-linecap="round" 
+          opacity="0.9"/>
+    <path d="M 50 10 Q 48 6 50 2" 
+          stroke="url(#steamGradient)" 
+          stroke-width="2.5" 
+          fill="none" 
+          stroke-linecap="round" 
+          opacity="0.9"/>
+    <path d="M 65 8 Q 63 4 65 0" 
+          stroke="url(#steamGradient)" 
+          stroke-width="2.5" 
+          fill="none" 
+          stroke-linecap="round" 
+          opacity="0.9"/>
+    
+    <!-- Small sparkle (AI intelligence indicator) -->
+    <g transform="translate(75, 25)">
+      <path d="M 0 -4 L 1 -1 L 4 0 L 1 1 L 0 4 L -1 1 L -4 0 L -1 -1 Z" 
+            fill="white" 
+            opacity="0.9"/>
+    </g>
+  </g>
+</svg>
+

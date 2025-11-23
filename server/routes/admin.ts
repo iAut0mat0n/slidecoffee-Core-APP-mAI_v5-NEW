@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { requireAuth } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { securityLogger } from '../utils/security-logger.js';
 
 const router = Router();
 
@@ -42,7 +43,8 @@ const requireAdmin = async (req: Request, res: Response, next: any) => {
     // If user has MFA enrolled but hasn't verified this session (nextLevel=aal2, currentLevel=aal1)
     // OR user has no MFA at all (currentLevel=aal1, nextLevel=aal1)
     if (currentLevel !== 'aal2') {
-      console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA (Current: ${currentLevel}, Next: ${nextLevel})`);
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      securityLogger.mfaFailure(user.id || 'unknown', user.email || 'unknown', ip, currentLevel || 'aal1', nextLevel || 'aal1');
       
       if (requireStrictMFA) {
         return res.status(403).json({ 

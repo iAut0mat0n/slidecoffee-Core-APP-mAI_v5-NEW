@@ -4,6 +4,8 @@ import { fileTypeFromBuffer } from 'file-type';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
+import { securityLogger } from '../utils/security-logger.js';
+import { publicBrandingLimiter, uploadLimiter } from '../middleware/rate-limiters.js';
 
 const router = Router();
 
@@ -37,7 +39,8 @@ const requireAdmin = async (req: Request, res: Response, next: any) => {
     // If user has MFA enrolled but hasn't verified this session (nextLevel=aal2, currentLevel=aal1)
     // OR user has no MFA at all (currentLevel=aal1, nextLevel=aal1)
     if (currentLevel !== 'aal2') {
-      console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA (Current: ${currentLevel}, Next: ${nextLevel})`);
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      securityLogger.mfaFailure(user.id || 'unknown', user.email || 'unknown', ip, currentLevel || 'aal1', nextLevel || 'aal1');
       
       if (requireStrictMFA) {
         return res.status(403).json({ 
@@ -72,7 +75,8 @@ const PUBLIC_BRANDING_KEYS = ['app_logo_url', 'app_favicon_url', 'app_title'];
 // GET /api/system/public-branding - Get public branding settings (NO authentication required)
 // This endpoint is intentionally public for displaying branding on login pages, etc.
 // ONLY returns whitelisted branding keys - no sensitive configuration
-router.get('/system/public-branding', async (req: Request, res: Response) => {
+// Rate limited to prevent abuse (60 req/min per IP)
+router.get('/system/public-branding', publicBrandingLimiter, async (req: Request, res: Response) => {
   try {
     const { data, error} = await supabase
       .from('v2_system_settings')
@@ -124,7 +128,8 @@ router.get('/system/settings', requireAuth, requireAdmin, async (req: Request, r
 });
 
 // POST /api/system/upload-logo - Upload logo or favicon (admin only, MFA required)
-router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+// Rate limited to prevent abuse (10 uploads per 15min per IP)
+router.post('/system/upload-logo', uploadLimiter, requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { base64Image, filename, type = 'logo' } = req.body;
 
@@ -186,6 +191,10 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
     // Strict validation - only allow specific image types
     const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
     if (!allowedMimeTypes.includes(detectedType.mime)) {
+      const user = (req as any).user;
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      securityLogger.uploadRejected(user?.id, ip, `Invalid file type: ${detectedType.mime}`, normalizedFilename);
+      
       return res.status(400).json({ 
         message: `Invalid file type detected: ${detectedType.mime}. Only PNG, JPEG, WEBP, and GIF are allowed.` 
       });
@@ -193,7 +202,10 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
 
     // Verify declared MIME type matches actual file type (prevent disguised files)
     if (detectedType.mime !== mimeType) {
-      console.warn(`⚠️ MIME type mismatch: declared ${mimeType}, actual ${detectedType.mime}`);
+      const user = (req as any).user;
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      securityLogger.mimeMismatch(user?.id, ip, mimeType, detectedType.mime, normalizedFilename);
+      
       return res.status(400).json({ 
         message: 'File type mismatch detected. The file content does not match the declared type.' 
       });
