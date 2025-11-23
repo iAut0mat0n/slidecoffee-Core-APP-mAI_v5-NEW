@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CoffeeCupIcon from '../components/CoffeeCupIcon';
+import { Coffee } from 'lucide-react';
 
 export default function SignupNew() {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function SignupNew() {
           {/* Logo and Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-6">
-              <CoffeeCupIcon className="w-10 h-10" />
+              <Coffee className="w-10 h-10" />
               <h1 className="text-2xl font-bold">SlideCoffee</h1>
             </div>
             <h2 className="text-3xl font-bold mb-2">Create your account</h2>
@@ -133,7 +133,7 @@ export default function SignupNew() {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <CoffeeCupIcon className="w-10 h-10" />
+            <Coffee className="w-10 h-10" />
             <h1 className="text-2xl font-bold">SlideCoffee</h1>
           </div>
           <h2 className="text-3xl font-bold mb-2">Welcome to SlideCoffee</h2>

@@ -1,5 +1,5 @@
+import { Coffee } from 'lucide-react';
 import { useSystemSettings } from '../lib/queries';
-import CoffeeCupIcon from './CoffeeCupIcon';
 
 interface AppLogoProps {
   className?: string;
@@ -23,7 +23,7 @@ export default function AppLogo({ className = '', showText = true, iconClassName
           }}
         />
       ) : (
-        <CoffeeCupIcon className={iconClassName} />
+        <Coffee className={iconClassName} />
       )}
       {showText && (
         <span className="text-xl font-bold text-gray-900">SlideCoffee</span>

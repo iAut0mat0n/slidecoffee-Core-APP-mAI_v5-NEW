@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { Coffee } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
-import CoffeeCupIcon from '../components/CoffeeCupIcon';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ export default function Login() {
             {/* Icon */}
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                <CoffeeCupIcon className="w-10 h-10" />
+                <Coffee className="w-10 h-10" />
               </div>
             </div>
 
