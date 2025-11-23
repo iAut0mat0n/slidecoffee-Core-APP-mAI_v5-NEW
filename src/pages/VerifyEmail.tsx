@@ -110,17 +110,23 @@ export default function VerifyEmail() {
         return;
       }
 
+      const redirectUrl = `${window.location.origin}/verify-email`;
+      console.log('📧 Resending verification email to:', email, 'with redirect:', redirectUrl);
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`,
+          emailRedirectTo: redirectUrl,
         }
       });
+
+      console.log('📧 Resend response:', { error: error?.message });
 
       if (error) throw error;
       toast.success('Verification email sent! Please check your inbox.');
     } catch (error: any) {
+      console.error('📧 Resend failed:', error);
       toast.error(error.message || 'Failed to resend email');
     } finally {
       setResending(false);
