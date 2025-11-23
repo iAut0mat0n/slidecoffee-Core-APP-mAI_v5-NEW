@@ -25,7 +25,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = parseInt(process.env.BACKEND_PORT || '3001', 10);
+const PORT = parseInt(process.env.PORT || process.env.BACKEND_PORT || '5000', 10);
 
 // CORS configuration
 const allowedOrigins = [
@@ -95,8 +95,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, 'localhost', () => {
-  console.log(`🚀 Server running on localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on 0.0.0.0:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
