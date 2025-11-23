@@ -87,8 +87,21 @@ app.use('/api', commentsRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  const publicPath = path.resolve(__dirname, '../dist');
-  app.use(express.static(publicPath));
+  // Find dist folder - it's at the root of the project
+  const publicPath = path.join(process.cwd(), 'dist');
+  
+  console.log(`📁 Serving static files from: ${publicPath}`);
+  
+  // Serve static files with correct MIME types
+  app.use(express.static(publicPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      }
+    }
+  }));
   
   // SPA fallback - serve index.html for all non-API routes
   app.get('*', (req, res) => {
