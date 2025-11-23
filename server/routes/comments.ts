@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { parseMentions, resolveMentions, createMentionNotifications, createReplyNotification } from '../utils/mentions.js';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get('/presentations/:id/comments', requireAuth, async (req: AuthRequest, 
     // Verify presentation belongs to user's workspace
     const { data: presentation } = await supabase
       .from('v2_presentations')
-      .select('id, workspace_id')
+      .select('id, workspace_id, title')
       .eq('id', id)
       .eq('workspace_id', workspaceId)
       .single();
@@ -100,7 +101,7 @@ router.post('/presentations/:id/comments', requireAuth, async (req: AuthRequest,
     // Verify presentation belongs to user's workspace
     const { data: presentation } = await supabase
       .from('v2_presentations')
-      .select('id, workspace_id')
+      .select('id, workspace_id, title')
       .eq('id', id)
       .eq('workspace_id', workspaceId)
       .single();
@@ -128,6 +129,52 @@ router.post('/presentations/:id/comments', requireAuth, async (req: AuthRequest,
       .single();
 
     if (error) throw error;
+
+    // 🔔 @MENTIONS: Parse and create notifications
+    try {
+      const mentions = parseMentions(content);
+      if (mentions.length > 0) {
+        const resolvedMentions = await resolveMentions(mentions, workspaceId);
+        
+        // Get presentation title for notification
+        const presentationTitle = presentation.title || 'Untitled Presentation';
+        
+        await createMentionNotifications(
+          resolvedMentions,
+          workspaceId,
+          id,
+          presentationTitle,
+          slideIndex,
+          content,
+          userName
+        );
+      }
+
+      // 🔔 REPLY NOTIFICATION: Notify parent comment author
+      if (parentCommentId) {
+        const { data: parentComment } = await supabase
+          .from('v2_comments')
+          .select('author_id')
+          .eq('id', parentCommentId)
+          .single();
+
+        if (parentComment && parentComment.author_id !== userId) {
+          const presentationTitle = presentation.title || 'Untitled Presentation';
+          await createReplyNotification(
+            parentComment.author_id,
+            workspaceId,
+            id,
+            presentationTitle,
+            slideIndex,
+            content,
+            userName
+          );
+        }
+      }
+    } catch (notificationError) {
+      // Don't fail the request if notifications fail
+      console.error('Failed to create notifications:', notificationError);
+    }
 
     res.json({
       success: true,
