@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { getActiveAIProvider } from '../utils/ai-settings.js';
@@ -7,6 +8,15 @@ import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import { webSearch } from '../utils/web-search.js';
 
 const router = Router();
+
+// ✅ SECURITY: Rate limiting for streaming generation (prevent spam/abuse)
+const streamingRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Max 10 streaming requests per 15 minutes per IP
+  message: 'Too many generation requests. Please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * STREAMING SLIDE GENERATION - True Real-Time Magic ✨
@@ -23,7 +33,7 @@ const router = Router();
  * 9. slide_complete - All slides done
  * 10. complete - Presentation saved
  */
-router.post('/generate-slides-stream', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/generate-slides-stream', streamingRateLimiter, requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { topic, brand, enableResearch = true, presentationPlan } = req.body;
     const userPlan = req.user?.plan || 'espresso';
@@ -34,8 +44,37 @@ router.post('/generate-slides-stream', requireAuth, async (req: AuthRequest, res
       return res.status(400).json({ error: 'Topic or presentation plan is required' });
     }
 
+    // ✅ SECURITY: Input validation and sanitization
+    if (topic) {
+      const topicValidation = validateLength(topic, 'topic', MAX_LENGTHS.PRESENTATION_TITLE, 0, false);
+      if (topicValidation) {
+        return res.status(400).json({ error: topicValidation.message });
+      }
+    }
+
+    if (presentationPlan) {
+      const planStr = JSON.stringify(presentationPlan);
+      if (planStr.length > 10000) {
+        return res.status(400).json({ error: 'Presentation plan too large (max 10KB)' });
+      }
+    }
+
     // Get authenticated Supabase client
     const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    // ✅ SECURITY: Validate brand ownership if provided
+    if (brand?.id) {
+      const { data: brandData, error: brandError } = await supabase
+        .from('v2_brands')
+        .select('id, workspace_id')
+        .eq('id', brand.id)
+        .eq('workspace_id', workspaceId)
+        .single();
+
+      if (brandError || !brandData) {
+        return res.status(403).json({ error: 'Brand not found or access denied' });
+      }
+    }
 
     // Get plan limits
     const planConfig = STRIPE_CONFIG.plans[userPlan as keyof typeof STRIPE_CONFIG.plans];
@@ -51,9 +90,11 @@ router.post('/generate-slides-stream', requireAuth, async (req: AuthRequest, res
       .eq('workspace_id', workspaceId)
       .gte('created_at', startOfMonth.toISOString());
 
-    const estimatedSlideCount = 10; // Default estimate
+    // ✅ SECURITY: Calculate max slides based on plan remaining capacity
+    const remainingSlides = limits.slidesPerMonth - (monthlySlides || 0);
+    const maxSlidesForGeneration = Math.min(remainingSlides, 50); // Hard cap at 50 slides per generation
     
-    if (monthlySlides !== null && (monthlySlides + estimatedSlideCount) > limits.slidesPerMonth) {
+    if (remainingSlides <= 0) {
       return res.status(403).json({
         error: 'Monthly slide limit reached',
         message: `Your ${planConfig.name} plan allows ${limits.slidesPerMonth} slides per month.`,
@@ -138,7 +179,10 @@ router.post('/generate-slides-stream', requireAuth, async (req: AuthRequest, res
     // PHASE 2: OUTLINE GENERATION
     sendEvent('outline_start', { message: 'Creating presentation outline...' });
 
-    const outlinePrompt = `Create a detailed presentation outline for: ${topic || presentationPlan?.title}
+    // ✅ SECURITY: Sanitize inputs to prevent prompt injection
+    const sanitizedTopic = (topic || presentationPlan?.title || '').substring(0, 500);
+    
+    const outlinePrompt = `Create a detailed presentation outline for: ${sanitizedTopic}
 
 ${searchResults ? `Research Context:\n${searchResults}\n` : ''}
 
@@ -219,7 +263,15 @@ Generate a JSON outline with:
     sendEvent('slide_start', { message: 'Generating slides...' });
 
     const slides: any[] = [];
-    const slideCount = outline.slides?.length || 8;
+    // ✅ SECURITY: Enforce plan limits during generation (not just pre-check)
+    const requestedSlideCount = outline.slides?.length || 8;
+    const slideCount = Math.min(requestedSlideCount, maxSlidesForGeneration);
+    
+    if (requestedSlideCount > slideCount) {
+      sendEvent('warning', { 
+        message: `Limited to ${slideCount} slides due to plan capacity (requested ${requestedSlideCount})`
+      });
+    }
 
     for (let i = 0; i < slideCount; i++) {
       const slideOutline = outline.slides?.[i];
