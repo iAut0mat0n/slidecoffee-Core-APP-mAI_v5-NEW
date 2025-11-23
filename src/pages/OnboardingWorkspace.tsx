@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCreateWorkspace } from '../lib/queries';
 import { toast } from 'sonner';
+import { UsersRound } from 'lucide-react';
 
 export default function OnboardingWorkspace() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function OnboardingWorkspace() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-100 rounded-full mb-4">
-            <span className="text-4xl">☕</span>
+            <UsersRound className="w-10 h-10 text-purple-600" />
           </div>
           <h1 className="text-4xl font-bold mb-2">Create Your Workspace</h1>
           <p className="text-gray-600">
