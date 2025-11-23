@@ -42,11 +42,12 @@ externalPort = 80
 localPort = 33259
 externalPort = 3000
 
-[[ports]]
-localPort = 41525
-externalPort = 3002
-
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 run = ["npm", "start"]
+
+[userenv]
+
+[userenv.production]
+NODE_ENV = "production"
