@@ -30,8 +30,14 @@ SlideCoffee is a full-stack application with a clear separation between frontend
 **System Design Choices:**
 -   **Data Flow:** React components interact with an API client via React Query, which then communicates with Express routes and the Supabase database.
 -   **Environment Variables:** Sensitive information is managed via Replit Secrets.
--   **Error Handling:** Robust JSON parsing with validation and graceful handling of streaming AI events.
--   **Security:** Focus on RLS for tenant isolation, authenticated Supabase client helper, server-side plan limit enforcement, and comprehensive input validation to prevent common vulnerabilities.
+-   **Error Handling:** Robust JSON parsing with validation and graceful handling of streaming AI events. Generic error messages are returned to clients while detailed errors are logged server-side only.
+-   **Security:** Production-ready security implementation including:
+    - **MFA Enforcement:** All admin routes verify Authenticator Assurance Level (AAL2) using authenticated Supabase client. Soft enforcement by default (logs warnings), strict enforcement via `REQUIRE_ADMIN_MFA=true` environment variable.
+    - **RLS Enforcement:** Row Level Security applied across all database tables for multi-tenant data isolation.
+    - **File Upload Security:** Strict MIME validation (PNG/JPEG/WEBP/GIF only), SVG blocking to prevent XSS, filename normalization, 1MB size limit, and buffer validation.
+    - **System Settings Protection:** Public settings endpoint requires authentication and only exposes whitelisted branding keys (app_logo_url, app_favicon_url, app_title).
+    - **CORS Configuration:** Production domain (app.slidecoffee.ai) whitelisted alongside Replit development domains.
+    - **Input Validation:** Comprehensive server-side validation across all endpoints to prevent injection attacks and data corruption.
 
 ## External Dependencies
 
