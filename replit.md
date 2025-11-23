@@ -34,8 +34,8 @@ SlideCoffee is a full-stack application with a clear separation between frontend
 -   **Security:** Production-ready security implementation including:
     - **MFA Enforcement:** All admin routes verify Authenticator Assurance Level (AAL2) using authenticated Supabase client. Soft enforcement by default (logs warnings), strict enforcement via `REQUIRE_ADMIN_MFA=true` environment variable.
     - **RLS Enforcement:** Row Level Security applied across all database tables for multi-tenant data isolation.
-    - **File Upload Security:** Strict MIME validation (PNG/JPEG/WEBP/GIF only), SVG blocking to prevent XSS, filename normalization, 1MB size limit, and buffer validation.
-    - **System Settings Protection:** Public settings endpoint requires authentication and only exposes whitelisted branding keys (app_logo_url, app_favicon_url, app_title).
+    - **File Upload Security:** Multi-layer validation including strict MIME validation (PNG/JPEG/WEBP/GIF only), SVG blocking to prevent XSS, filename normalization, 1MB size limit, buffer validation, and magic-byte verification using `file-type` library to prevent disguised file uploads. Detects and blocks MIME type mismatches between declared and actual file types.
+    - **System Settings Protection:** Two-tier access control model - public branding endpoint (`/system/public-branding`) is intentionally unauthenticated for login page display, exposing only whitelisted keys (app_logo_url, app_favicon_url, app_title). Admin settings endpoint (`/system/settings`) requires authentication, admin role, and MFA to access ALL system configuration.
     - **CORS Configuration:** Production domain (app.slidecoffee.ai) whitelisted alongside Replit development domains.
     - **Input Validation:** Comprehensive server-side validation across all endpoints to prevent injection attacks and data corruption.
 
