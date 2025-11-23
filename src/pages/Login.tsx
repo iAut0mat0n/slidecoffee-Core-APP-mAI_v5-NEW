@@ -21,6 +21,8 @@ export default function Login() {
     
     try {
       await signIn(formData.email, formData.password);
+      // Clear any pending verification flags on successful login
+      localStorage.removeItem('pendingVerificationEmail');
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (error: any) {

@@ -61,6 +61,7 @@ import IconLibraryBrowser from './pages/IconLibraryBrowser'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
+import VerifyEmail from './pages/VerifyEmail'
 import OnboardingWelcome from './pages/OnboardingWelcome'
 import OnboardingWorkspace from './pages/OnboardingWorkspace'
 import OnboardingBrand from './pages/OnboardingBrand'
@@ -70,6 +71,7 @@ import ProjectEditor from './pages/ProjectEditor'
 import PresentView from './pages/PresentView'
 
 import ProtectedRoute from './components/ProtectedRoute'
+import OnboardingRoute from './components/OnboardingRoute'
 import BrewChatWidget from './components/BrewChatWidget'
 import FaviconLoader from './components/FaviconLoader'
 
@@ -89,13 +91,34 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         
-        {/* Onboarding Routes */}
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
-        <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
-        <Route path="/onboarding/brand" element={<OnboardingBrand />} />
-        <Route path="/onboarding/plan" element={<OnboardingPlan />} />
+        {/* Onboarding Routes - Protected by email verification */}
+        <Route path="/onboarding" element={
+          <OnboardingRoute>
+            <Onboarding />
+          </OnboardingRoute>
+        } />
+        <Route path="/onboarding/welcome" element={
+          <OnboardingRoute>
+            <OnboardingWelcome />
+          </OnboardingRoute>
+        } />
+        <Route path="/onboarding/workspace" element={
+          <OnboardingRoute>
+            <OnboardingWorkspace />
+          </OnboardingRoute>
+        } />
+        <Route path="/onboarding/brand" element={
+          <OnboardingRoute>
+            <OnboardingBrand />
+          </OnboardingRoute>
+        } />
+        <Route path="/onboarding/plan" element={
+          <OnboardingRoute>
+            <OnboardingPlan />
+          </OnboardingRoute>
+        } />
         
         {/* Editor Routes */}
         <Route path="/projects/:id/editor" element={

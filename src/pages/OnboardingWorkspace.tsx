@@ -34,7 +34,9 @@ export default function OnboardingWorkspace() {
       <div className="max-w-2xl w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🏢</div>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-100 rounded-full mb-4">
+            <span className="text-4xl">☕</span>
+          </div>
           <h1 className="text-4xl font-bold mb-2">Create Your Workspace</h1>
           <p className="text-gray-600">
             A workspace helps you organize your presentations and collaborate with your team
@@ -72,7 +74,7 @@ export default function OnboardingWorkspace() {
                 {[
                   { id: 'personal', label: 'Personal', description: 'Just for you', icon: '👤' },
                   { id: 'team', label: 'Team', description: 'For small teams (2-10 people)', icon: '👥' },
-                  { id: 'company', label: 'Company', description: 'For larger organizations', icon: '🏢' },
+                  { id: 'company', label: 'Company', description: 'For larger organizations', icon: '💼' },
                 ].map((type) => (
                   <label
                     key={type.id}
