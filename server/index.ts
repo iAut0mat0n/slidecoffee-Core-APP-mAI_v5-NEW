@@ -99,12 +99,24 @@ if (process.env.NODE_ENV === 'production') {
         res.setHeader('Content-Type', 'application/javascript');
       } else if (filePath.endsWith('.css')) {
         res.setHeader('Content-Type', 'text/css');
+      } else if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
       }
     }
   }));
   
-  // SPA fallback - serve index.html for all non-API routes
-  app.get('*', (req, res) => {
+  // SPA fallback - serve index.html ONLY for routes that don't match files
+  // This prevents /logo.png from being caught by the catch-all
+  app.get('*', (req, res, next) => {
+    // If the request is for a static file that doesn't exist, let it 404
+    // Only serve index.html for actual page routes
+    if (req.path.match(/\.(png|jpg|jpeg|gif|svg|css|js|ico|webp)$/)) {
+      return res.status(404).send('File not found');
+    }
     res.sendFile(path.join(publicPath, 'index.html'));
   });
 }
