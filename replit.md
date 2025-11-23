@@ -23,7 +23,7 @@ SlideCoffee is a full-stack application with a clear separation between frontend
 -   **Authentication & Authorization:** Supabase handles authentication. JWT tokens secure API routes, custom middleware enforces authentication, and Row Level Security (RLS) is applied across all database tables for data isolation.
 -   **Stripe Billing:** Integrated for subscription management (Pro & Enterprise plans) with secure webhooks and a customer portal. Features an in-app upgrade system with plan pre-selection during onboarding.
 -   **Project Editor:** Includes a full slide editor with debounced autosave.
--   **Real-Time Collaboration:** Live presence indicators are powered by Supabase Realtime.
+-   **Real-Time Collaboration:** Complete collaboration suite with v2_comments (threaded comments), v2_presence (live heartbeat tracking), v2_notifications (@mentions system), and v2_presentation_views (viral analytics). All powered by Supabase Realtime for instant updates. Production RLS policies enforce workspace isolation (see supabase/migrations/add_collaboration_rls_policies.sql).
 -   **Deployment:** Configured for Replit Autoscale, with frontend on port 5000 and backend on localhost:3001. CORS is configured for Replit domains.
 -   **Input Validation:** Comprehensive backend and frontend input validation across all text fields to ensure data integrity and security.
 -   **Support Ticket System:** Integrated system with `v2_support_tickets` and `v2_support_ticket_replies` tables, API endpoints, and an admin panel for management.

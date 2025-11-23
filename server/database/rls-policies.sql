@@ -38,3 +38,16 @@ COMMENT ON TABLE v2_user_context IS
 'User-specific AI context and preferences. 
 RLS enforced: Users can only access their own data via auth.uid().
 Application layer also validates user_id in all queries for defense-in-depth.';
+
+
+-- ============================================================================
+-- Real-Time Collaboration Tables RLS Policies
+-- ============================================================================
+-- NOTE: See supabase/migrations/add_collaboration_rls_policies.sql for full implementation
+-- These policies are applied to production Supabase database only
+-- Development database enforces security at application layer
+
+-- v2_comments: Workspace-scoped comment access
+-- v2_presence: Users see presence in their workspace, can only update own
+-- v2_notifications: Users can only read/update/delete their own notifications
+-- v2_presentation_views: Users can read analytics for workspace presentations only
