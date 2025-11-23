@@ -516,6 +516,31 @@ router.get('/present/:shareToken', async (req: Request, res: Response) => {
       });
     }
 
+    // 🔥 VIRAL GROWTH: Track anonymous view for analytics
+    try {
+      await supabase
+        .from('v2_presentation_views')
+        .insert({
+          presentation_id: data.id,
+          workspace_id: data.workspace_id,
+          viewer_type: 'anonymous',
+          share_token: shareToken,
+          user_agent: req.headers['user-agent'] || null,
+          ip_address: req.ip || null,
+          referrer: req.headers['referer'] || null
+        });
+    } catch (viewError) {
+      // Don't fail the request if analytics fails
+      console.error('Failed to track view:', viewError);
+    }
+
+    // Get workspace info for branding/viral CTAs
+    const { data: workspace } = await supabase
+      .from('v2_workspaces')
+      .select('name, plan')
+      .eq('id', data.workspace_id)
+      .single();
+
     // Return presentation data (unlimited access, no password)
     res.json({
       success: true,
@@ -526,7 +551,11 @@ router.get('/present/:shareToken', async (req: Request, res: Response) => {
       shareSettings: {
         access: settings.access,
         expiresAt: settings.expiresAt
-      }
+      },
+      // 🔥 VIRAL GROWTH: Include workspace plan for freemium watermarking
+      workspacePlan: workspace?.plan || 'espresso',
+      workspaceName: workspace?.name || 'SlideCoffee User',
+      slideCount: data.slides?.length || 0
     });
   } catch (error: any) {
     console.error('Error fetching public presentation:', error);

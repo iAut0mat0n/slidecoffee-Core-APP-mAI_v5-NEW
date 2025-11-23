@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Lock } from 'lucide-react'
+import { Lock, Twitter, Linkedin, Link as LinkIcon, Sparkles } from 'lucide-react'
 import PresentationSlideshow from '../components/PresentationSlideshow'
 import Button from '../components/Button'
 import Input from '../components/Input'
@@ -12,6 +12,9 @@ interface PresentationData {
   description: string
   slides: any[]
   shareSettings: any
+  workspacePlan?: string
+  workspaceName?: string
+  slideCount?: number
 }
 
 export default function PresentView() {
@@ -162,11 +165,109 @@ export default function PresentView() {
     return null
   }
 
+  // 🔥 VIRAL GROWTH: Determine if we should show free tier branding
+  const showFreeTierBranding = presentation.workspacePlan === 'espresso'
+  const currentUrl = window.location.href
+
+  const handleSocialShare = (platform: 'twitter' | 'linkedin') => {
+    const text = `Check out this presentation: ${presentation.title}`
+    const url = encodeURIComponent(currentUrl)
+    
+    if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${url}`, '_blank')
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank')
+    }
+  }
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(currentUrl)
+    alert('Link copied to clipboard!')
+  }
+
   return (
-    <PresentationSlideshow
-      slides={presentation.slides}
-      projectName={presentation.title}
-      onClose={() => navigate('/')}
-    />
+    <div className="relative">
+      {/* 🔥 VIRAL GROWTH: Top Banner with CTAs */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-5 h-5" />
+              <div>
+                <p className="font-semibold">{presentation.title}</p>
+                <p className="text-xs opacity-90">
+                  {presentation.slideCount} slides • Created with SlideCoffee
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Social Share Buttons */}
+              <button
+                onClick={() => handleSocialShare('twitter')}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                title="Share on Twitter"
+              >
+                <Twitter className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleSocialShare('linkedin')}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                title="Share on LinkedIn"
+              >
+                <Linkedin className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                title="Copy Link"
+              >
+                <LinkIcon className="w-4 h-4" />
+              </button>
+
+              {/* 🔥 VIRAL CTA: Create Free Account */}
+              <Button
+                onClick={() => navigate('/signup')}
+                className="bg-white text-purple-600 hover:bg-gray-100 font-semibold px-6 py-2"
+              >
+                Create Your Own - Free
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Presentation Content with Top Padding */}
+      <div className="pt-20">
+        <PresentationSlideshow
+          slides={presentation.slides}
+          projectName={presentation.title}
+          onClose={() => navigate('/')}
+        />
+      </div>
+
+      {/* 🔥 VIRAL GROWTH: Bottom Watermark for Free Tier */}
+      {showFreeTierBranding && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-gray-200 shadow-lg">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <span>
+                  Created with <strong className="text-purple-600">SlideCoffee</strong> by {presentation.workspaceName}
+                </span>
+              </div>
+              <Button
+                onClick={() => navigate('/signup')}
+                size="sm"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold"
+              >
+                Create Presentations Like This - Free
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
