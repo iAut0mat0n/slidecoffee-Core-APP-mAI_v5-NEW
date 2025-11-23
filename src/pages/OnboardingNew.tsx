@@ -50,7 +50,7 @@ export default function OnboardingNew() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-2">
-            <Coffee className="w-8 h-8" />
+            <Coffee className="w-8 h-8 text-purple-600" />
             <h1 className="text-xl font-bold">SlideCoffee</h1>
           </div>
           

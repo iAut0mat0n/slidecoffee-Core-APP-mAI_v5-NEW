@@ -32,7 +32,7 @@ export default function OnboardingWelcome() {
       {/* Header */}
       <div className="p-6">
         <div className="flex items-center gap-2 text-white">
-          <Coffee className="w-7 h-7" />
+          <Coffee className="w-7 h-7 text-white" />
           <span className="text-xl font-semibold">SlideCoffee</span>
         </div>
       </div>

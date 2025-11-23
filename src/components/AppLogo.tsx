@@ -23,7 +23,7 @@ export default function AppLogo({ className = '', showText = true, iconClassName
           }}
         />
       ) : (
-        <Coffee className={iconClassName} />
+        <Coffee className={`${iconClassName} text-purple-600`} />
       )}
       {showText && (
         <span className="text-xl font-bold text-gray-900">SlideCoffee</span>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Coffee, Loader2, ExternalLink } from 'lucide-react';
+import { X, Send, Loader2, ExternalLink } from 'lucide-react';
 import { AI_AGENT } from '../config/aiAgent';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -152,10 +152,10 @@ export default function BrewChatWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 z-50 group"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 z-50 group border-2 border-purple-200"
         title="Chat with Brew"
       >
-        <Coffee className="w-7 h-7" />
+        <img src="/brew-avatar.png" alt="Brew AI" className="w-14 h-14 rounded-full" />
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
       </button>
     );
@@ -167,7 +167,7 @@ export default function BrewChatWidget() {
       <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Coffee className="w-6 h-6" />
+            <img src="/brew-avatar.png" alt="Brew AI" className="w-10 h-10 rounded-full bg-white p-0.5" />
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-purple-700"></div>
           </div>
           <div>

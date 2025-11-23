@@ -53,7 +53,7 @@ export default function Login() {
             {/* Icon */}
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                <Coffee className="w-10 h-10" />
+                <Coffee className="w-10 h-10 text-purple-600" />
               </div>
             </div>
 
