@@ -1,35 +1,75 @@
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 
 process.env.NODE_ENV = 'test';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 process.env.SUPABASE_ANON_KEY = 'test-anon-key';
 process.env.JWT_SECRET = 'test-jwt-secret';
+process.env.REQUIRE_ADMIN_MFA = 'false';
+
+export const mockSupabaseState = {
+  user: null as any,
+  dbData: {} as Record<string, any>,
+  storageData: {} as Record<string, any>,
+};
+
+beforeEach(() => {
+  mockSupabaseState.user = null;
+  mockSupabaseState.dbData = {};
+  mockSupabaseState.storageData = {};
+});
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        in: vi.fn(() => Promise.resolve({ data: [], error: null })),
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
-        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      })),
-      upsert: vi.fn(() => Promise.resolve({ error: null })),
-    })),
+    from: vi.fn((table: string) => {
+      const chainable = {
+        select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        upsert: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: mockSupabaseState.dbData[table]?.single || null,
+          error: mockSupabaseState.dbData[table]?.singleError || null,
+        }),
+      };
+      
+      (chainable as any).then = vi.fn((resolve: any) => {
+        return Promise.resolve({
+          data: mockSupabaseState.dbData[table]?.data || [],
+          error: mockSupabaseState.dbData[table]?.error || null,
+        }).then(resolve);
+      });
+      
+      return chainable;
+    }),
     storage: {
       from: vi.fn(() => ({
-        upload: vi.fn(() => Promise.resolve({ data: { path: 'test/path.png' }, error: null })),
-        getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://test.supabase.co/storage/v1/object/public/assets/test/path.png' } })),
+        upload: vi.fn(() => Promise.resolve({
+          data: mockSupabaseState.storageData.uploadData || { path: 'test/path.png' },
+          error: mockSupabaseState.storageData.uploadError || null,
+        })),
+        getPublicUrl: vi.fn(() => ({
+          data: { publicUrl: mockSupabaseState.storageData.publicUrl || 'https://test.supabase.co/storage/test.png' },
+        })),
       })),
     },
     auth: {
       getUser: vi.fn(() => Promise.resolve({
-        data: { user: { id: 'test-user-id', email: 'test@example.com' } },
-        error: null,
+        data: mockSupabaseState.user ? { user: mockSupabaseState.user } : { user: null },
+        error: mockSupabaseState.user ? null : { message: 'Not authenticated' },
       })),
       mfa: {
         getAuthenticatorAssuranceLevel: vi.fn(() => Promise.resolve({
-          data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+          data: mockSupabaseState.user?.aal ? {
+            currentLevel: mockSupabaseState.user.aal,
+            nextLevel: mockSupabaseState.user.aal === 'aal1' ? 'aal2' : 'aal2',
+          } : {
+            currentLevel: 'aal1',
+            nextLevel: 'aal1',
+          },
           error: null,
         })),
       },
