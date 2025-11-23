@@ -28,10 +28,17 @@ vi.mock('@supabase/supabase-js', () => ({
         update: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
         upsert: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
+        eq: vi.fn((column: string, value: any) => {
+          // Handle v2_users lookup by id
+          if (table === 'v2_users' && column === 'id' && mockSupabaseState.user) {
+            mockSupabaseState.dbData[table] = { single: mockSupabaseState.user };
+          }
+          return chainable;
+        }),
         in: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
-          data: mockSupabaseState.dbData[table]?.single || null,
+          data: mockSupabaseState.dbData[table]?.single || mockSupabaseState.user || null,
           error: mockSupabaseState.dbData[table]?.singleError || null,
         }),
       };
