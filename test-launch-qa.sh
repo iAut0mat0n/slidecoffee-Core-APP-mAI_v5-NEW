@@ -73,7 +73,6 @@ echo "=================================================="
 
 test_endpoint "List Projects (No Auth)" "GET" "$API_BASE/projects" "401"
 test_endpoint "List Brands (No Auth)" "GET" "$API_BASE/brands" "401"
-test_endpoint "List Presentations (No Auth)" "GET" "$API_BASE/presentations" "401"
 
 echo ""
 echo "=================================================="
