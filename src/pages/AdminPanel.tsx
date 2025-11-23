@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText, Key, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Users, CreditCard, BarChart3, Zap, Database, FileText, Key, MessageSquare, Settings } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, type AISettings } from '../lib/supabase'
 import { adminAPI } from '../lib/api-client'
@@ -8,8 +8,9 @@ import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
 import SupportTicketsAdmin from '../components/SupportTicketsAdmin'
+import { toast } from 'sonner'
 
-type Tab = 'overview' | 'users' | 'subscriptions' | 'analytics' | 'ai-settings' | 'database' | 'logs' | 'support-tickets'
+type Tab = 'overview' | 'users' | 'subscriptions' | 'analytics' | 'ai-settings' | 'database' | 'logs' | 'support-tickets' | 'system-settings'
 
 export default function AdminPanel() {
   const { user } = useAuth()
@@ -28,6 +29,8 @@ export default function AdminPanel() {
   const [configuring, setConfiguring] = useState<string | null>(null)
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [showApiKey, setShowApiKey] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingFavicon, setUploadingFavicon] = useState(false)
 
   useEffect(() => {
     // Check if user is admin
@@ -105,11 +108,59 @@ export default function AdminPanel() {
     }
   }
 
+  const handleLogoUpload = async (file: File, type: 'logo' | 'favicon') => {
+    try {
+      if (type === 'logo') {
+        setUploadingLogo(true)
+      } else {
+        setUploadingFavicon(true)
+      }
+
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      
+      await new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            const base64 = reader.result as string
+            
+            // Upload via API
+            const response = await adminAPI.uploadLogo(base64, file.name, type)
+            
+            if (response.logoUrl || response.faviconUrl) {
+              toast.success(`${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully!`)
+              window.location.reload() // Reload to see new logo/favicon
+            }
+            resolve(response)
+          } catch (error: any) {
+            if (error.response?.data?.requiresMFA) {
+              toast.error('Multi-factor authentication required for admin operations. Please enable MFA in your account settings.')
+            } else {
+              toast.error(error.response?.data?.message || `Failed to upload ${type}`)
+            }
+            reject(error)
+          }
+        }
+        reader.onerror = reject
+      })
+    } catch (error) {
+      console.error(`Error uploading ${type}:`, error)
+    } finally {
+      if (type === 'logo') {
+        setUploadingLogo(false)
+      } else {
+        setUploadingFavicon(false)
+      }
+    }
+  }
+
   const tabs = [
     { id: 'overview' as Tab, label: 'Overview', icon: BarChart3 },
     { id: 'users' as Tab, label: 'Users', icon: Users },
     { id: 'subscriptions' as Tab, label: 'Subscriptions', icon: CreditCard },
     { id: 'support-tickets' as Tab, label: 'Support Tickets', icon: MessageSquare },
+    { id: 'system-settings' as Tab, label: 'System Settings', icon: Settings },
     { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
     { id: 'ai-settings' as Tab, label: 'AI Settings', icon: Zap },
     { id: 'database' as Tab, label: 'Database', icon: Database },
@@ -491,6 +542,94 @@ export default function AdminPanel() {
                       <div className="text-sm text-gray-600">Across all tables</div>
                     </div>
                     <div className="text-2xl font-bold text-gray-900">0</div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {activeTab === 'system-settings' && (
+              <Card className="p-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">System Settings</h2>
+                <p className="text-gray-600 mb-8">
+                  Manage application branding, logo, and favicon. These settings affect the entire application.
+                </p>
+
+                <div className="space-y-8">
+                  {/* Logo Upload */}
+                  <div className="border-b border-gray-200 pb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Logo</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Upload a custom logo to replace the default coffee cup icon in headers and navigation.
+                      Recommended size: 512x512px, PNG or SVG format.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        id="logo-upload"
+                        accept="image/png,image/svg+xml,image/jpeg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleLogoUpload(file, 'logo')
+                        }}
+                      />
+                      <Button
+                        onClick={() => document.getElementById('logo-upload')?.click()}
+                        disabled={uploadingLogo}
+                      >
+                        {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                      </Button>
+                      {uploadingLogo && (
+                        <span className="text-sm text-gray-500">Uploading logo...</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Favicon Upload */}
+                  <div className="border-b border-gray-200 pb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Favicon</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Upload a custom favicon to display in browser tabs. Recommended size: 32x32px or 64x64px, ICO, PNG, or SVG format.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        id="favicon-upload"
+                        accept="image/x-icon,image/png,image/svg+xml"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleLogoUpload(file, 'favicon')
+                        }}
+                      />
+                      <Button
+                        onClick={() => document.getElementById('favicon-upload')?.click()}
+                        disabled={uploadingFavicon}
+                      >
+                        {uploadingFavicon ? 'Uploading...' : 'Upload Favicon'}
+                      </Button>
+                      {uploadingFavicon && (
+                        <span className="text-sm text-gray-500">Uploading favicon...</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Security Notice */}
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-purple-900 mb-1">Security: MFA Required</h4>
+                        <p className="text-sm text-purple-800">
+                          Multi-factor authentication is required for all admin operations, including logo and favicon uploads. 
+                          If you haven't enabled MFA yet, please do so in your account settings before making changes.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Card>

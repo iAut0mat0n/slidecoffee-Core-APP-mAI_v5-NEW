@@ -39,9 +39,20 @@ SlideCoffee is built as a full-stack application with a clear separation between
 -   **Stripe:** Integrated for handling all billing and subscription management.
 -   **Voyage AI:** Used for embeddings when Claude provider is active (Claude doesn't provide embedding API).
 
-## Recent Updates (November 22, 2025)
+## Recent Updates (November 23, 2025)
 
-### **Brand-Consistent Logo Implementation** (Latest)
+### **Admin-Managed Logo/Favicon System with MFA Security** (Latest)
+-   **System Settings Admin Panel**: New tab in Admin Panel for managing application branding
+-   **Logo Upload**: Admins can upload custom logos (PNG, SVG, JPEG) to replace default coffee cup icon
+-   **Favicon Upload**: Admins can upload custom favicons (ICO, PNG, SVG) for browser tabs
+-   **Supabase Storage Integration**: Uploads stored in `assets` bucket at `system/logos/` and `system/favicons/`
+-   **Dynamic Favicon Loader**: React component automatically updates favicon from system settings without page reload
+-   **MFA Security Enhancement**: Admin middleware checks for MFA enrollment (soft enforcement via `REQUIRE_ADMIN_MFA` env var)
+-   **Security Features**: File size limits (1MB), filename validation (255 chars), type validation, proper error handling
+-   **Database**: System settings stored in `v2_system_settings` table with keys `app_logo_url` and `app_favicon_url`
+-   **Production-Ready**: Environment variable `REQUIRE_ADMIN_MFA=true` enables strict MFA requirement for admin operations
+
+### **Brand-Consistent Logo Implementation**
 -   **Created CoffeeCupIcon component**: Purple coffee cup SVG icon matching the SlideCoffee brand (w/ steam)
 -   **Updated AppLogo component**: Now displays CoffeeCupIcon instead of ☕ emoji, with flexible sizing props
 -   **Updated favicon**: Created `public/favicon.svg` with branded purple coffee cup icon

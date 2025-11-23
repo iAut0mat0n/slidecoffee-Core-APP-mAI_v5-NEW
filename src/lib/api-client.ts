@@ -125,5 +125,10 @@ export const adminAPI = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  uploadLogo: (base64Image: string, filename: string, type: 'logo' | 'favicon') =>
+    fetchAPI<{ logoUrl?: string; faviconUrl?: string }>('/system/upload-logo', {
+      method: 'POST',
+      body: JSON.stringify({ base64Image, filename, type }),
+    }),
 };
 

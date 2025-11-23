@@ -71,10 +71,14 @@ import PresentView from './pages/PresentView'
 
 import ProtectedRoute from './components/ProtectedRoute'
 import BrewChatWidget from './components/BrewChatWidget'
+import FaviconLoader from './components/FaviconLoader'
 
 function App() {
   return (
     <BrowserRouter>
+      {/* Favicon Loader - Updates favicon dynamically from system settings */}
+      <FaviconLoader />
+      
       {/* Brew AI Chat Widget - Shows globally */}
       <BrewChatWidget />
       

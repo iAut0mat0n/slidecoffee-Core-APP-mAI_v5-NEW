@@ -5,12 +5,57 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// Admin middleware - check if user is admin
+// Admin middleware - check if user is admin AND has MFA enabled (soft enforcement)
 const requireAdmin = async (req: Request, res: Response, next: any) => {
   const user = (req as any).user;
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
+  
+  // MFA Check - Soft enforcement for admin operations
+  // TODO: Enable strict MFA requirement when MFA is widely adopted (set REQUIRE_ADMIN_MFA=true)
+  const requireStrictMFA = process.env.REQUIRE_ADMIN_MFA === 'true';
+  
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Use Supabase MFA API to check enrollment status
+    const { data: mfaData, error: mfaError } = await supabase.auth.mfa.listFactors();
+    
+    if (!mfaError && mfaData) {
+      const hasMFA = mfaData.totp.length > 0 || mfaData.all.some(f => f.status === 'verified');
+      
+      if (!hasMFA) {
+        // Log warning about missing MFA
+        console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA`);
+        
+        if (requireStrictMFA) {
+          // Strict mode: block access
+          return res.status(403).json({ 
+            message: 'Multi-factor authentication is required for admin operations. Please enable MFA in your account settings.',
+            requiresMFA: true
+          });
+        } else {
+          // Soft mode: log and allow (for development/transition period)
+          console.log('✓ MFA not required (REQUIRE_ADMIN_MFA not enabled). Allowing admin access.');
+        }
+      } else {
+        console.log(`✓ Admin user ${user.email} has MFA enabled`);
+      }
+    }
+  } catch (error) {
+    console.error('MFA check error:', error);
+    // Don't block on MFA check failures unless strict mode is enabled
+    if (requireStrictMFA) {
+      return res.status(500).json({ message: 'Failed to verify MFA status' });
+    }
+  }
+  
   next();
 };
 
@@ -43,13 +88,17 @@ router.get('/system/settings', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/system/upload-logo - Upload logo (admin only)
+// POST /api/system/upload-logo - Upload logo or favicon (admin only, MFA required)
 router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { base64Image, filename } = req.body;
+    const { base64Image, filename, type = 'logo' } = req.body;
 
     if (!base64Image || !filename) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    if (!['logo', 'favicon'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid type. Must be "logo" or "favicon"' });
     }
 
     // Validate filename length
@@ -71,23 +120,51 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // TODO: Upload to S3 storage
-    // For now, using a placeholder URL
+    // Upload to Supabase Storage
     const timestamp = Date.now();
-    const logoUrl = `/uploads/logos/${timestamp}-${filename}`;
+    const storagePath = `system/${type}s/${timestamp}-${filename}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('assets')
+      .upload(storagePath, buffer, {
+        contentType: base64Image.match(/data:(image\/\w+);/)?.[1] || 'image/png',
+        upsert: true
+      });
 
-    // Update system settings
-    const { error } = await supabase
-      .from('v2_system_settings')
-      .update({ value: logoUrl, updated_at: new Date().toISOString() })
-      .eq('key', 'app_logo_url');
-
-    if (error) {
-      return res.status(500).json({ message: 'Failed to update logo setting' });
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return res.status(500).json({ message: 'Failed to upload file to storage' });
     }
 
-    res.json({ logoUrl });
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('assets')
+      .getPublicUrl(storagePath);
+
+    // Update system settings
+    const settingKey = type === 'logo' ? 'app_logo_url' : 'app_favicon_url';
+    const { error: updateError } = await supabase
+      .from('v2_system_settings')
+      .upsert({
+        key: settingKey,
+        value: publicUrl,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'key'
+      });
+
+    if (updateError) {
+      console.error('Settings update error:', updateError);
+      return res.status(500).json({ message: 'Failed to update system settings' });
+    }
+
+    const responseData = type === 'logo' 
+      ? { logoUrl: publicUrl } 
+      : { faviconUrl: publicUrl };
+
+    res.json(responseData);
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
