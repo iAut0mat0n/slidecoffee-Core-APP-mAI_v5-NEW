@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Send, Coffee, Loader2, Sparkles, Search } from 'lucide-react'
+import { Send, Coffee, Loader2, Sparkles, Search, ExternalLink as LinkIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { streamChatMessage } from '../lib/api-stream'
-import { generateSlides } from '../lib/api'
+import { streamSlideGeneration } from '../lib/api-slides-stream'
 import { toast } from 'sonner'
-import { useCreateProject } from '../lib/queries'
 
 interface Message {
   id: string
@@ -22,12 +20,17 @@ interface SlidePreview {
   thumbnail?: string
 }
 
+interface ResearchSource {
+  url: string
+  title: string
+  snippet?: string
+}
+
 type AgentPhase = 'research' | 'outline' | 'generating' | 'complete'
 
 export default function AIAgentCreate() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const createProject = useCreateProject()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -36,6 +39,8 @@ export default function AIAgentCreate() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
   const [enableResearch, setEnableResearch] = useState(true)
+  const [researchSources, setResearchSources] = useState<ResearchSource[]>([])
+  const [outline, setOutline] = useState<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -77,135 +82,107 @@ export default function AIAgentCreate() {
     }
 
     setIsGenerating(true)
+    setResearchSources([])
+    setSlides([])
+    setOutline(null)
+    setProgress(0)
     
     try {
-      // Phase 1: Research & Planning with streaming AI
-      setCurrentPhase('research')
-      addAgentMessage('Let me research your topic and create a plan...', true)
-      
-      const chatMessages = [
-        {
-          role: 'system',
-          content: `You are an expert presentation designer. Create a detailed presentation plan based on the user's request.
-
-CRITICAL: Respond ONLY with valid JSON in this exact format:
-{
-  "title": "Presentation Title",
-  "summary": "Brief overview of the topic",
-  "slides": [
-    {
-      "title": "Slide Title",
-      "purpose": "What this slide accomplishes",
-      "keyPoints": ["Point 1", "Point 2", "Point 3"]
-    }
-  ],
-  "themes": ["Theme 1", "Theme 2"]
-}
-
-Create 6-8 slides. Be specific and actionable.`
-        },
-        {
-          role: 'user',
-          content: userRequest
-        }
-      ]
-      
-      let aiPlanText = ''
-      let currentMessage = { id: Date.now().toString(), role: 'agent' as const, content: '', timestamp: new Date() }
-      setMessages(prev => [...prev, currentMessage])
-      
-      // Stream the AI response with research enabled
-      // Note: userId and workspaceId are derived from auth token on backend for security
-      for await (const event of streamChatMessage(chatMessages, user.id, undefined, {
-        enableResearch: enableResearch,
+      // TRUE STREAMING MAGIC - Watch everything happen in real-time!
+      for await (const event of streamSlideGeneration({
+        topic: userRequest,
+        enableResearch: enableResearch
       })) {
-        if (event.type === 'chunk' && event.content) {
-          aiPlanText += event.content
-          setMessages(prev => {
-            const updated = [...prev]
-            const lastMsg = updated[updated.length - 1]
-            if (lastMsg.role === 'agent') {
-              lastMsg.content = aiPlanText
+        
+        switch (event.type) {
+          case 'start':
+            addAgentMessage('🚀 Starting presentation generation...', true)
+            break;
+            
+          case 'research_start':
+            setCurrentPhase('research')
+            addAgentMessage('🔍 Researching your topic...', true)
+            break;
+            
+          case 'research_source':
+            // Add each source as it's found - REAL-TIME!
+            if (event.url && event.title) {
+              setResearchSources(prev => [...prev, {
+                url: event.url!,
+                title: event.title!,
+                snippet: event.snippet
+              }])
+              addAgentMessage(`📚 Found: ${event.title}`)
             }
-            return updated
-          })
-        } else if (event.type === 'done') {
-          if (event.fullResponse) {
-            aiPlanText = event.fullResponse
-          }
-          break
-        } else if (event.type === 'error') {
-          throw new Error(event.error || 'AI generation failed')
+            break;
+            
+          case 'research_complete':
+            addAgentMessage(`✅ Research complete! Found ${event.sourceCount || 0} sources`)
+            break;
+            
+          case 'research_error':
+            addAgentMessage('⚠️ Research unavailable, continuing without sources')
+            break;
+            
+          case 'outline_start':
+            setCurrentPhase('outline')
+            addAgentMessage('📝 Creating presentation outline...', true)
+            break;
+            
+          case 'outline_complete':
+            setOutline(event.outline)
+            addAgentMessage(`✨ Outline ready! Planning ${event.outline?.slides?.length || 0} slides: "${event.outline?.title}"`)
+            break;
+            
+          case 'slide_start':
+            setCurrentPhase('generating')
+            addAgentMessage('🎨 Generating slides...', true)
+            break;
+            
+          case 'slide_generated':
+            // Each slide appears AS IT'S GENERATED - TRUE MAGIC!
+            if (event.slide) {
+              const slidePreview: SlidePreview = {
+                id: event.slideNumber || 0,
+                title: event.slide.title || `Slide ${event.slideNumber}`,
+                content: event.slide.content || ''
+              }
+              setSlides(prev => [...prev, slidePreview])
+              setCurrentSlide((event.slideNumber || 1) - 1)
+              setProgress(event.progress || 0)
+              addAgentMessage(`✓ Slide ${event.slideNumber}/${event.totalSlides}: ${event.slide.title}`)
+            }
+            break;
+            
+          case 'slides_complete':
+            addAgentMessage(`🎉 All ${event.slideCount} slides generated!`)
+            break;
+            
+          case 'complete':
+            setCurrentPhase('complete')
+            const presentationId = event.presentation?.id
+            const presentationTitle = event.presentation?.title || 'your presentation'
+            
+            addAgentMessage(`✅ ${presentationTitle} is ready! Created ${event.presentation?.slideCount} slides.`)
+            toast.success('Presentation created successfully!')
+            
+            // Show sources used
+            if (event.sources && event.sources.length > 0) {
+              addAgentMessage(`📖 Used ${event.sources.length} research sources`)
+            }
+            
+            // Redirect to editor after 2 seconds
+            if (presentationId) {
+              setTimeout(() => {
+                navigate(`/projects/${presentationId}/editor`)
+              }, 2000)
+            }
+            break;
+            
+          case 'error':
+            throw new Error(event.message || 'Generation failed')
         }
       }
-      
-      // Parse the JSON plan
-      let parsedPlan
-      try {
-        parsedPlan = JSON.parse(aiPlanText)
-        if (!parsedPlan.slides || !Array.isArray(parsedPlan.slides)) {
-          throw new Error('Invalid plan format: missing slides array')
-        }
-      } catch (parseError) {
-        console.error('Failed to parse AI plan:', parseError)
-        throw new Error('AI returned invalid plan format. Please try again.')
-      }
-      
-      addAgentMessage(`Perfect! I've created a plan with ${parsedPlan.slides.length} slides: ${parsedPlan.title}`)
-      setCurrentPhase('outline')
-      
-      // Phase 2: Generate Slides
-      setCurrentPhase('generating')
-      addAgentMessage('Creating your slides with beautiful designs...', true)
-      
-      const slidesResult = await generateSlides({ plan: parsedPlan })
-      
-      if (!slidesResult.slides || slidesResult.slides.length === 0) {
-        throw new Error('No slides were generated')
-      }
-      
-      // Phase 3: Display slides progressively
-      const generatedSlides: SlidePreview[] = []
-      for (let i = 0; i < slidesResult.slides.length; i++) {
-        const slide = slidesResult.slides[i]
-        const slidePreview: SlidePreview = {
-          id: i + 1,
-          title: slide.title || `Slide ${i + 1}`,
-          content: slide.content || '',
-        }
-        generatedSlides.push(slidePreview)
-        setSlides([...generatedSlides])
-        setCurrentSlide(i)
-        setProgress(((i + 1) / slidesResult.slides.length) * 100)
-        addAgentMessage(`✓ Slide ${i + 1}: ${slidePreview.title}`)
-        await new Promise(resolve => setTimeout(resolve, 300))
-      }
-      
-      // Phase 4: Save to Database
-      setCurrentPhase('complete')
-      addAgentMessage('Saving your presentation...')
-      
-      const projectData = {
-        title: parsedPlan.title || 'Untitled Presentation',
-        description: parsedPlan.summary || '',
-        slides: slidesResult.slides,
-        created_by: user.id,
-        workspace_id: user.default_workspace_id,
-        thumbnail: null,
-        status: 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      
-      const savedProject = await createProject.mutateAsync(projectData)
-      
-      addAgentMessage(`🎉 Your presentation is ready! Created ${slidesResult.slides.length} slides and saved to your projects.`)
-      toast.success('Presentation created successfully!')
-      
-      // Redirect to editor after 2 seconds
-      setTimeout(() => {
-        navigate(`/projects/${savedProject.id}/editor`)
-      }, 2000)
       
     } catch (error) {
       console.error('AI Generation Error:', error)
@@ -350,7 +327,56 @@ Create 6-8 slides. Be specific and actionable.`
         {/* Header */}
         <div className="border-b border-gray-200 bg-white p-4">
           <h2 className="font-semibold text-lg">Live Preview</h2>
+          {progress > 0 && progress < 100 && (
+            <div className="text-sm text-gray-500 mt-1">
+              {Math.round(progress)}% complete
+            </div>
+          )}
         </div>
+
+        {/* Research Sources Panel */}
+        {researchSources.length > 0 && (
+          <div className="bg-white border-b border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Search className="w-4 h-4 text-purple-600" />
+              <h3 className="font-semibold text-sm">Research Sources ({researchSources.length})</h3>
+            </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {researchSources.map((source, idx) => (
+                <a
+                  key={idx}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-2 text-xs hover:bg-gray-50 p-2 rounded transition-colors"
+                >
+                  <LinkIcon className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">{source.title}</div>
+                    <div className="text-gray-500 truncate">{source.url}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Outline Preview */}
+        {outline && !slides.length && (
+          <div className="bg-white border-b border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <h3 className="font-semibold text-sm">Outline</h3>
+            </div>
+            <div className="text-sm">
+              <div className="font-semibold text-gray-900 mb-2">{outline.title}</div>
+              <div className="text-gray-600 text-xs mb-2">{outline.summary}</div>
+              <div className="text-xs text-gray-500">
+                {outline.slides?.length || 0} slides planned
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Preview Area */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">

@@ -265,6 +265,11 @@ Return JSON:
           })
         });
 
+        if (!slideResponse.ok) {
+          const errorText = await slideResponse.text();
+          throw new Error(`Failed to generate slide ${i + 1}: ${slideResponse.statusText}`);
+        }
+
         const slideData = await slideResponse.json() as any;
         const slideText = slideData.content?.[0]?.text || '{}';
         slide = JSON.parse(slideText);
@@ -285,6 +290,11 @@ Return JSON:
             max_tokens: 1024
           })
         });
+
+        if (!slideResponse.ok) {
+          const errorText = await slideResponse.text();
+          throw new Error(`Failed to generate slide ${i + 1}: ${slideResponse.statusText}`);
+        }
 
         const slideData = await slideResponse.json() as any;
         slide = JSON.parse(slideData.choices?.[0]?.message?.content || '{}');
