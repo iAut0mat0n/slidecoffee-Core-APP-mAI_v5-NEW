@@ -11,12 +11,14 @@ export const mockSupabaseState = {
   user: null as any,
   dbData: {} as Record<string, any>,
   storageData: {} as Record<string, any>,
+  queryFilters: {} as Record<string, any>,
 };
 
 beforeEach(() => {
   mockSupabaseState.user = null;
   mockSupabaseState.dbData = {};
   mockSupabaseState.storageData = {};
+  mockSupabaseState.queryFilters = {};
 });
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -35,18 +37,36 @@ vi.mock('@supabase/supabase-js', () => ({
           }
           return chainable;
         }),
-        in: vi.fn().mockReturnThis(),
+        in: vi.fn((column: string, values: any[]) => {
+          // Store filter for later use in .then()
+          mockSupabaseState.queryFilters[table] = { column, values };
+          return chainable;
+        }),
         limit: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
           data: mockSupabaseState.dbData[table]?.single || mockSupabaseState.user || null,
           error: mockSupabaseState.dbData[table]?.singleError || null,
         }),
       };
       
+      // Add .then() for promise-like behavior
       (chainable as any).then = vi.fn((resolve: any) => {
+        let data = mockSupabaseState.dbData[table]?.data || [];
+        
+        // Apply .in() filter if present
+        const filter = mockSupabaseState.queryFilters[table];
+        if (filter && Array.isArray(data)) {
+          data = data.filter((row: any) => 
+            filter.values.includes(row[filter.column])
+          );
+        }
+        
         return Promise.resolve({
-          data: mockSupabaseState.dbData[table]?.data || [],
+          data,
           error: mockSupabaseState.dbData[table]?.error || null,
+          count: mockSupabaseState.dbData[table]?.count || null,
         }).then(resolve);
       });
       

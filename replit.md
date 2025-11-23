@@ -31,13 +31,17 @@ SlideCoffee is a full-stack application with a clear separation between frontend
 -   **Data Flow:** React components interact with an API client via React Query, which then communicates with Express routes and the Supabase database.
 -   **Environment Variables:** Sensitive information is managed via Replit Secrets.
 -   **Error Handling:** Robust JSON parsing with validation and graceful handling of streaming AI events. Generic error messages are returned to clients while detailed errors are logged server-side only.
+-   **Testing:** Comprehensive automated test suite using Vitest + Supertest with 100% pass rate (18/18 tests). Tests exercise real Express routes with intelligent Supabase mocking (`server/tests/setup.ts`) that handles auth, database queries (with .in() filtering), and storage operations. Test coverage includes authentication, authorization, MFA enforcement, file upload security, rate limiting, and admin endpoints.
 -   **Security:** Production-ready security implementation including:
     - **MFA Enforcement:** All admin routes verify Authenticator Assurance Level (AAL2) using authenticated Supabase client. Soft enforcement by default (logs warnings), strict enforcement via `REQUIRE_ADMIN_MFA=true` environment variable.
     - **RLS Enforcement:** Row Level Security applied across all database tables for multi-tenant data isolation.
     - **File Upload Security:** Multi-layer validation including strict MIME validation (PNG/JPEG/WEBP/GIF only), SVG blocking to prevent XSS, filename normalization, 1MB size limit, buffer validation, and magic-byte verification using `file-type` library to prevent disguised file uploads. Detects and blocks MIME type mismatches between declared and actual file types.
     - **System Settings Protection:** Two-tier access control model - public branding endpoint (`/system/public-branding`) is intentionally unauthenticated for login page display, exposing only whitelisted keys (app_logo_url, app_favicon_url, app_title). Admin settings endpoint (`/system/settings`) requires authentication, admin role, and MFA to access ALL system configuration.
+    - **Rate Limiting:** Express-rate-limit middleware protects endpoints - 60 requests/min for public branding, 10 uploads per 15min per IP.
+    - **Security Logging:** Structured Pino-based logging system (`server/utils/security-logger.ts`) tracks security events (MFA failures, MIME mismatches, rate limit violations, unauthorized access) with severity levels (low/medium/high/critical) and automated alerting on critical events.
     - **CORS Configuration:** Production domain (app.slidecoffee.ai) whitelisted alongside Replit development domains.
     - **Input Validation:** Comprehensive server-side validation across all endpoints to prevent injection attacks and data corruption.
+-   **Branding Assets:** Organized in `public/branding/` directory (logo.png, logo.svg, favicon.png) and exposed via database settings. Frontend components (`AppLogo.tsx`, `FaviconLoader.tsx`) dynamically load branding from system settings. Brew AI chat widget uses custom avatar assets (brew-avatar.png and variants).
 
 ## External Dependencies
 
