@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import { requireAuth } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 
 const router = Router();
 
@@ -12,47 +13,46 @@ const requireAdmin = async (req: Request, res: Response, next: any) => {
     return res.status(403).json({ message: 'Admin access required' });
   }
   
-  // MFA Check - Soft enforcement for admin operations
-  // TODO: Enable strict MFA requirement when MFA is widely adopted (set REQUIRE_ADMIN_MFA=true)
+  // MFA Check - Verify AAL using authenticated Supabase client
   const requireStrictMFA = process.env.REQUIRE_ADMIN_MFA === 'true';
   
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
+    // Get authenticated Supabase client (token already validated by requireAuth)
+    const { supabase: userSupabase } = await getAuthenticatedSupabaseClient(req);
     
-    // Use Supabase MFA API to check enrollment status
-    const { data: mfaData, error: mfaError } = await supabase.auth.mfa.listFactors();
+    // Check MFA status using authenticated client
+    const { data: aalData, error: aalError } = await userSupabase.auth.mfa.getAuthenticatorAssuranceLevel();
     
-    if (!mfaError && mfaData) {
-      const hasMFA = mfaData.totp.length > 0 || mfaData.all.some(f => f.status === 'verified');
-      
-      if (!hasMFA) {
-        // Log warning about missing MFA
-        console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA`);
-        
-        if (requireStrictMFA) {
-          // Strict mode: block access
-          return res.status(403).json({ 
-            message: 'Multi-factor authentication is required for admin operations. Please enable MFA in your account settings.',
-            requiresMFA: true
-          });
-        } else {
-          // Soft mode: log and allow (for development/transition period)
-          console.log('✓ MFA not required (REQUIRE_ADMIN_MFA not enabled). Allowing admin access.');
-        }
-      } else {
-        console.log(`✓ Admin user ${user.email} has MFA enabled`);
+    if (aalError) {
+      console.error('Failed to check MFA status:', aalError);
+      if (requireStrictMFA) {
+        return res.status(500).json({ message: 'Authentication verification failed' });
       }
+      return next();
+    }
+    
+    const { currentLevel, nextLevel } = aalData;
+    
+    // If user has MFA enrolled but hasn't verified this session (nextLevel=aal2, currentLevel=aal1)
+    // OR user has no MFA at all (currentLevel=aal1, nextLevel=aal1)
+    if (currentLevel !== 'aal2') {
+      console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA (Current: ${currentLevel}, Next: ${nextLevel})`);
+      
+      if (requireStrictMFA) {
+        return res.status(403).json({ 
+          message: 'Multi-factor authentication is required for admin operations',
+          requiresMFA: true,
+          currentAAL: currentLevel,
+          nextAAL: nextLevel
+        });
+      }
+    } else {
+      console.log(`✓ Admin user ${user.email} has MFA verified (AAL2)`);
     }
   } catch (error) {
-    console.error('MFA check error:', error);
-    // Don't block on MFA check failures unless strict mode is enabled
+    console.error('MFA verification error:', error);
     if (requireStrictMFA) {
-      return res.status(500).json({ message: 'Failed to verify MFA status' });
+      return res.status(500).json({ message: 'Authentication verification failed' });
     }
   }
   
@@ -65,14 +65,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// GET /api/system/settings - Get all system settings
-router.get('/system/settings', async (req: Request, res: Response) => {
+// Public-safe system setting keys (branding only)
+const PUBLIC_SETTINGS_KEYS = ['app_logo_url', 'app_favicon_url', 'app_title'];
+
+// GET /api/system/settings - Get public system settings (authentication required)
+router.get('/system/settings', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('v2_system_settings')
-      .select('*');
+      .select('*')
+      .in('key', PUBLIC_SETTINGS_KEYS);
 
     if (error) {
+      console.error('Failed to fetch system settings:', error);
       return res.status(500).json({ message: 'Failed to fetch system settings' });
     }
 
@@ -84,6 +89,7 @@ router.get('/system/settings', async (req: Request, res: Response) => {
 
     res.json(settings);
   } catch (error) {
+    console.error('System settings error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -98,7 +104,7 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
     }
 
     if (!['logo', 'favicon'].includes(type)) {
-      return res.status(400).json({ message: 'Invalid type. Must be "logo" or "favicon"' });
+      return res.status(400).json({ message: 'Invalid type' });
     }
 
     // Validate filename length
@@ -107,12 +113,27 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
       return res.status(400).json({ message: filenameError.message });
     }
 
+    // Normalize filename - prevent path traversal and malicious filenames
+    const normalizedFilename = filename
+      .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars
+      .replace(/\.{2,}/g, '.') // Remove multiple dots
+      .slice(0, 100); // Limit length
+
+    // Strict MIME type validation - only allow safe image types
+    const mimeMatch = base64Image.match(/^data:(image\/(png|jpeg|jpg|webp|gif));base64,/);
+    if (!mimeMatch) {
+      return res.status(400).json({ 
+        message: 'Invalid image format. Only PNG, JPEG, WEBP, and GIF are allowed. SVG is not supported for security reasons.' 
+      });
+    }
+    const mimeType = mimeMatch[1];
+
     // Validate base64 image size (1MB max to prevent DoS)
     const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
     const estimatedSize = base64Image.length * 0.75; // Base64 is ~33% larger than binary
     if (estimatedSize > MAX_IMAGE_SIZE) {
       return res.status(400).json({ 
-        message: `Image size exceeds maximum allowed size of ${MAX_IMAGE_SIZE / (1024 * 1024)}MB` 
+        message: 'Image size exceeds 1MB limit'
       });
     }
 
@@ -120,20 +141,25 @@ router.post('/system/upload-logo', requireAuth, requireAdmin, async (req: Reques
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // Upload to Supabase Storage
+    // Additional validation - check buffer is valid
+    if (buffer.length === 0) {
+      return res.status(400).json({ message: 'Invalid image data' });
+    }
+
+    // Upload to Supabase Storage with normalized filename
     const timestamp = Date.now();
-    const storagePath = `system/${type}s/${timestamp}-${filename}`;
+    const storagePath = `system/${type}s/${timestamp}-${normalizedFilename}`;
     
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('assets')
       .upload(storagePath, buffer, {
-        contentType: base64Image.match(/data:(image\/\w+);/)?.[1] || 'image/png',
+        contentType: mimeType,
         upsert: true
       });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      return res.status(500).json({ message: 'Failed to upload file to storage' });
+      return res.status(500).json({ message: 'Failed to upload file' });
     }
 
     // Get public URL

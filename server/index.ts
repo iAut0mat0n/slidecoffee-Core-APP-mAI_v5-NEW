@@ -28,7 +28,8 @@ const PORT = parseInt(process.env.BACKEND_PORT || '3001', 10);
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5000',
-  'http:// 0.0.0.0:5000',
+  'http://0.0.0.0:5000',
+  'https://app.slidecoffee.ai',
   /\.replit\.dev$/,
   /\.repl\.co$/,
   /\.netlify\.app$/,

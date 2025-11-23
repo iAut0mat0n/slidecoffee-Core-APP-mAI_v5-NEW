@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
 import { requireAuth } from '../middleware/auth.js';
+import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
@@ -10,12 +12,56 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Admin middleware - check if user is admin
+// Admin middleware - check if user is admin AND has MFA enabled (soft enforcement)
 const requireAdmin = async (req: Request, res: Response, next: any) => {
   const user = (req as any).user;
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
+  
+  // MFA Check - Verify AAL using authenticated Supabase client
+  const requireStrictMFA = process.env.REQUIRE_ADMIN_MFA === 'true';
+  
+  try {
+    // Get authenticated Supabase client (token already validated by requireAuth)
+    const { supabase: userSupabase, token } = await getAuthenticatedSupabaseClient(req);
+    
+    // Check MFA status using authenticated client
+    const { data: aalData, error: aalError } = await userSupabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    
+    if (aalError) {
+      console.error('Failed to check MFA status:', aalError);
+      if (requireStrictMFA) {
+        return res.status(500).json({ message: 'Authentication verification failed' });
+      }
+      return next();
+    }
+    
+    const { currentLevel, nextLevel } = aalData;
+    
+    // If user has MFA enrolled but hasn't verified this session (nextLevel=aal2, currentLevel=aal1)
+    // OR user has no MFA at all (currentLevel=aal1, nextLevel=aal1)
+    if (currentLevel !== 'aal2') {
+      console.warn(`⚠️  Admin user ${user.email} accessed admin endpoint without MFA (Current: ${currentLevel}, Next: ${nextLevel})`);
+      
+      if (requireStrictMFA) {
+        return res.status(403).json({ 
+          message: 'Multi-factor authentication is required for admin operations',
+          requiresMFA: true,
+          currentAAL: currentLevel,
+          nextAAL: nextLevel
+        });
+      }
+    } else {
+      console.log(`✓ Admin user ${user.email} has MFA verified (AAL2)`);
+    }
+  } catch (error) {
+    console.error('MFA verification error:', error);
+    if (requireStrictMFA) {
+      return res.status(500).json({ message: 'Authentication verification failed' });
+    }
+  }
+  
   next();
 };
 
@@ -32,7 +78,7 @@ router.get('/admin/users', requireAuth, requireAdmin, async (req: Request, res: 
     res.json(users || []);
   } catch (error: any) {
     console.error('Failed to fetch users:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch users' });
+    res.status(500).json({ message: 'Failed to fetch users' });
   }
 });
 
@@ -50,7 +96,7 @@ router.get('/admin/subscriptions', requireAuth, requireAdmin, async (req: Reques
     res.json(subscriptions || []);
   } catch (error: any) {
     console.error('Failed to fetch subscriptions:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch subscriptions' });
+    res.status(500).json({ message: 'Failed to fetch subscriptions' });
   }
 });
 
@@ -87,7 +133,7 @@ router.get('/admin/stats', requireAuth, requireAdmin, async (req: Request, res: 
     });
   } catch (error: any) {
     console.error('Failed to fetch stats:', error);
-    res.status(500).json({ message: error.message || 'Failed to fetch stats' });
+    res.status(500).json({ message: 'Failed to fetch stats' });
   }
 });
 
@@ -111,7 +157,7 @@ router.patch('/admin/users/:id/role', requireAuth, requireAdmin, async (req: Req
     res.json({ success: true });
   } catch (error: any) {
     console.error('Failed to update user role:', error);
-    res.status(500).json({ message: error.message || 'Failed to update user role' });
+    res.status(500).json({ message: 'Failed to update user role' });
   }
 });
 
@@ -158,7 +204,8 @@ router.patch('/admin/ai-settings/:id', requireAuth, requireAdmin, async (req: Re
 
     res.json(safeData);
   } catch (error: any) {
-    res.status(500).json({ message: error.message || 'Failed to update AI settings' });
+    console.error('Failed to update AI settings:', error);
+    res.status(500).json({ message: 'Failed to update AI settings' });
   }
 });
 
