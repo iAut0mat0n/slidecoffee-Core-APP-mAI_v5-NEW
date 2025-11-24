@@ -33,19 +33,19 @@ export default function VerifyEmail() {
         return;
       }
 
-      // CRITICAL: Check for existing session immediately on mount
-      // If user already has a session (e.g., email confirmation disabled),
-      // don't wait for polling - redirect now
+      // Check for existing session with confirmed email
+      // Only redirect if email is already confirmed
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && !completedRef.current) {
-        // User already has a session, allow them through
+      if (session?.user?.email_confirmed_at && !completedRef.current) {
+        // Email already confirmed, allow them through
         completedRef.current = true;
         localStorage.removeItem('pendingVerificationEmail');
+        toast.success('Email already verified!');
         navigate('/');
         return;
       }
 
-      // No existing session, start polling
+      // Email not confirmed yet, start polling for verification
       checkEmailVerification();
       intervalRef.current = setInterval(checkEmailVerification, 3000);
     };
@@ -77,7 +77,8 @@ export default function VerifyEmail() {
         (await supabase.auth.getSession()).data.session : 
         session;
       
-      if (activeSession?.user && !completedRef.current) {
+      // Only proceed if email is confirmed
+      if (activeSession?.user?.email_confirmed_at && !completedRef.current) {
         // Mark as completed to prevent duplicate processing
         completedRef.current = true;
 
@@ -86,20 +87,10 @@ export default function VerifyEmail() {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
-
-        // Key insight: If Supabase gave the user a session, they're authorized
-        // This handles both cases:
-        // 1. Email confirmation disabled → session created immediately
-        // 2. Email confirmation enabled AND user clicked verification link → session created
         
         // Clear the pending verification flag and proceed
         localStorage.removeItem('pendingVerificationEmail');
-        
-        // Show success message only if email was actually confirmed
-        if (activeSession.user.email_confirmed_at) {
-          toast.success('Email verified successfully!');
-        }
-        
+        toast.success('Email verified successfully!');
         navigate('/');
       }
       // If no session, keep waiting (user hasn't clicked verification link yet)
