@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import AppLogo from '../components/AppLogo';
 
@@ -22,18 +21,9 @@ export default function Signup() {
     try {
       await signUp(formData.email, formData.password, formData.name);
       
-      // Check if user has a session immediately (means email confirmation not required)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // Email confirmation not required - proceed to onboarding
-        toast.success('Account created successfully!');
-        navigate('/onboarding/welcome');
-      } else {
-        // Email confirmation required - go to verification page
-        localStorage.setItem('pendingVerificationEmail', formData.email);
-        navigate('/verify-email', { state: { email: formData.email } });
-      }
+      // Always go to verification page - let VerifyEmail handle auto-redirect if needed
+      localStorage.setItem('pendingVerificationEmail', formData.email);
+      navigate('/verify-email', { state: { email: formData.email } });
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account');
     } finally {

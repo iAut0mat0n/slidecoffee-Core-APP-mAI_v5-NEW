@@ -16,9 +16,9 @@ export default function OnboardingWorkspace() {
     setLoading(true);
     
     try {
+      // Only send name - workspace type is UI preference only
       await createWorkspace.mutateAsync({
         name: workspaceName,
-        type: workspaceType,
       });
       
       toast.success('Workspace created successfully!');
