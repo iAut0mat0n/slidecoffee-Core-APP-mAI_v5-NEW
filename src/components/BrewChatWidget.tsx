@@ -20,9 +20,6 @@ export default function BrewChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, loading } = useAuth();
 
-  // Don't render widget if not authenticated
-  if (!user || loading) return null;
-
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const greeting = AI_AGENT.greetings[
@@ -42,6 +39,9 @@ export default function BrewChatWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Don't render widget if not authenticated (after all hooks)
+  if (!user || loading) return null;
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading || !user) return;
