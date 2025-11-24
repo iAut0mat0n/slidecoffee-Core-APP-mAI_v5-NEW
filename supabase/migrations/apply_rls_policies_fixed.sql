@@ -38,9 +38,7 @@ DROP POLICY IF EXISTS workspace_members_update_admin ON v2_workspace_members;
 DROP POLICY IF EXISTS workspace_members_delete_admin ON v2_workspace_members;
 
 CREATE POLICY workspace_members_read_own ON v2_workspace_members 
-FOR SELECT USING (user_id = auth.uid() OR workspace_id IN (
-  SELECT workspace_id FROM v2_workspace_members WHERE user_id = auth.uid()
-));
+FOR SELECT USING (user_id = auth.uid());
 
 CREATE POLICY workspace_members_insert_own ON v2_workspace_members 
 FOR INSERT WITH CHECK (user_id = auth.uid());
