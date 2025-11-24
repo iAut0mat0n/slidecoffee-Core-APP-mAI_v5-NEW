@@ -13,8 +13,10 @@ export default function VerifyEmail() {
   const [checking, setChecking] = useState(true);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [code, setCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const completedRef = useRef(false);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -55,6 +57,10 @@ export default function VerifyEmail() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
       }
     };
   }, []);
@@ -153,6 +159,11 @@ export default function VerifyEmail() {
   };
 
   const resendVerificationEmail = async () => {
+    if (resendCooldown > 0) {
+      toast.error(`Please wait ${resendCooldown} seconds before requesting another code`);
+      return;
+    }
+
     setResending(true);
     try {
       if (!email) {
@@ -173,8 +184,30 @@ export default function VerifyEmail() {
 
       console.log('📧 Resend response:', { error: error?.message });
 
-      if (error) throw error;
-      toast.success('Verification code sent! Please check your inbox.');
+      if (error) {
+        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+          toast.error('Too many requests. Please wait 60 seconds and try again.');
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success('Verification code sent! Please check your inbox.');
+        
+        // Start 60-second cooldown
+        setResendCooldown(60);
+        cooldownTimerRef.current = setInterval(() => {
+          setResendCooldown((prev) => {
+            if (prev <= 1) {
+              if (cooldownTimerRef.current) {
+                clearInterval(cooldownTimerRef.current);
+                cooldownTimerRef.current = null;
+              }
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
     } catch (error: any) {
       console.error('📧 Resend failed:', error);
       toast.error(error.message || 'Failed to resend code');
@@ -253,10 +286,10 @@ export default function VerifyEmail() {
             <div className="space-y-3">
               <button
                 onClick={resendVerificationEmail}
-                disabled={resending}
+                disabled={resending || resendCooldown > 0}
                 className="w-full px-6 py-3 border border-purple-600 text-purple-600 hover:bg-purple-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {resending ? 'Sending...' : 'Resend Verification Code'}
+                {resending ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Verification Code'}
               </button>
             </div>
 

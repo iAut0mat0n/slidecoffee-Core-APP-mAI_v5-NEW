@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: workspaces, error } = await supabase
           .from('v2_workspaces')
           .select('id')
-          .eq('created_by', userData.id)
+          .eq('owner_id', userData.id)
           .limit(1)
         
         if (error) {
