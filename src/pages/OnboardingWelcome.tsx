@@ -1,8 +1,21 @@
 import { useNavigate } from 'react-router-dom';
-import { Coffee } from 'lucide-react';
+import { Coffee, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Signed out successfully');
+      navigate('/login');
+    } catch (error) {
+      toast.error('Failed to sign out');
+    }
+  };
 
   const features = [
     {
@@ -31,9 +44,18 @@ export default function OnboardingWelcome() {
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-blue-800 flex flex-col">
       {/* Header */}
       <div className="p-6">
-        <div className="flex items-center gap-2 text-white">
-          <Coffee className="w-7 h-7 text-white" />
-          <span className="text-xl font-semibold">SlideCoffee</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-white">
+            <Coffee className="w-7 h-7 text-white" />
+            <span className="text-xl font-semibold">SlideCoffee</span>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm">Sign out</span>
+          </button>
         </div>
       </div>
 

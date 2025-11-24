@@ -8,6 +8,16 @@ SlideCoffee is an AI-first presentation platform designed to enable users to gen
 
 I prefer concise and direct communication. When making changes, prioritize iterative development with clear explanations for each step. Please ask for confirmation before implementing major architectural changes or significant code refactors. I value clean, readable code with a focus on maintainability. Do not make changes to the `supabase/migrations` folder without explicit instruction.
 
+**Required Fix Workflow (Nov 24, 2025):**
+All bug fixes and changes MUST follow this workflow to prevent breaking production:
+1. **Investigate** - Check logs, errors, screenshots to understand what's actually happening
+2. **Call Architect** - Use architect tool to analyze root cause before making any code changes
+3. **Determine Fix** - Work with architect to identify the proper solution (no workarounds)
+4. **Implement** - Make changes only after architect approves the approach
+5. **Test** - Restart workflows and verify fixes work in development before deploying to production
+
+This workflow prevents introducing new bugs and ensures stable deployments.
+
 ## System Architecture
 
 SlideCoffee is a full-stack application with a clear separation between frontend and backend.
