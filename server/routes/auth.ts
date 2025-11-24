@@ -86,5 +86,56 @@ router.post('/auth/logout', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/create-user - Create user record (uses service role to bypass RLS)
+router.post('/auth/create-user', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('v2_users')
+      .select('id')
+      .eq('id', authUser.id)
+      .single();
+
+    if (existingUser) {
+      return res.json({ success: true, message: 'User already exists' });
+    }
+
+    // Create user with service role (bypasses RLS)
+    const { data: newUser, error } = await supabase
+      .from('v2_users')
+      .insert({
+        id: authUser.id,
+        email: authUser.email!,
+        name: authUser.user_metadata?.name || 'User',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to create user:', error);
+      return res.status(500).json({ error: 'Failed to create user record' });
+    }
+
+    res.json({ success: true, user: newUser });
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user record' });
+  }
+});
+
 export const authRouter = router;
 

@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Send, Loader2, ExternalLink } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { AI_AGENT } from '../config/aiAgent';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 interface Message {
   id: string;
@@ -19,6 +21,7 @@ export default function BrewChatWidget() {
   const [enableResearch, setEnableResearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -40,8 +43,11 @@ export default function BrewChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Don't render widget if not authenticated (after all hooks)
-  if (!user || loading) return null;
+  // Don't render widget on auth pages or if not authenticated (after all hooks)
+  const authPages = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'];
+  const isAuthPage = authPages.some(page => location.pathname.startsWith(page));
+  
+  if (!user || loading || isAuthPage) return null;
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading || !user) return;
@@ -58,6 +64,12 @@ export default function BrewChatWidget() {
     setIsLoading(true);
 
     try {
+      // Get auth token for API request
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
+
       // Include the new user message in the request
       const allMessages = [...messages, userMessage].map((m) => ({
         role: m.role,
@@ -68,6 +80,7 @@ export default function BrewChatWidget() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         credentials: 'include',
         body: JSON.stringify({

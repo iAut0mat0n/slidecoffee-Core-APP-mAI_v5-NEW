@@ -51,34 +51,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let userData = await getCurrentUser()
       
       // If user record doesn't exist but we have a Supabase auth session,
-      // create the user record (this handles the missing database trigger)
+      // create the user record via backend endpoint (uses service role to bypass RLS)
       if (!userData) {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (authUser) {
-          console.log('📝 Creating missing user record for:', authUser.email)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          console.log('📝 Creating missing user record via backend...')
           
-          // Create the user record
-          const { data: newUser, error } = await supabase
-            .from('v2_users')
-            .insert({
-              id: authUser.id,
-              email: authUser.email!,
-              name: authUser.user_metadata?.name || 'User',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+          try {
+            const response = await fetch('/api/auth/create-user', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+              },
+              credentials: 'include'
             })
-            .select()
-            .single()
-          
-          if (error) {
-            console.error('Failed to create user record:', error)
-            // If it's a duplicate key error, try to fetch the user again
-            if (error.code === '23505') {
+            
+            if (response.ok) {
+              console.log('✅ User record created successfully')
+              // Fetch the newly created user
               userData = await getCurrentUser()
+            } else {
+              console.error('Failed to create user record:', await response.text())
             }
-          } else {
-            userData = newUser
-            console.log('✅ User record created successfully')
+          } catch (fetchError) {
+            console.error('Error calling create-user endpoint:', fetchError)
           }
         }
       }
