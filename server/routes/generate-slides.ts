@@ -7,6 +7,28 @@ import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 
 const router = Router();
 
+/**
+ * Sanitize AI response to extract valid JSON
+ * Removes markdown code fences, extra whitespace, and other formatting
+ */
+function sanitizeJSONResponse(text: string): string {
+  if (!text) return '{}';
+  
+  // Remove markdown code fences (```json, ```, etc.)
+  let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  // If it starts with { or [, extract just the JSON object/array
+  const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+  
+  return cleaned;
+}
+
 router.post('/generate-slides', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { plan, brand } = req.body;
@@ -135,7 +157,8 @@ Return the slides as a JSON array.`;
 
       const data = await response.json() as any;
       const slidesContent = data.content?.[0]?.text || '{}';
-      const parsedSlides = JSON.parse(slidesContent);
+      const sanitizedContent = sanitizeJSONResponse(slidesContent);
+      const parsedSlides = JSON.parse(sanitizedContent);
       slides = parsedSlides.slides || [];
       usage = data.usage;
     } else {
@@ -171,7 +194,8 @@ Return the slides as a JSON array.`;
 
       const data = await response.json() as any;
       const slidesContent = data.choices?.[0]?.message?.content || '{}';
-      const parsedSlides = JSON.parse(slidesContent);
+      const sanitizedContent = sanitizeJSONResponse(slidesContent);
+      const parsedSlides = JSON.parse(sanitizedContent);
       slides = parsedSlides.slides || [];
       usage = data.usage;
     }

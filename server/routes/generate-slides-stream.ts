@@ -19,6 +19,28 @@ const streamingRateLimiter = rateLimit({
 });
 
 /**
+ * Sanitize AI response to extract valid JSON
+ * Removes markdown code fences, extra whitespace, and other formatting
+ */
+function sanitizeJSONResponse(text: string): string {
+  if (!text) return '{}';
+  
+  // Remove markdown code fences (```json, ```, etc.)
+  let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  // If it starts with { or [, extract just the JSON object/array
+  const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+  
+  return cleaned;
+}
+
+/**
  * STREAMING SLIDE GENERATION - True Real-Time Magic ✨
  * 
  * Streams events in order:
@@ -226,7 +248,8 @@ Generate a JSON outline with:
 
       const outlineData = await outlineResponse.json() as any;
       const outlineText = outlineData.content?.[0]?.text || '{}';
-      outline = JSON.parse(outlineText);
+      const sanitizedOutline = sanitizeJSONResponse(outlineText);
+      outline = JSON.parse(sanitizedOutline);
     } else {
       // OpenAI-compatible
       const outlineResponse = await fetch(`${aiProvider.apiUrl}/v1/chat/completions`, {
@@ -251,7 +274,9 @@ Generate a JSON outline with:
       }
 
       const outlineData = await outlineResponse.json() as any;
-      outline = JSON.parse(outlineData.choices?.[0]?.message?.content || '{}');
+      const outlineContent = outlineData.choices?.[0]?.message?.content || '{}';
+      const sanitizedOutline = sanitizeJSONResponse(outlineContent);
+      outline = JSON.parse(sanitizedOutline);
     }
 
     sendEvent('outline_complete', { 
@@ -324,7 +349,8 @@ Return JSON:
 
         const slideData = await slideResponse.json() as any;
         const slideText = slideData.content?.[0]?.text || '{}';
-        slide = JSON.parse(slideText);
+        const sanitizedSlide = sanitizeJSONResponse(slideText);
+        slide = JSON.parse(sanitizedSlide);
       } else {
         const slideResponse = await fetch(`${aiProvider.apiUrl}/v1/chat/completions`, {
           method: 'POST',
@@ -349,7 +375,9 @@ Return JSON:
         }
 
         const slideData = await slideResponse.json() as any;
-        slide = JSON.parse(slideData.choices?.[0]?.message?.content || '{}');
+        const slideContent = slideData.choices?.[0]?.message?.content || '{}';
+        const sanitizedSlide = sanitizeJSONResponse(slideContent);
+        slide = JSON.parse(sanitizedSlide);
       }
 
       slides.push(slide);
