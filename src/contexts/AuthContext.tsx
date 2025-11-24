@@ -47,15 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loadUser = async () => {
+    console.log('🔄 loadUser() called')
     try {
+      console.log('1️⃣ Fetching user from database...')
       let userData = await getCurrentUser()
+      console.log('1️⃣ getCurrentUser() result:', userData ? `User found: ${userData.email}` : 'No user found')
       
       // If user record doesn't exist but we have a Supabase auth session,
       // create the user record via backend endpoint (uses service role to bypass RLS)
       if (!userData) {
+        console.log('2️⃣ No user record found, checking for auth session...')
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('2️⃣ Session status:', session ? `Session exists for ${session.user?.email}` : 'No session')
+        
         if (session?.access_token) {
-          console.log('📝 Creating missing user record via backend...')
+          console.log('3️⃣ Creating missing user record via backend...')
           
           try {
             // Use proper API base URL (works in both dev and production)
@@ -63,7 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const apiBase = import.meta.env.VITE_API_URL || ''
             // Ensure we have exactly one /api prefix - normalize the URL construction
             const createUserUrl = apiBase ? `${apiBase}/auth/create-user` : '/api/auth/create-user'
-            console.log('🔗 Creating user at:', createUserUrl, 'API base:', apiBase || '(default)')
+            console.log('3️⃣ API call details:', {
+              url: createUserUrl,
+              apiBase: apiBase || '(default /api)',
+              hasToken: !!session.access_token
+            })
             
             const response = await fetch(createUserUrl, {
               method: 'POST',
@@ -74,18 +84,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               credentials: 'include'
             })
             
+            console.log('3️⃣ Response status:', response.status, response.statusText)
+            
             if (response.ok) {
-              console.log('✅ User record created successfully')
+              const result = await response.json()
+              console.log('✅ User record created successfully:', result)
               // Fetch the newly created user
+              console.log('4️⃣ Re-fetching user from database...')
               userData = await getCurrentUser()
+              console.log('4️⃣ User after creation:', userData ? `Found: ${userData.email}` : 'Still not found')
             } else {
               const errorText = await response.text()
-              console.error('Failed to create user record:', errorText)
+              console.error('❌ Failed to create user record:', response.status, errorText)
             }
           } catch (fetchError) {
-            console.error('Error calling create-user endpoint:', fetchError)
+            console.error('❌ Error calling create-user endpoint:', fetchError)
           }
+        } else {
+          console.log('⚠️ No session token available, cannot create user')
         }
+      } else {
+        console.log('✅ User already exists, skipping creation')
       }
       
       setUser(userData)
