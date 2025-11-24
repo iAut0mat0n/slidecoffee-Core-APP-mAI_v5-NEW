@@ -11,6 +11,8 @@ export default function VerifyEmail() {
   const [email, setEmail] = useState('');
   const [resending, setResending] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [code, setCode] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const completedRef = useRef(false);
 
@@ -102,6 +104,43 @@ export default function VerifyEmail() {
     }
   };
 
+  const verifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifyingCode(true);
+    try {
+      if (!email || !code) {
+        toast.error('Please enter the verification code');
+        return;
+      }
+
+      console.log('🔐 Verifying code for:', email);
+
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'signup'
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        completedRef.current = true;
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        localStorage.removeItem('pendingVerificationEmail');
+        toast.success('Email verified successfully!');
+        navigate('/onboarding/welcome');
+      }
+    } catch (error: any) {
+      console.error('🔐 Verification failed:', error);
+      toast.error(error.message || 'Invalid verification code');
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
   const resendVerificationEmail = async () => {
     setResending(true);
     try {
@@ -124,10 +163,10 @@ export default function VerifyEmail() {
       console.log('📧 Resend response:', { error: error?.message });
 
       if (error) throw error;
-      toast.success('Verification email sent! Please check your inbox.');
+      toast.success('Verification code sent! Please check your inbox.');
     } catch (error: any) {
       console.error('📧 Resend failed:', error);
-      toast.error(error.message || 'Failed to resend email');
+      toast.error(error.message || 'Failed to resend code');
     } finally {
       setResending(false);
     }
@@ -159,7 +198,7 @@ export default function VerifyEmail() {
               Verify Your Email
             </h1>
             <p className="text-center text-gray-600 mb-6">
-              We sent a verification link to
+              We sent an 8-digit verification code to
             </p>
             <p className="text-center font-medium text-gray-900 mb-6">
               {email}
@@ -167,9 +206,31 @@ export default function VerifyEmail() {
 
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-purple-900">
-                Click the verification link in your email to continue. This page will automatically update when verified.
+                Enter the 8-digit code from your email to verify your account.
               </p>
             </div>
+
+            {/* Code Input Form */}
+            <form onSubmit={verifyCode} className="mb-6">
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  placeholder="Enter 8-digit code"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-center text-2xl tracking-wider font-mono"
+                  maxLength={8}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={verifyingCode || code.length !== 8}
+                className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {verifyingCode ? 'Verifying...' : 'Verify Email'}
+              </button>
+            </form>
 
             {checking && (
               <div className="flex items-center justify-center gap-2 text-purple-600 mb-6">
@@ -184,20 +245,13 @@ export default function VerifyEmail() {
                 disabled={resending}
                 className="w-full px-6 py-3 border border-purple-600 text-purple-600 hover:bg-purple-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {resending ? 'Sending...' : 'Resend Verification Email'}
-              </button>
-
-              <button
-                onClick={checkEmailVerification}
-                className="w-full px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors"
-              >
-                I've Verified My Email
+                {resending ? 'Sending...' : 'Resend Verification Code'}
               </button>
             </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500">
-                Didn't receive the email? Check your spam folder or click "Resend"
+                Didn't receive the code? Check your spam folder or click "Resend"
               </p>
             </div>
           </div>
