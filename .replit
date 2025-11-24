@@ -51,3 +51,5 @@ run = ["npm", "start"]
 
 [userenv.production]
 NODE_ENV = "production"
+
+[userenv.development]
