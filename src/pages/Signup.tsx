@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { Coffee } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
 
 export default function Signup() {
@@ -73,7 +72,7 @@ export default function Signup() {
             {/* Icon */}
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                <Coffee className="w-8 h-8 text-purple-600" />
+                <AppLogo showText={false} iconClassName="w-10 h-10" />
               </div>
             </div>
 
