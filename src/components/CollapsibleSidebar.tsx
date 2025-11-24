@@ -192,16 +192,18 @@ export default function CollapsibleSidebar() {
 
             {/* User Menu Dropdown */}
             {isUserMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50">
                 <Link
                   to="/settings"
                   className="block px-3 py-2 text-sm hover:bg-gray-100 rounded-lg"
+                  onClick={() => setIsUserMenuOpen(false)}
                 >
                   Settings
                 </Link>
                 <Link
                   to="/subscription"
                   className="block px-3 py-2 text-sm hover:bg-gray-100 rounded-lg"
+                  onClick={() => setIsUserMenuOpen(false)}
                 >
                   Subscription
                 </Link>
