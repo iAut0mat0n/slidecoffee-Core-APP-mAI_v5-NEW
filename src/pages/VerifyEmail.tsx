@@ -121,7 +121,18 @@ export default function VerifyEmail() {
         type: 'signup'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 Verification error:', error);
+        
+        if (error.message?.includes('expired')) {
+          toast.error('Code expired! Please click "Resend" and try again within 60 seconds.');
+        } else if (error.message?.includes('invalid')) {
+          toast.error('Invalid code. Please check the code in your email and try again.');
+        } else {
+          toast.error(error.message || 'Verification failed');
+        }
+        return;
+      }
 
       if (data.session) {
         completedRef.current = true;
