@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const router = Router();
 
 const supabase = createClient(
-  process.env.SUPABASE_URL || '',
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
@@ -89,8 +89,14 @@ router.post('/auth/logout', async (req: Request, res: Response) => {
 // POST /api/auth/create-user - Create user record (uses service role to bypass RLS)
 router.post('/auth/create-user', async (req: Request, res: Response) => {
   try {
+    // Log environment check for debugging
+    const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const hasUrl = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
+    console.log('🔑 Create user endpoint called - Service key exists:', hasServiceKey, 'URL exists:', hasUrl);
+
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
+      console.error('❌ No authorization header provided');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -98,21 +104,30 @@ router.post('/auth/create-user', async (req: Request, res: Response) => {
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !authUser) {
+      console.error('❌ Invalid token:', authError?.message);
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    console.log('✅ Auth verified for user:', authUser.email);
+
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('v2_users')
       .select('id')
       .eq('id', authUser.id)
       .single();
 
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Error checking existing user:', checkError);
+    }
+
     if (existingUser) {
+      console.log('ℹ️ User already exists:', authUser.email);
       return res.json({ success: true, message: 'User already exists' });
     }
 
     // Create user with service role (bypasses RLS)
+    console.log('📝 Creating new user record for:', authUser.email);
     const { data: newUser, error } = await supabase
       .from('v2_users')
       .insert({
@@ -126,14 +141,15 @@ router.post('/auth/create-user', async (req: Request, res: Response) => {
       .single();
 
     if (error) {
-      console.error('Failed to create user:', error);
-      return res.status(500).json({ error: 'Failed to create user record' });
+      console.error('❌ Failed to create user in DB:', error);
+      return res.status(500).json({ error: 'Failed to create user record', details: error.message });
     }
 
+    console.log('✅ User created successfully:', authUser.email);
     res.json({ success: true, user: newUser });
   } catch (error: any) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user record' });
+    console.error('❌ Unexpected error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user record', details: error.message });
   }
 });
 
