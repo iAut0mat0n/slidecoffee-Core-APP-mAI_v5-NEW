@@ -1,14 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from './config'
 
-// Debug: Log Supabase configuration (without exposing full key)
-console.log('🔧 Supabase Config:', {
-  url: config.supabase.url,
-  anonKeyPresent: !!config.supabase.anonKey,
-  anonKeyLength: config.supabase.anonKey?.length || 0,
-  anonKeyPrefix: config.supabase.anonKey?.substring(0, 20) + '...'
-});
-
 export const supabase = createClient(
   config.supabase.url,
   config.supabase.anonKey
