@@ -24,7 +24,8 @@ export default function Login() {
       // Clear any pending verification flags on successful login
       localStorage.removeItem('pendingVerificationEmail');
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      // Navigate to root - RootRedirect will handle onboarding check
+      navigate('/');
     } catch (error: any) {
       toast.error(error.message || 'Invalid email or password');
     } finally {
