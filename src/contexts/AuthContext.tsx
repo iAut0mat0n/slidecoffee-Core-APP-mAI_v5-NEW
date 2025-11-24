@@ -58,7 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('📝 Creating missing user record via backend...')
           
           try {
-            const response = await fetch('/api/auth/create-user', {
+            // Use proper API base URL (works in both dev and production)
+            // VITE_API_URL should be full base like "http://localhost:3001/api" (dev) or empty (prod)
+            const apiBase = import.meta.env.VITE_API_URL || ''
+            // Ensure we have exactly one /api prefix - normalize the URL construction
+            const createUserUrl = apiBase ? `${apiBase}/auth/create-user` : '/api/auth/create-user'
+            console.log('🔗 Creating user at:', createUserUrl, 'API base:', apiBase || '(default)')
+            
+            const response = await fetch(createUserUrl, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${session.access_token}`,
@@ -72,7 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Fetch the newly created user
               userData = await getCurrentUser()
             } else {
-              console.error('Failed to create user record:', await response.text())
+              const errorText = await response.text()
+              console.error('Failed to create user record:', errorText)
             }
           } catch (fetchError) {
             console.error('Error calling create-user endpoint:', fetchError)

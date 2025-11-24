@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ CRITICAL: Missing Supabase credentials!', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey
+  });
+  throw new Error('Supabase configuration is missing');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // GET /api/auth/me - Get current user
 router.get('/auth/me', async (req: Request, res: Response) => {

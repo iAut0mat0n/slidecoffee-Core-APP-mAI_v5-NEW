@@ -30,10 +30,12 @@ const PORT = parseInt(process.env.PORT || process.env.BACKEND_PORT || '5000', 10
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5000',
+  'http://127.0.0.1:5000',
   'http://0.0.0.0:5000',
   'https://app.slidecoffee.ai',
   /\.replit\.dev$/,
   /\.repl\.co$/,
+  /--5000\.id\.repl\.co$/, 
   /\.replit\.app$/,
   /\.netlify\.app$/,
   /\.onrender\.com$/,
@@ -54,6 +56,8 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
+      console.error('🚫 CORS rejected origin:', origin);
+      console.error('📋 Allowed origins:', allowedOrigins.map(o => o.toString()));
       callback(new Error('Not allowed by CORS'));
     }
   },

@@ -46,6 +46,10 @@ externalPort = 3000
 localPort = 33335
 externalPort = 3002
 
+[[ports]]
+localPort = 44529
+externalPort = 3003
+
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
@@ -57,3 +61,4 @@ run = ["npm", "start"]
 NODE_ENV = "production"
 
 [userenv.development]
+VITE_API_URL = "http://localhost:3001/api"
