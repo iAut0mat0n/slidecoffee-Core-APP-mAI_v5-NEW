@@ -19,9 +19,10 @@ export default function OnboardingWelcome() {
 
   const features = [
     {
-      icon: '🤖',
+      icon: '/brew-avatar.png',
+      isImage: true,
       title: 'AI-Powered Creation',
-      description: 'Meet BREW, your AI assistant that generates beautiful presentations from simple prompts',
+      description: 'Meet Brew, your AI research agent partner who helps you research topics and build your vision into stunning presentations',
     },
     {
       icon: '🎨',
@@ -107,7 +108,17 @@ export default function OnboardingWelcome() {
                   key={index}
                   className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all"
                 >
-                  <div className="text-4xl mb-3">{feature.icon}</div>
+                  {feature.isImage ? (
+                    <div className="mb-3">
+                      <img 
+                        src={feature.icon} 
+                        alt={feature.title}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-4xl mb-3">{feature.icon}</div>
+                  )}
                   <h3 className="text-xl font-semibold text-white mb-2">
                     {feature.title}
                   </h3>
