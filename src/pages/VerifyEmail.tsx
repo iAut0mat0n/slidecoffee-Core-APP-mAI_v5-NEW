@@ -41,7 +41,7 @@ export default function VerifyEmail() {
         completedRef.current = true;
         localStorage.removeItem('pendingVerificationEmail');
         toast.success('Email already verified!');
-        navigate('/');
+        navigate('/onboarding/welcome');
         return;
       }
 
@@ -91,7 +91,7 @@ export default function VerifyEmail() {
         // Clear the pending verification flag and proceed
         localStorage.removeItem('pendingVerificationEmail');
         toast.success('Email verified successfully!');
-        navigate('/');
+        navigate('/onboarding/welcome');
       }
       // If no session, keep waiting (user hasn't clicked verification link yet)
     } catch (error) {
@@ -139,7 +139,7 @@ export default function VerifyEmail() {
         }
         localStorage.removeItem('pendingVerificationEmail');
         toast.success('Email verified successfully!');
-        navigate('/');
+        navigate('/onboarding/welcome');
       }
     } catch (error: any) {
       console.error('🔐 Verification failed:', error);
