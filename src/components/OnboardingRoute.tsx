@@ -7,6 +7,8 @@ export default function OnboardingRoute({ children }: { children: React.ReactNod
   const [checking, setChecking] = useState(true);
   const [emailVerified, setEmailVerified] = useState(false);
   const [userCheckComplete, setUserCheckComplete] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 20; // 20 retries * 500ms = 10 seconds timeout
 
   useEffect(() => {
     checkEmailVerification();
@@ -47,11 +49,29 @@ export default function OnboardingRoute({ children }: { children: React.ReactNod
               localStorage.removeItem('pendingVerificationEmail');
             }
           }
+          
+          // CRITICAL: If we have a supabaseUser but no database user yet,
+          // don't mark check complete - keep waiting for AuthContext to create it
+          // This prevents redirecting to /login during user creation race condition
+          if (user || !supabaseUser.email_confirmed_at) {
+            setUserCheckComplete(true);
+            setRetryCount(0); // Reset retry count on success
+          } else if (retryCount < MAX_RETRIES) {
+            // User is authenticated and verified, but DB record is being created
+            // Keep checking until user appears (AuthContext will create it)
+            console.log(`⏳ Waiting for user record to be created in database... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+            setRetryCount(prev => prev + 1);
+            setTimeout(checkEmailVerification, 500); // Retry in 500ms
+          } else {
+            // Timeout: User creation took too long
+            console.error('❌ Timeout waiting for user record creation');
+            setUserCheckComplete(true); // Stop waiting and let redirect logic handle it
+          }
         } else {
           // No authenticated user yet
           setEmailVerified(false);
+          setUserCheckComplete(true);
         }
-        setUserCheckComplete(true);
       }
     } catch (error) {
       console.error('Error checking email verification:', error);
