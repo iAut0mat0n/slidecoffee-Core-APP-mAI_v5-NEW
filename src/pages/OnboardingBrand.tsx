@@ -28,6 +28,15 @@ export default function OnboardingBrand() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🎨 Brand form submitted', { brandName, brandColor, hasLogo: !!logoFile });
+    
+    // Validate brand name
+    if (!brandName || brandName.trim().length === 0) {
+      toast.error('Please enter a brand name');
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -35,13 +44,17 @@ export default function OnboardingBrand() {
       
       // Upload logo to Supabase storage if provided
       if (logoFile) {
+        console.log('📤 Uploading logo...');
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from('brand-assets')
           .upload(`logos/${fileName}`, logoFile);
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('❌ Logo upload failed:', uploadError);
+          throw new Error(`Logo upload failed: ${uploadError.message}`);
+        }
         
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
@@ -49,15 +62,19 @@ export default function OnboardingBrand() {
           .getPublicUrl(`logos/${fileName}`);
         
         logoUrl = publicUrl;
+        console.log('✅ Logo uploaded:', logoUrl);
       }
       
       // Get first workspace (created in previous step)
       const workspaceId = workspaces?.[0]?.id;
+      console.log('🏢 Workspace ID:', workspaceId, 'Workspaces:', workspaces);
+      
       if (!workspaceId) {
         throw new Error('No workspace found. Please create a workspace first.');
       }
       
       // Create brand
+      console.log('🎨 Creating brand...', { name: brandName, color: brandColor, logo: logoUrl, workspace: workspaceId });
       await createBrand.mutateAsync({
         name: brandName,
         primary_color: brandColor,
@@ -65,9 +82,13 @@ export default function OnboardingBrand() {
         workspace_id: workspaceId,
       });
       
-      // Only navigate to plan selection after successful brand creation
+      console.log('✅ Brand created successfully');
+      toast.success('Brand created successfully!');
+      
+      // Navigate to plan selection after successful brand creation
       navigate('/onboarding/plan');
     } catch (error: any) {
+      console.error('❌ Brand creation error:', error);
       toast.error(error.message || 'Failed to create brand');
     } finally {
       setLoading(false);
