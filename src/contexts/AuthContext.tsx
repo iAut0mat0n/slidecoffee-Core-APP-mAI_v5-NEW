@@ -111,17 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     
     if (error) throw error
-    
-    if (data.user) {
-      // Create user profile
-      await supabase.from('v2_users').insert({
-        id: data.user.id,
-        email,
-        name,
-        credits: 75,
-        plan: 'starter'
-      })
-    }
   }
 
   const signOut = async () => {
