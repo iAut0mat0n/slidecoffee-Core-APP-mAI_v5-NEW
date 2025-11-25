@@ -118,11 +118,8 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
         
         console.log('✅ Backfilled workspace membership for user:', userRecord.email);
       }
-    } else {
-      // Critical: User has no workspace - should not happen
-      console.error('❌ User has no workspace:', userRecord.email);
-      return res.status(500).json({ error: 'User workspace not configured' });
     }
+    // Note: Users without workspaces are allowed during onboarding (workspace creation)
 
     const planMapping: Record<string, string> = {
       'starter': 'americano',
