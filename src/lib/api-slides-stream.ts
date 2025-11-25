@@ -39,6 +39,8 @@ export interface StreamOptions {
   presentationPlan?: any;
   brand?: any;
   enableResearch?: boolean;
+  projectId?: string;
+  brandId?: string;
 }
 
 /**

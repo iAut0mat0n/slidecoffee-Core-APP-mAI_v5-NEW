@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Search, Plus, Star, Image as ImageIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import CollapsibleSidebar from '../components/CollapsibleSidebar'
+import ProjectCreationModal from '../components/ProjectCreationModal'
 import { useProjects } from '../lib/queries'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -12,6 +13,7 @@ export default function ProjectsNew() {
   const { data: projectsData, isLoading } = useProjects()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const filterTabs = [
     { id: 'all', label: 'All' },
@@ -33,7 +35,19 @@ export default function ProjectsNew() {
   })
 
   const handleCreateNew = () => {
-    navigate('/create/generate')
+    setShowCreateModal(true)
+  }
+
+  const handleProjectCreated = (project: any) => {
+    console.log('🚀 Project created, navigating to slide generation with project:', project);
+    // Navigate to slide generation with project context
+    navigate('/create/generate', { 
+      state: { 
+        projectId: project.id,
+        projectName: project.name,
+        brandId: project.brand_id 
+      } 
+    });
   }
 
   const handleProjectClick = (projectId: string) => {
@@ -43,6 +57,13 @@ export default function ProjectsNew() {
   return (
     <div className="flex h-screen bg-gray-50">
       <CollapsibleSidebar />
+      
+      {/* Project Creation Modal */}
+      <ProjectCreationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleProjectCreated}
+      />
       
       <div className="flex-1 overflow-y-auto">
         <div className="p-8">

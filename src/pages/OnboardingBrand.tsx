@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export default function OnboardingBrand() {
   const navigate = useNavigate();
   const createBrand = useCreateBrand();
-  const { data: workspaces } = useWorkspaces();
+  const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
   const [brandName, setBrandName] = useState('');
   const [brandColor, setBrandColor] = useState('#8B5CF6');
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
@@ -29,11 +29,24 @@ export default function OnboardingBrand() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🎨 Brand form submitted', { brandName, brandColor, hasLogo: !!logoFile });
+    console.log('🎨 Brand form submitted', { brandName, brandColor, hasLogo: !!logoFile, workspacesLoading });
     
     // Validate brand name
     if (!brandName || brandName.trim().length === 0) {
       toast.error('Please enter a brand name');
+      return;
+    }
+    
+    // Wait for workspaces to load
+    if (workspacesLoading) {
+      toast.error('Please wait while we load your workspace...');
+      return;
+    }
+    
+    // Check workspace availability
+    if (!workspaces || workspaces.length === 0) {
+      toast.error('No workspace found. Please create a workspace first.');
+      navigate('/onboarding/workspace');
       return;
     }
     
@@ -66,12 +79,8 @@ export default function OnboardingBrand() {
       }
       
       // Get first workspace (created in previous step)
-      const workspaceId = workspaces?.[0]?.id;
-      console.log('🏢 Workspace ID:', workspaceId, 'Workspaces:', workspaces);
-      
-      if (!workspaceId) {
-        throw new Error('No workspace found. Please create a workspace first.');
-      }
+      const workspaceId = workspaces[0].id;
+      console.log('🏢 Workspace ID:', workspaceId);
       
       // Create brand
       console.log('🎨 Creating brand...', { name: brandName, color: brandColor, logo: logoUrl, workspace: workspaceId });
@@ -239,10 +248,10 @@ export default function OnboardingBrand() {
               </Link>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || workspacesLoading}
                 className="flex-1 w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Setting up...' : 'Complete Setup'}
+                {workspacesLoading ? 'Loading workspace...' : loading ? 'Setting up...' : 'Complete Setup'}
               </button>
             </div>
 

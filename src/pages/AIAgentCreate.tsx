@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Send, Coffee, Loader2, Sparkles, Search, ExternalLink as LinkIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { streamSlideGeneration } from '../lib/api-slides-stream'
@@ -31,6 +31,7 @@ type AgentPhase = 'research' | 'outline' | 'generating' | 'complete'
 export default function AIAgentCreate() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -42,12 +43,21 @@ export default function AIAgentCreate() {
   const [researchSources, setResearchSources] = useState<ResearchSource[]>([])
   const [outline, setOutline] = useState<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
+  
+  // Get project context from navigation state
+  const projectContext = location.state as { projectId?: string; projectName?: string; brandId?: string } | null
+  
   useEffect(() => {
     // Initial greeting
-    addAgentMessage(
-      "Hi! I'm your AI presentation assistant. Let me help you create an amazing presentation. What would you like to create today?"
-    )
+    const greeting = projectContext?.projectName 
+      ? `Hi! I'm ready to create slides for "${projectContext.projectName}". What topic would you like me to research and present?`
+      : "Hi! I'm your AI presentation assistant. Let me help you create an amazing presentation. What would you like to create today?"
+    
+    addAgentMessage(greeting)
+    
+    if (projectContext) {
+      console.log('🎯 Project context loaded:', projectContext);
+    }
   }, [])
 
   useEffect(() => {
@@ -89,9 +99,17 @@ export default function AIAgentCreate() {
     
     try {
       // TRUE STREAMING MAGIC - Watch everything happen in real-time!
+      console.log('📡 Starting slide generation with context:', {
+        topic: userRequest,
+        projectId: projectContext?.projectId,
+        brandId: projectContext?.brandId
+      });
+      
       for await (const event of streamSlideGeneration({
         topic: userRequest,
-        enableResearch: enableResearch
+        enableResearch: enableResearch,
+        projectId: projectContext?.projectId,
+        brandId: projectContext?.brandId
       })) {
         
         switch (event.type) {

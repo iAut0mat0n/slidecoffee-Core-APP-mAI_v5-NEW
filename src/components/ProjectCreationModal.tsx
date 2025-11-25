@@ -1,33 +1,76 @@
 import { useState } from 'react';
+import { useBrands, useCreateProject } from '../lib/queries';
+import { toast } from 'sonner';
 
 interface ProjectCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: (project: any) => void;
 }
 
-export default function ProjectCreationModal({ isOpen, onClose }: ProjectCreationModalProps) {
+export default function ProjectCreationModal({ isOpen, onClose, onSuccess }: ProjectCreationModalProps) {
   const [projectName, setProjectName] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('default');
-  const [selectedTemplate, setSelectedTemplate] = useState('blank');
-
-  const brands = [
-    { id: 'default', name: 'Default', color: '#8B5CF6' },
-    { id: 'company', name: 'My Company', color: '#3B82F6' },
-    { id: 'personal', name: 'Personal', color: '#10B981' },
-  ];
-
-  const templates = [
-    { id: 'blank', name: 'Blank', description: 'Start from scratch', icon: '📄' },
-    { id: 'pitch', name: 'Pitch Deck', description: 'Investor presentation', icon: '💼' },
-    { id: 'report', name: 'Report', description: 'Business report', icon: '📊' },
-    { id: 'education', name: 'Education', description: 'Teaching materials', icon: '🎓' },
-  ];
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  
+  const { data: brandsData } = useBrands();
+  const createProject = useCreateProject();
+  
+  const brands = brandsData || [];
 
   if (!isOpen) return null;
 
-  const handleSubmit = () => {
-    // Handle project creation
-    onClose();
+  const handleSubmit = async () => {
+    if (!projectName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      console.log('🎯 Creating project:', { name: projectName, brand: selectedBrand || null });
+      
+      const result = await createProject.mutateAsync({
+        name: projectName.trim(),
+        description: '',
+        brand_id: selectedBrand || null,
+      });
+      
+      // Log the EXACT structure we receive
+      console.log('🔍 RAW mutation result:', JSON.stringify(result, null, 2));
+      console.log('🔍 result type:', typeof result);
+      console.log('🔍 result.id:', result?.id);
+      console.log('🔍 result.data:', result?.data);
+      console.log('🔍 result.data?.id:', result?.data?.id);
+      
+      // Check if result has nested data property (Supabase-style)
+      const project = result?.data || result;
+      console.log('✅ Extracted project:', JSON.stringify(project, null, 2));
+      
+      if (!project || !project.id) {
+        console.error('❌ No valid project ID found in response');
+        throw new Error('Project creation did not return valid project data');
+      }
+      
+      toast.success('Project created successfully!');
+      
+      // Reset form
+      setProjectName('');
+      setSelectedBrand('');
+      
+      // Call success callback with extracted project data
+      console.log('📤 Passing to onSuccess:', { id: project.id, name: project.name, brand_id: project.brand_id });
+      onSuccess(project);
+      
+      // Close modal
+      onClose();
+    } catch (error: any) {
+      console.error('❌ Project creation error:', error);
+      toast.error(error.message || 'Failed to create project');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,51 +111,34 @@ export default function ProjectCreationModal({ isOpen, onClose }: ProjectCreatio
           {/* Brand Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Brand
+              Brand (Optional)
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {brands.map((brand) => (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrand(brand.id)}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
-                    selectedBrand === brand.id
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <div
-                    className="w-8 h-8 rounded mb-2"
-                    style={{ backgroundColor: brand.color }}
-                  ></div>
-                  <div className="font-medium text-sm">{brand.name}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Template Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Template
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {templates.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => setSelectedTemplate(template.id)}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
-                    selectedTemplate === template.id
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <div className="text-3xl mb-2">{template.icon}</div>
-                  <div className="font-medium mb-1">{template.name}</div>
-                  <div className="text-sm text-gray-600">{template.description}</div>
-                </button>
-              ))}
-            </div>
+            {brands.length > 0 ? (
+              <div className="grid grid-cols-3 gap-3">
+                {brands.map((brand) => (
+                  <button
+                    key={brand.id}
+                    type="button"
+                    onClick={() => setSelectedBrand(brand.id)}
+                    className={`p-4 border-2 rounded-lg text-left transition-all ${
+                      selectedBrand === brand.id
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <div
+                      className="w-8 h-8 rounded mb-2"
+                      style={{ backgroundColor: brand.primary_color || '#8B5CF6' }}
+                    ></div>
+                    <div className="font-medium text-sm">{brand.name}</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500 text-sm bg-gray-50 rounded-lg p-4">
+                No brands yet. You can create a brand from the Brands page.
+              </div>
+            )}
           </div>
         </div>
 
@@ -126,10 +152,10 @@ export default function ProjectCreationModal({ isOpen, onClose }: ProjectCreatio
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!projectName}
+            disabled={!projectName || loading}
             className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Project
+            {loading ? 'Creating...' : 'Create Project'}
           </button>
         </div>
       </div>

@@ -57,10 +57,17 @@ function sanitizeJSONResponse(text: string): string {
  */
 router.post('/generate-slides-stream', streamingRateLimiter, requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { topic, brand, enableResearch = true, presentationPlan } = req.body;
+    const { topic, brand, enableResearch = true, presentationPlan, projectId, brandId } = req.body;
     const userPlan = req.user?.plan || 'espresso';
     const workspaceId = req.user?.workspaceId;
     const userId = req.user?.id;
+
+    console.log('🎯 Stream generation request:', { 
+      topic: topic?.substring(0, 50), 
+      projectId, 
+      brandId: brandId || brand?.id,
+      hasResearch: enableResearch 
+    });
 
     if (!topic && !presentationPlan) {
       return res.status(400).json({ error: 'Topic or presentation plan is required' });
@@ -84,18 +91,39 @@ router.post('/generate-slides-stream', streamingRateLimiter, requireAuth, async 
     // Get authenticated Supabase client
     const { supabase } = await getAuthenticatedSupabaseClient(req);
 
+    // ✅ SECURITY: Validate project ownership if provided
+    if (projectId) {
+      const { data: projectData, error: projectError } = await supabase
+        .from('v2_projects')
+        .select('id, workspace_id')
+        .eq('id', projectId)
+        .eq('workspace_id', workspaceId)
+        .single();
+
+      if (projectError || !projectData) {
+        console.error('❌ Project ownership validation failed:', projectError);
+        return res.status(403).json({ error: 'Project not found or access denied' });
+      }
+      
+      console.log('✅ Project ownership validated:', projectId);
+    }
+    
     // ✅ SECURITY: Validate brand ownership if provided
-    if (brand?.id) {
+    if (brand?.id || brandId) {
+      const finalBrandId = brandId || brand?.id;
       const { data: brandData, error: brandError } = await supabase
         .from('v2_brands')
         .select('id, workspace_id')
-        .eq('id', brand.id)
+        .eq('id', finalBrandId)
         .eq('workspace_id', workspaceId)
         .single();
 
       if (brandError || !brandData) {
+        console.error('❌ Brand ownership validation failed:', brandError);
         return res.status(403).json({ error: 'Brand not found or access denied' });
       }
+      
+      console.log('✅ Brand ownership validated:', finalBrandId);
     }
 
     // Get plan limits
@@ -400,6 +428,15 @@ Return JSON:
     });
 
     // PHASE 4: SAVE TO DATABASE
+    const finalBrandId = brandId || brand?.id || null;
+    
+    console.log('💾 Saving presentation:', {
+      title: outline.title || topic,
+      projectId,
+      brandId: finalBrandId,
+      slideCount: slides.length
+    });
+    
     const { data: presentation, error: saveError } = await supabase
       .from('v2_presentations')
       .insert({
@@ -408,7 +445,8 @@ Return JSON:
         slides: slides,
         workspace_id: workspaceId,
         created_by: userId,
-        brand_id: brand?.id || null,
+        project_id: projectId || null,
+        brand_id: finalBrandId,
         status: 'draft',
         thumbnail: null
       })
