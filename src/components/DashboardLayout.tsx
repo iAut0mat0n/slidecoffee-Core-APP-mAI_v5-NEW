@@ -24,13 +24,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
+  const [workspacesLoading, setWorkspacesLoading] = useState(true)
 
   useEffect(() => {
     const loadWorkspaces = async () => {
+      if (!user) {
+        setWorkspacesLoading(false)
+        return
+      }
       try {
         const data = await workspacesAPI.list()
-        setWorkspaces(data)
-        if (data.length > 0) {
+        setWorkspaces(data || [])
+        if (data && data.length > 0) {
           const defaultWs = user?.default_workspace_id 
             ? data.find((w: Workspace) => w.id === user.default_workspace_id) 
             : data[0]
@@ -38,11 +43,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }
       } catch (error) {
         console.error('Failed to load workspaces:', error)
+        setWorkspaces([])
+      } finally {
+        setWorkspacesLoading(false)
       }
     }
-    if (user) {
-      loadWorkspaces()
-    }
+    loadWorkspaces()
   }, [user])
 
   const isActive = (path: string) => location.pathname === path
@@ -68,7 +74,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`p-1.5 hover:bg-gray-100 rounded-lg transition-colors ${sidebarCollapsed ? 'hidden' : ''}`}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -80,6 +86,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               onClick={() => setWorkspaceMenuOpen(!workspaceMenuOpen)}
               className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={workspacesLoading}
             >
               <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-sm font-medium text-purple-700">
@@ -87,7 +94,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </span>
               </div>
               <div className="flex-1 text-left min-w-0">
-                <div className="text-sm font-medium truncate">{currentWorkspace?.name || 'My Workspace'}</div>
+                <div className="text-sm font-medium truncate">
+                  {workspacesLoading ? 'Loading...' : (currentWorkspace?.name || 'My Workspace')}
+                </div>
               </div>
               <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${workspaceMenuOpen ? 'rotate-180' : ''}`} />
             </button>
