@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCreateBrand, useWorkspaces } from '../lib/queries';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { ImagePlus, Sparkles } from 'lucide-react';
 
 export default function OnboardingBrand() {
   const navigate = useNavigate();
@@ -164,11 +165,11 @@ export default function OnboardingBrand() {
                 Brand Logo (Optional)
               </label>
               <div className="flex items-center gap-4">
-                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
                   {uploadedLogo ? (
                     <img src={uploadedLogo} alt="Logo" className="w-full h-full object-contain rounded-lg" />
                   ) : (
-                    <span className="text-4xl">🏢</span>
+                    <ImagePlus className="w-10 h-10 text-purple-400" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -253,11 +254,11 @@ export default function OnboardingBrand() {
               <p className="text-sm font-medium text-gray-700 mb-3">Preview</p>
               <div className="bg-white rounded-lg p-6 border border-gray-200">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColor }}>
+                  <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: brandColor }}>
                     {uploadedLogo ? (
                       <img src={uploadedLogo} alt="Logo" className="w-12 h-12 object-contain" />
                     ) : (
-                      <span className="text-3xl">🏢</span>
+                      <Sparkles className="w-8 h-8 text-white" />
                     )}
                   </div>
                   <div>
