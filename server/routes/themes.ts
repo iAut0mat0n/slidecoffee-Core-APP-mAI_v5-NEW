@@ -169,4 +169,100 @@ router.post('/import-pptx', upload.single('pptx'), async (req, res) => {
   }
 })
 
+/**
+ * POST /api/themes
+ * 
+ * Save a theme to the database
+ * 
+ * Request:
+ *   - JSON body with theme data
+ *   - Auth: Bearer token required
+ * 
+ * Response:
+ *   - 200: { success: true, theme: <saved_theme> }
+ *   - 400: { error: 'Invalid data' }
+ *   - 500: { error: 'Save failed' }
+ */
+router.post('/', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!,
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    )
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    const { name, colors, fonts, metadata, extractedMetadata } = req.body
+    
+    if (!name || !colors || !fonts) {
+      return res.status(400).json({ error: 'Missing required fields: name, colors, fonts' })
+    }
+    
+    // TODO: Get user's workspace ID (for now using first workspace)
+    // In production, this should come from the request or user context
+    const { data: workspaces } = await supabase
+      .from('v2_workspaces')
+      .select('id')
+      .eq('owner_id', user.id)
+      .limit(1)
+    
+    if (!workspaces || workspaces.length === 0) {
+      return res.status(400).json({ error: 'No workspace found for user' })
+    }
+    
+    const workspaceId = workspaces[0].id
+    
+    // Insert theme into database
+    const { data: theme, error: insertError } = await supabase
+      .from('v2_theme_profiles')
+      .insert({
+        workspace_id: workspaceId,
+        created_by: user.id,
+        name: name,
+        description: `Imported PowerPoint theme: ${metadata?.total_slides || 0} slides`,
+        source_type: 'pptx',
+        created_via: 'pptx_import',
+        palette_json: {
+          primary: colors.primary,
+          secondary: colors.secondary,
+          accent: colors.accent,
+          palette: colors.palette || []
+        },
+        typography_json: {
+          heading: fonts.heading,
+          body: fonts.body,
+          fonts_used: fonts.all_fonts || []
+        },
+        extracted_metadata: extractedMetadata || metadata || {},
+        is_public: false,
+        is_featured: false
+      })
+      .select()
+      .single()
+    
+    if (insertError) {
+      console.error('Theme insert error:', insertError)
+      return res.status(500).json({ error: 'Failed to save theme', details: insertError.message })
+    }
+    
+    return res.json({ success: true, theme })
+    
+  } catch (error) {
+    console.error('Theme save error:', error)
+    return res.status(500).json({ 
+      error: 'Failed to save theme',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+})
+
 export default router

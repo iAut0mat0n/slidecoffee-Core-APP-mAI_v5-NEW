@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Plus, Search, Grid3x3, List } from 'lucide-react'
+import { toast } from 'sonner'
 import CollapsibleSidebar from '../components/CollapsibleSidebar'
+import PowerPointImportModal from '../components/PowerPointImportModal'
 
 interface Theme {
   id: string
@@ -157,6 +159,58 @@ export default function ThemesNew() {
     setShowImportModal(true)
   }
 
+  const handlePowerPointImport = async (theme: any) => {
+    try {
+      // Get auth token
+      let authToken = null
+      const token = localStorage.getItem('supabase.auth.token')
+      if (token) {
+        try {
+          authToken = JSON.parse(token)?.access_token
+        } catch (e) {
+          const authKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') && key.endsWith('-auth-token')
+          )
+          if (authKeys.length > 0) {
+            const sessionV2 = localStorage.getItem(authKeys[0])
+            if (sessionV2) {
+              const parsed = JSON.parse(sessionV2)
+              authToken = parsed?.access_token || parsed?.currentSession?.access_token
+            }
+          }
+        }
+      }
+      
+      const apiUrl = import.meta.env.PROD 
+        ? '/api/themes' 
+        : 'http://localhost:3001/api/themes'
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: JSON.stringify(theme)
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save theme')
+      }
+      
+      const result = await response.json()
+      console.log('Theme saved:', result.theme)
+      toast.success(`Theme "${theme.name}" imported and saved successfully!`)
+      
+      // TODO: Refresh themes list to show the new theme
+      
+    } catch (error) {
+      console.error('Failed to save PowerPoint theme:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save theme')
+    }
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <CollapsibleSidebar />
@@ -281,33 +335,12 @@ export default function ThemesNew() {
         </div>
       </div>
 
-      {/* Import Theme Modal (placeholder) */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Import Theme</h2>
-            <p className="text-gray-600 mb-6">Upload a theme file or paste theme JSON</p>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
-              <p className="text-gray-500">Drag and drop theme file here</p>
-              <p className="text-sm text-gray-400 mt-2">or click to browse</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Import
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* PowerPoint Import Modal */}
+      <PowerPointImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handlePowerPointImport}
+      />
     </div>
   )
 }
