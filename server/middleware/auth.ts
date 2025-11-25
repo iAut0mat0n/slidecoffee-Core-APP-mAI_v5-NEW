@@ -81,7 +81,11 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
       .where(eq(v2Users.id, authUser.id))
       .limit(1);
 
-    let workspaceId = userRecord?.defaultWorkspaceId;
+    if (!userRecord) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    let workspaceId = userRecord.defaultWorkspaceId;
     
     if (!workspaceId) {
       const [membership] = await db
@@ -93,6 +97,33 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
       workspaceId = membership?.workspaceId;
     }
 
+    // Safety check: Ensure workspace membership exists (handles migration edge cases)
+    if (workspaceId) {
+      const [existingMembership] = await db
+        .select({ id: v2WorkspaceMembers.id })
+        .from(v2WorkspaceMembers)
+        .where(eq(v2WorkspaceMembers.userId, userRecord.id))
+        .limit(1);
+
+      if (!existingMembership) {
+        // Backfill missing membership for existing users
+        await db
+          .insert(v2WorkspaceMembers)
+          .values({
+            workspaceId,
+            userId: userRecord.id,
+            role: userRecord.id === userRecord.defaultWorkspaceId ? 'owner' : 'member',
+          })
+          .onConflictDoNothing();
+        
+        console.log('✅ Backfilled workspace membership for user:', userRecord.email);
+      }
+    } else {
+      // Critical: User has no workspace - should not happen
+      console.error('❌ User has no workspace:', userRecord.email);
+      return res.status(500).json({ error: 'User workspace not configured' });
+    }
+
     const planMapping: Record<string, string> = {
       'starter': 'americano',
       'professional': 'cappuccino',
@@ -101,16 +132,16 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
       'pro': 'cappuccino',
       'business': 'coldBrew',
     };
-    const rawPlan = userRecord?.plan || 'espresso';
+    const rawPlan = userRecord.plan || 'espresso';
     const normalizedPlan = planMapping[rawPlan] || rawPlan;
 
     req.user = {
-      id: authUser.id,
-      email: authUser.email || '',
-      name: userRecord?.name || undefined,
-      role: userRecord?.role || 'user',
+      id: userRecord.id,
+      email: userRecord.email || '',
+      name: userRecord.name || undefined,
+      role: userRecord.role || 'user',
       plan: normalizedPlan,
-      subscription_status: userRecord?.subscriptionStatus || undefined,
+      subscription_status: userRecord.subscriptionStatus || undefined,
       workspaceId: workspaceId || undefined,
     };
 

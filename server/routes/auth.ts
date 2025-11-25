@@ -85,6 +85,16 @@ router.get('/auth/me', async (req: Request, res: Response) => {
     }
 
     console.log('✅ User found in Replit DB:', userProfile.email);
+    
+    // Get workspace membership to include workspaceId in response
+    const [membership] = await db
+      .select({ workspaceId: v2WorkspaceMembers.workspaceId })
+      .from(v2WorkspaceMembers)
+      .where(eq(v2WorkspaceMembers.userId, userProfile.id))
+      .limit(1);
+
+    const workspaceId = membership?.workspaceId || userProfile.defaultWorkspaceId;
+    
     res.json({ 
       user: {
         id: userProfile.id,
@@ -95,6 +105,7 @@ router.get('/auth/me', async (req: Request, res: Response) => {
         plan: userProfile.plan,
         default_workspace_id: userProfile.defaultWorkspaceId,
         subscription_status: userProfile.subscriptionStatus,
+        workspaceId: workspaceId,
       }
     });
   } catch (error: any) {
