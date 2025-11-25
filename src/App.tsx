@@ -63,7 +63,6 @@ import StockImageBrowser from './pages/StockImageBrowser'
 import IconLibraryBrowser from './pages/IconLibraryBrowser'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
-import LoginReplit from './pages/LoginReplit'
 import ForgotPassword from './pages/ForgotPassword'
 import VerifyEmail from './pages/VerifyEmail'
 import AuthCallback from './pages/AuthCallback'
@@ -92,13 +91,9 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         
-        {/* Auth Routes - Replit Auth */}
-        <Route path="/signup" element={<LoginReplit />} />
-        <Route path="/login" element={<LoginReplit />} />
-        
-        {/* Old Supabase routes (kept for reference, but not used) */}
-        <Route path="/login-old" element={<Login />} />
-        <Route path="/signup-old" element={<Signup />} />
+        {/* Auth Routes */}
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
