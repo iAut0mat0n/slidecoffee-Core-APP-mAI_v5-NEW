@@ -24,6 +24,7 @@ import brewsRouter from './routes/brews.js';
 import { dbTestRouter } from './routes/db-test.js';
 import { usersRouter } from './routes/users.js';
 import templatesRouter from './routes/templates.js';
+import themesRouter from './routes/themes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +100,7 @@ app.use('/api', brewsRouter);
 app.use('/api', dbTestRouter);
 app.use('/api', usersRouter);
 app.use('/api', templatesRouter);
+app.use('/api/themes', themesRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

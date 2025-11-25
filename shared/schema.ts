@@ -85,7 +85,10 @@ export const v2ThemeProfiles = pgTable('v2_theme_profiles', {
   previewImageUrl: text('preview_image_url'),
   thumbnailUrl: text('thumbnail_url'),
   sourceFileId: uuid('source_file_id'),
+  sourceFileUrl: text('source_file_url'), // URL/path to uploaded PPTX file
   extractedStyles: jsonb('extracted_styles'),
+  extractedMetadata: jsonb('extracted_metadata'), // PowerPoint-specific metadata (slide count, dimensions, etc.)
+  createdVia: text('created_via').default('manual'), // 'manual', 'pptx_import', 'ai_generated'
   isPublic: boolean('is_public').default(false),
   isFeatured: boolean('is_featured').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

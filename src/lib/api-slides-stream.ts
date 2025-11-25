@@ -41,6 +41,7 @@ export interface StreamOptions {
   enableResearch?: boolean;
   projectId?: string;
   brandId?: string;
+  templateId?: string | null;
 }
 
 /**

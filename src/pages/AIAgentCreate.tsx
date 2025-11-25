@@ -150,7 +150,8 @@ export default function AIAgentCreate() {
         topic: userRequest,
         enableResearch: enableResearch,
         projectId: projectContext?.projectId,
-        brandId: projectContext?.brandId
+        brandId: projectContext?.brandId,
+        templateId: selectedTemplate
       })) {
         
         switch (event.type) {
