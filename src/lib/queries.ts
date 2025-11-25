@@ -3,6 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import { systemAPI, authAPI, brandsAPI, projectsAPI, templatesAPI, workspacesAPI } from './api-client';
 
+// Type definitions
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  workspace_id: string;
+  brand_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // System Settings Hooks
 export const useSystemSettings = (options?: UseQueryOptions<Record<string, string>>) => {
   return useQuery({
@@ -109,8 +120,49 @@ export const useProject = (id: string, options?: UseQueryOptions<any>) => {
 
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: projectsAPI.create,
+  return useMutation<Project, Error, any>({
+    mutationFn: async (data: any): Promise<Project> => {
+      try {
+        // Call API
+        const result = await projectsAPI.create(data);
+        
+        // Check for error response pattern {error, message}
+        if (result && (result as any).error) {
+          const errorMsg = (result as any).message || 'Project creation failed';
+          console.error('❌ API returned error:', result);
+          throw new Error(errorMsg);
+        }
+        
+        // Handle both direct response and {data, error} wrapper
+        // Backend returns data directly, but defensively handle both patterns
+        const project = (result as any)?.data || result;
+        
+        // Validate we have a proper project object with ID
+        if (!project || typeof project !== 'object' || !project.id) {
+          console.error('❌ Invalid project response:', result);
+          throw new Error('Project creation did not return valid data');
+        }
+        
+        // Type-safe validation: ensure required fields exist
+        if (!project.workspace_id) {
+          console.error('❌ Project missing workspace_id:', project);
+          throw new Error('Project creation returned incomplete data');
+        }
+        
+        console.log('✅ useCreateProject: validated and returning clean project:', {
+          id: project.id,
+          name: project.name,
+          workspace_id: project.workspace_id,
+          brand_id: project.brand_id
+        });
+        
+        return project;
+      } catch (error: any) {
+        console.error('❌ useCreateProject error:', error);
+        // Re-throw with clear message
+        throw new Error(error.message || 'Failed to create project');
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },

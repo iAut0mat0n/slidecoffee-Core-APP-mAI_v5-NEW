@@ -37,9 +37,9 @@ export default function OnboardingBrand() {
       return;
     }
     
-    // Wait for workspaces to load
+    // This should never happen due to disabled form, but defensive check
     if (workspacesLoading) {
-      toast.error('Please wait while we load your workspace...');
+      console.warn('⚠️ Form submitted while workspaces loading (should be blocked by UI)');
       return;
     }
     
@@ -113,8 +113,22 @@ export default function OnboardingBrand() {
     '#EC4899', // Pink
   ];
 
+  // Hard block: disable entire form while workspaces load
+  const isFormDisabled = workspacesLoading || loading;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+      {/* Loading Overlay - Hard UI Block */}
+      {workspacesLoading && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4 text-center">
+            <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Loading your workspace...</h3>
+            <p className="text-gray-600">Please wait while we prepare your account</p>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-2xl w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -137,7 +151,8 @@ export default function OnboardingBrand() {
                 type="text"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                disabled={isFormDisabled}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="My Brand"
                 required
               />
@@ -161,12 +176,17 @@ export default function OnboardingBrand() {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
+                    disabled={isFormDisabled}
                     className="hidden"
                     id="logo-upload"
                   />
                   <label
                     htmlFor="logo-upload"
-                    className="inline-block px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer font-medium"
+                    className={`inline-block px-4 py-2 border border-gray-300 rounded-lg font-medium ${
+                      isFormDisabled 
+                        ? 'opacity-50 cursor-not-allowed pointer-events-none' 
+                        : 'hover:bg-gray-50 cursor-pointer'
+                    }`}
                   >
                     Upload Logo
                   </label>
@@ -187,14 +207,16 @@ export default function OnboardingBrand() {
                   type="color"
                   value={brandColor}
                   onChange={(e) => setBrandColor(e.target.value)}
-                  className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer"
+                  disabled={isFormDisabled}
+                  className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">
                   <input
                     type="text"
                     value={brandColor}
                     onChange={(e) => setBrandColor(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
+                    disabled={isFormDisabled}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="#8B5CF6"
                   />
                 </div>
@@ -206,8 +228,18 @@ export default function OnboardingBrand() {
                   <button
                     key={color}
                     type="button"
-                    onClick={() => setBrandColor(color)}
-                    className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                    onClick={() => {
+                      if (isFormDisabled) return;
+                      setBrandColor(color);
+                    }}
+                    onKeyDown={(e) => {
+                      if (isFormDisabled && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                      }
+                    }}
+                    disabled={isFormDisabled}
+                    tabIndex={isFormDisabled ? -1 : 0}
+                    className={`w-10 h-10 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       brandColor === color ? 'border-gray-900 scale-110' : 'border-gray-300'
                     }`}
                     style={{ backgroundColor: color }}
@@ -248,7 +280,7 @@ export default function OnboardingBrand() {
               </Link>
               <button
                 type="submit"
-                disabled={loading || workspacesLoading}
+                disabled={isFormDisabled}
                 className="flex-1 w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {workspacesLoading ? 'Loading workspace...' : loading ? 'Setting up...' : 'Complete Setup'}

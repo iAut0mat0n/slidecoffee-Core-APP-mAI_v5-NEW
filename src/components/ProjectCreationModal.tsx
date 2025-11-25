@@ -31,36 +31,21 @@ export default function ProjectCreationModal({ isOpen, onClose, onSuccess }: Pro
     try {
       console.log('🎯 Creating project:', { name: projectName, brand: selectedBrand || null });
       
-      const result = await createProject.mutateAsync({
+      // Hook guarantees clean project object with ID
+      const project = await createProject.mutateAsync({
         name: projectName.trim(),
         description: '',
         brand_id: selectedBrand || null,
       });
       
-      // Log the EXACT structure we receive
-      console.log('🔍 RAW mutation result:', JSON.stringify(result, null, 2));
-      console.log('🔍 result type:', typeof result);
-      console.log('🔍 result.id:', result?.id);
-      console.log('🔍 result.data:', result?.data);
-      console.log('🔍 result.data?.id:', result?.data?.id);
-      
-      // Check if result has nested data property (Supabase-style)
-      const project = result?.data || result;
-      console.log('✅ Extracted project:', JSON.stringify(project, null, 2));
-      
-      if (!project || !project.id) {
-        console.error('❌ No valid project ID found in response');
-        throw new Error('Project creation did not return valid project data');
-      }
-      
+      console.log('✅ Project created:', { id: project.id, name: project.name, brand_id: project.brand_id });
       toast.success('Project created successfully!');
       
       // Reset form
       setProjectName('');
       setSelectedBrand('');
       
-      // Call success callback with extracted project data
-      console.log('📤 Passing to onSuccess:', { id: project.id, name: project.name, brand_id: project.brand_id });
+      // Pass clean project to success callback
       onSuccess(project);
       
       // Close modal
