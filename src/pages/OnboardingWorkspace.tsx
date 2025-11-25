@@ -33,7 +33,7 @@ export default function OnboardingWorkspace() {
       console.log('✅ User data refreshed');
       
       toast.success('Workspace created successfully!');
-      navigate('/onboarding/brand');
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('❌ Workspace creation failed:', error);
       toast.error(error.message || 'Failed to create workspace');

@@ -180,7 +180,7 @@ export default function DashboardNew() {
                   </div>
                 </div>
                 
-                <h2 className="text-3xl font-bold mb-3">No projects yet</h2>
+                <h2 className="text-3xl font-bold mb-3">No presentations yet</h2>
                 <p className="text-gray-600 mb-8 text-center max-w-md">
                   Time for a fresh brew! Get started by creating your first presentation with AI
                 </p>
@@ -190,7 +190,7 @@ export default function DashboardNew() {
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                   <Plus size={20} />
-                  Create your first project
+                  Create your first presentation
                 </button>
               </div>
             )}

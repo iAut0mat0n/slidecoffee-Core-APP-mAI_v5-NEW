@@ -1,0 +1,104 @@
+index-C0n7nI9h.js:139 🎨 Brand form submitted {brandName: 'ForthLogic', brandColor: '#8B5CF6', hasLogo: true, workspacesLoading: false}
+index-C0n7nI9h.js:139 📤 Uploading logo...
+index-C0n7nI9h.js:36  POST https://oguffkeepedzwydqvqnp.supabase.co/storage/v1/object/brand-assets/logos/42eu9i.png 400 (Bad Request)
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+await in (anonymous)
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+Dl @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+tn @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+uploadOrUpdate @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+upload @ index-C0n7nI9h.js:36
+S @ index-C0n7nI9h.js:139
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9
+index-C0n7nI9h.js:139 ❌ Logo upload failed: StorageApiError: Bucket not found
+    at index-C0n7nI9h.js:36:10184
+S @ index-C0n7nI9h.js:139
+await in S
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9
+index-C0n7nI9h.js:139 ❌ Brand creation error: Error: Logo upload failed: Bucket not found
+    at S (index-C0n7nI9h.js:139:71210)
+S @ index-C0n7nI9h.js:139
+await in S
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9
+index-C0n7nI9h.js:139 🎨 Brand form submitted {brandName: 'ForthLogic', brandColor: '#8B5CF6', hasLogo: true, workspacesLoading: false}
+index-C0n7nI9h.js:139 📤 Uploading logo...
+index-C0n7nI9h.js:36  POST https://oguffkeepedzwydqvqnp.supabase.co/storage/v1/object/brand-assets/logos/5ald0h.png 400 (Bad Request)
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+await in (anonymous)
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+Dl @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+tn @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+uploadOrUpdate @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:36
+(anonymous) @ index-C0n7nI9h.js:11
+ve @ index-C0n7nI9h.js:11
+upload @ index-C0n7nI9h.js:36
+S @ index-C0n7nI9h.js:139
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9
+index-C0n7nI9h.js:139 ❌ Logo upload failed: StorageApiError: Bucket not found
+    at index-C0n7nI9h.js:36:10184
+S @ index-C0n7nI9h.js:139
+await in S
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9
+index-C0n7nI9h.js:139 ❌ Brand creation error: Error: Logo upload failed: Bucket not found
+    at S (index-C0n7nI9h.js:139:71210)
+S @ index-C0n7nI9h.js:139
+await in S
+Fx @ index-C0n7nI9h.js:8
+(anonymous) @ index-C0n7nI9h.js:8
+Qf @ index-C0n7nI9h.js:8
+Gd @ index-C0n7nI9h.js:8
+ih @ index-C0n7nI9h.js:9
+d1 @ index-C0n7nI9h.js:9

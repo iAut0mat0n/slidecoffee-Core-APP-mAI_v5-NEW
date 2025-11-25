@@ -68,7 +68,6 @@ import VerifyEmail from './pages/VerifyEmail'
 import AuthCallback from './pages/AuthCallback'
 import OnboardingWelcome from './pages/OnboardingWelcome'
 import OnboardingWorkspace from './pages/OnboardingWorkspace'
-import OnboardingBrand from './pages/OnboardingBrand'
 import OnboardingPlan from './pages/OnboardingPlan'
 import SlideEditor from './pages/SlideEditor'
 import ProjectEditor from './pages/ProjectEditor'
@@ -112,11 +111,6 @@ function App() {
         <Route path="/onboarding/workspace" element={
           <OnboardingRoute>
             <OnboardingWorkspace />
-          </OnboardingRoute>
-        } />
-        <Route path="/onboarding/brand" element={
-          <OnboardingRoute>
-            <OnboardingBrand />
           </OnboardingRoute>
         } />
         <Route path="/onboarding/plan" element={

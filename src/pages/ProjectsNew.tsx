@@ -173,8 +173,8 @@ export default function ProjectsNew() {
             // Empty State
             <div className="bg-white rounded-lg border border-gray-200 p-12 flex flex-col items-center justify-center">
               <ImageIcon className="w-16 h-16 text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
-              <p className="text-gray-500 mb-6">Create your first project to get started</p>
+              <h3 className="text-xl font-semibold mb-2">No presentations yet</h3>
+              <p className="text-gray-500 mb-6">Create your first presentation to get started</p>
               <button
                 onClick={handleCreateNew}
                 className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
