@@ -30,6 +30,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || process.env.BACKEND_PORT || '5000', 10);
 
+// Trust proxy for proper rate limiting behind reverse proxies (Replit, Netlify, etc.)
+app.set('trust proxy', 1);
+
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5000',
