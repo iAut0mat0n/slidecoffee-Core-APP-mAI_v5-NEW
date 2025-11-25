@@ -1,5 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { getAuthenticatedSupabaseClient, getServiceRoleClient } from '../utils/supabase-auth.js';
+import { createClient } from '@supabase/supabase-js';
+import { db } from '../db.js';
+import { v2Users, v2WorkspaceMembers } from '../../shared/schema.js';
+import { eq } from 'drizzle-orm';
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase auth credentials');
+}
+
+const supabaseAuth = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export interface AuthRequest extends Request {
   user?: {
@@ -13,41 +25,74 @@ export interface AuthRequest extends Request {
   };
 }
 
+function getTokenFromRequest(req: Request): string | undefined {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  
+  if (req.headers.cookie) {
+    const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = decodeURIComponent(value || '');
+      return acc;
+    }, {} as Record<string, string>);
+
+    const accessTokenCookieName = Object.keys(cookies).find(key => 
+      key.startsWith('sb-') && key.endsWith('-access-token')
+    );
+    
+    if (accessTokenCookieName) {
+      return cookies[accessTokenCookieName];
+    }
+  }
+  
+  return undefined;
+}
+
 export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    // Get authenticated Supabase client (enforces RLS)
-    const { user } = await getAuthenticatedSupabaseClient(req);
-
-    // Use service-role ONLY for fetching user profile metadata
-    // (v2_users table requires service-role for cross-workspace admin queries)
-    const serviceSupabase = getServiceRoleClient();
-    
-    const { data: userRecord, error: userError } = await serviceSupabase
-      .from('v2_users')
-      .select('id, email, name, role, plan, default_workspace_id, subscription_status')
-      .eq('id', user.id)
-      .single();
-
-    if (userError) {
-      console.error('Error fetching user profile:', userError);
+    if (!supabaseAuth) {
+      throw new Error('Supabase auth not configured');
     }
 
-    // Get workspace ID from user's membership or default workspace
-    let workspaceId = userRecord?.default_workspace_id;
+    const token = getTokenFromRequest(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser(token);
+    
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const [userRecord] = await db
+      .select({
+        id: v2Users.id,
+        email: v2Users.email,
+        name: v2Users.name,
+        role: v2Users.role,
+        plan: v2Users.plan,
+        defaultWorkspaceId: v2Users.defaultWorkspaceId,
+        subscriptionStatus: v2Users.subscriptionStatus,
+      })
+      .from(v2Users)
+      .where(eq(v2Users.id, authUser.id))
+      .limit(1);
+
+    let workspaceId = userRecord?.defaultWorkspaceId;
     
     if (!workspaceId) {
-      // Find user's workspace from memberships
-      const { data: membership } = await serviceSupabase
-        .from('v2_workspace_members')
-        .select('workspace_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .single();
+      const [membership] = await db
+        .select({ workspaceId: v2WorkspaceMembers.workspaceId })
+        .from(v2WorkspaceMembers)
+        .where(eq(v2WorkspaceMembers.userId, authUser.id))
+        .limit(1);
       
-      workspaceId = membership?.workspace_id;
+      workspaceId = membership?.workspaceId;
     }
 
-    // Normalize plan identifier (handle legacy plan names)
     const planMapping: Record<string, string> = {
       'starter': 'americano',
       'professional': 'cappuccino',
@@ -59,16 +104,15 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     const rawPlan = userRecord?.plan || 'espresso';
     const normalizedPlan = planMapping[rawPlan] || rawPlan;
 
-    // Attach user info to request
     req.user = {
-      id: user.id,
-      email: user.email || '',
-      name: userRecord?.name,
+      id: authUser.id,
+      email: authUser.email || '',
+      name: userRecord?.name || undefined,
       role: userRecord?.role || 'user',
       plan: normalizedPlan,
-      subscription_status: userRecord?.subscription_status,
-      workspaceId: workspaceId,
-    } as any;
+      subscription_status: userRecord?.subscriptionStatus || undefined,
+      workspaceId: workspaceId || undefined,
+    };
 
     next();
   } catch (error: any) {
@@ -79,3 +123,5 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     res.status(500).json({ error: 'Authentication failed' });
   }
 }
+
+export { getTokenFromRequest };

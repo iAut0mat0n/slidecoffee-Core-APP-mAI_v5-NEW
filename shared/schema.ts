@@ -9,6 +9,8 @@ export const v2Users = pgTable('v2_users', {
   role: text('role').default('user'),
   credits: integer('credits').default(75),
   plan: text('plan').default('starter'),
+  defaultWorkspaceId: uuid('default_workspace_id'),
+  subscriptionStatus: text('subscription_status').default('inactive'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });

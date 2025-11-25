@@ -1,68 +1,81 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
-import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { db } from '../db.js';
+import { v2Brands } from '../../shared/schema.js';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 const router = Router();
 
-// GET /api/brands - List all brands
 router.get('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
     const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
 
-    const { data, error } = await supabase
-      .from('v2_brands')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-      .order('created_at', { ascending: false });
+    const brands = await db
+      .select()
+      .from(v2Brands)
+      .where(eq(v2Brands.workspaceId, workspaceId))
+      .orderBy(desc(v2Brands.createdAt));
 
-    if (error) throw error;
-    res.json(data || []);
+    res.json(brands);
   } catch (error: any) {
+    console.error('Failed to fetch brands:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch brands' });
   }
 });
 
-// GET /api/brands/:id - Get single brand
 router.get('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
 
-    const { data, error } = await supabase
-      .from('v2_brands')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
+    const [brand] = await db
+      .select()
+      .from(v2Brands)
+      .where(and(
+        eq(v2Brands.id, req.params.id),
+        eq(v2Brands.workspaceId, workspaceId)
+      ))
+      .limit(1);
 
-    if (error) throw error;
-    res.json(data);
+    if (!brand) {
+      return res.status(404).json({ message: 'Brand not found' });
+    }
+
+    res.json(brand);
   } catch (error: any) {
+    console.error('Failed to fetch brand:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch brand' });
   }
 });
 
-// POST /api/brands - Create brand (with limit enforcement)
 router.post('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
     const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
+
     const userPlan = req.user?.plan || 'espresso';
 
-    // Validate input lengths
     const nameError = validateLength(req.body.name, 'Brand name', MAX_LENGTHS.BRAND_NAME, 1);
     if (nameError) {
       return res.status(400).json({ error: nameError.message });
     }
 
-    // Enforce brand limits (Espresso: 1 brand, paid plans: unlimited)
     if (userPlan === 'espresso') {
-      const { count } = await supabase
-        .from('v2_brands')
-        .select('*', { count: 'exact', head: true })
-        .eq('workspace_id', workspaceId);
+      const brandCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(v2Brands)
+        .where(eq(v2Brands.workspaceId, workspaceId));
 
-      if (count && count >= 1) {
+      const count = brandCount[0]?.count || 0;
+      if (count >= 1) {
         return res.status(403).json({
           error: 'Brand limit reached',
           message: 'Free plan limited to 1 brand. Upgrade to create more brands.',
@@ -73,54 +86,97 @@ router.post('/brands', requireAuth, async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const { data, error } = await supabase
-      .from('v2_brands')
-      .insert([{ ...req.body, workspace_id: workspaceId }])
-      .select()
-      .single();
+    const [newBrand] = await db
+      .insert(v2Brands)
+      .values({
+        workspaceId,
+        name: req.body.name,
+        primaryColor: req.body.primaryColor || req.body.primary_color || '#7C3AED',
+        secondaryColor: req.body.secondaryColor || req.body.secondary_color || '#6EE7B7',
+        accentColor: req.body.accentColor || req.body.accent_color || '#FFE5E5',
+        fontHeading: req.body.fontHeading || req.body.font_heading || 'Inter',
+        fontBody: req.body.fontBody || req.body.font_body || 'Inter',
+        logoUrl: req.body.logoUrl || req.body.logo_url,
+        guidelines: req.body.guidelines,
+      })
+      .returning();
 
-    if (error) throw error;
-    res.status(201).json(data);
+    res.status(201).json(newBrand);
   } catch (error: any) {
+    console.error('Failed to create brand:', error);
     res.status(500).json({ message: error.message || 'Failed to create brand' });
   }
 });
 
-// PUT /api/brands/:id - Update brand
 router.put('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
 
-    const { data, error } = await supabase
-      .from('v2_brands')
-      .update(req.body)
-      .eq('id', req.params.id)
-      .select()
-      .single();
+    const updateData: any = {};
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.primaryColor !== undefined || req.body.primary_color !== undefined) 
+      updateData.primaryColor = req.body.primaryColor || req.body.primary_color;
+    if (req.body.secondaryColor !== undefined || req.body.secondary_color !== undefined) 
+      updateData.secondaryColor = req.body.secondaryColor || req.body.secondary_color;
+    if (req.body.accentColor !== undefined || req.body.accent_color !== undefined) 
+      updateData.accentColor = req.body.accentColor || req.body.accent_color;
+    if (req.body.fontHeading !== undefined || req.body.font_heading !== undefined) 
+      updateData.fontHeading = req.body.fontHeading || req.body.font_heading;
+    if (req.body.fontBody !== undefined || req.body.font_body !== undefined) 
+      updateData.fontBody = req.body.fontBody || req.body.font_body;
+    if (req.body.logoUrl !== undefined || req.body.logo_url !== undefined) 
+      updateData.logoUrl = req.body.logoUrl || req.body.logo_url;
+    if (req.body.guidelines !== undefined) updateData.guidelines = req.body.guidelines;
+    
+    updateData.updatedAt = new Date();
 
-    if (error) throw error;
-    res.json(data);
+    const [updatedBrand] = await db
+      .update(v2Brands)
+      .set(updateData)
+      .where(and(
+        eq(v2Brands.id, req.params.id),
+        eq(v2Brands.workspaceId, workspaceId)
+      ))
+      .returning();
+
+    if (!updatedBrand) {
+      return res.status(404).json({ message: 'Brand not found' });
+    }
+
+    res.json(updatedBrand);
   } catch (error: any) {
+    console.error('Failed to update brand:', error);
     res.status(500).json({ message: error.message || 'Failed to update brand' });
   }
 });
 
-// DELETE /api/brands/:id - Delete brand
 router.delete('/brands/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const workspaceId = req.user?.workspaceId;
+    if (!workspaceId) {
+      return res.status(401).json({ message: 'Workspace not found' });
+    }
 
-    const { error } = await supabase
-      .from('v2_brands')
-      .delete()
-      .eq('id', req.params.id);
+    const result = await db
+      .delete(v2Brands)
+      .where(and(
+        eq(v2Brands.id, req.params.id),
+        eq(v2Brands.workspaceId, workspaceId)
+      ))
+      .returning();
 
-    if (error) throw error;
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Brand not found' });
+    }
+
     res.status(204).send();
   } catch (error: any) {
+    console.error('Failed to delete brand:', error);
     res.status(500).json({ message: error.message || 'Failed to delete brand' });
   }
 });
 
 export const brandsRouter = router;
-
