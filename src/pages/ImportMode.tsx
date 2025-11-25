@@ -79,9 +79,18 @@ export default function ImportMode() {
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
+  interface DraftUpdates {
+    outline_json?: OutlineData;
+    current_step?: number;
+    theme_id?: string;
+    brand_id?: string | null;
+    image_source?: string;
+    options?: typeof options;
+  }
+
   const saveDraftToServer = useCallback(async (
     id: string, 
-    updates: { outline_json?: OutlineData; current_step?: number; theme_id?: string }
+    updates: DraftUpdates
   ) => {
     try {
       await fetch(`/api/brews/outline-drafts/${id}`, {
@@ -95,7 +104,7 @@ export default function ImportMode() {
     }
   }, []);
 
-  const debouncedSaveDraft = useCallback((updates: { outline_json?: OutlineData; current_step?: number; theme_id?: string }) => {
+  const debouncedSaveDraft = useCallback((updates: DraftUpdates) => {
     if (!draftId) return;
     
     if (saveTimeoutRef.current) {
@@ -125,6 +134,18 @@ export default function ImportMode() {
           }
           if (draft.theme_id) {
             setSelectedTheme(draft.theme_id);
+          }
+          if (draft.brand_id) {
+            setSelectedBrand(draft.brand_id);
+          }
+          if (draft.image_source) {
+            setImageSource(draft.image_source as 'pexels' | 'unsplash' | 'none');
+          }
+          if (draft.options_json) {
+            setOptions(draft.options_json);
+          }
+          if (draft.source_content) {
+            setExtractedContent(draft.source_content);
           }
           const stepMap: Record<number, Step> = { 1: 'upload', 2: 'preview', 3: 'outline', 4: 'theme', 5: 'images', 6: 'generate' };
           if (draft.current_step && stepMap[draft.current_step]) {
@@ -298,6 +319,16 @@ export default function ImportMode() {
   const handleThemeSelect = (themeId: string) => {
     setSelectedTheme(themeId);
     debouncedSaveDraft({ theme_id: themeId });
+  };
+
+  const handleBrandSelect = (brandId: string | null) => {
+    setSelectedBrand(brandId);
+    debouncedSaveDraft({ brand_id: brandId });
+  };
+
+  const handleImageSourceSelect = (source: 'pexels' | 'unsplash' | 'none') => {
+    setImageSource(source);
+    debouncedSaveDraft({ image_source: source });
   };
 
   const handleGenerate = async () => {
@@ -724,7 +755,7 @@ export default function ImportMode() {
               ].map((source) => (
                 <button
                   key={source.id}
-                  onClick={() => setImageSource(source.id as any)}
+                  onClick={() => handleImageSourceSelect(source.id as 'pexels' | 'unsplash' | 'none')}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                     imageSource === source.id
                       ? 'border-purple-600 bg-purple-50'

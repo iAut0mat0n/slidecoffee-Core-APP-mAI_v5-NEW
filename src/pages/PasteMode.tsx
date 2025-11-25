@@ -60,9 +60,18 @@ export default function PasteMode() {
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
+  interface DraftUpdates {
+    outline_json?: OutlineData;
+    current_step?: number;
+    theme_id?: string;
+    brand_id?: string | null;
+    image_source?: string;
+    options?: typeof options;
+  }
+
   const saveDraftToServer = useCallback(async (
     id: string, 
-    updates: { outline_json?: OutlineData; current_step?: number; theme_id?: string }
+    updates: DraftUpdates
   ) => {
     try {
       await fetch(`/api/brews/outline-drafts/${id}`, {
@@ -76,7 +85,7 @@ export default function PasteMode() {
     }
   }, []);
 
-  const debouncedSaveDraft = useCallback((updates: { outline_json?: OutlineData; current_step?: number; theme_id?: string }) => {
+  const debouncedSaveDraft = useCallback((updates: DraftUpdates) => {
     if (!draftId) return;
     
     if (saveTimeoutRef.current) {
@@ -106,6 +115,18 @@ export default function PasteMode() {
           }
           if (draft.theme_id) {
             setSelectedTheme(draft.theme_id);
+          }
+          if (draft.brand_id) {
+            setSelectedBrand(draft.brand_id);
+          }
+          if (draft.image_source) {
+            setImageSource(draft.image_source as 'pexels' | 'unsplash' | 'none');
+          }
+          if (draft.options_json) {
+            setOptions(draft.options_json);
+          }
+          if (draft.source_content) {
+            setContent(draft.source_content);
           }
           const stepMap: Record<number, Step> = { 1: 'paste', 2: 'outline', 3: 'theme', 4: 'images', 5: 'generate' };
           if (draft.current_step && stepMap[draft.current_step]) {
@@ -155,7 +176,7 @@ export default function PasteMode() {
       setOutlineData(data.outline);
       setDraftId(data.draft_id);
       setSearchParams({ draft: data.draft_id });
-      setCurrentStep('outline');
+      handleStepChange('outline');
       toast.success('Content analyzed! Review your outline.');
     } catch (error) {
       console.error('Analysis error:', error);
@@ -214,6 +235,16 @@ export default function PasteMode() {
   const handleThemeSelect = (themeId: string) => {
     setSelectedTheme(themeId);
     debouncedSaveDraft({ theme_id: themeId });
+  };
+
+  const handleBrandSelect = (brandId: string | null) => {
+    setSelectedBrand(brandId);
+    debouncedSaveDraft({ brand_id: brandId });
+  };
+
+  const handleImageSourceSelect = (source: 'pexels' | 'unsplash' | 'none') => {
+    setImageSource(source);
+    debouncedSaveDraft({ image_source: source });
   };
 
   const handleGenerate = async () => {
@@ -325,7 +356,7 @@ We'll automatically detect headings, sections, and key points to create slides.`
                 </label>
                 <select
                   value={selectedBrand || ''}
-                  onChange={(e) => setSelectedBrand(e.target.value || null)}
+                  onChange={(e) => handleBrandSelect(e.target.value || null)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">No brand</option>
@@ -570,7 +601,7 @@ We'll automatically detect headings, sections, and key points to create slides.`
               ].map((source) => (
                 <button
                   key={source.id}
-                  onClick={() => setImageSource(source.id as any)}
+                  onClick={() => handleImageSourceSelect(source.id as 'pexels' | 'unsplash' | 'none')}
                   className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                     imageSource === source.id
                       ? 'border-purple-600 bg-purple-50'

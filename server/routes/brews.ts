@@ -148,7 +148,7 @@ Include 3-5 key points per content slide.`
 router.patch('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { outline_json, current_step, theme_id, image_profile_id } = req.body;
+    const { outline_json, current_step, theme_id, image_profile_id, brand_id, image_source, options } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -181,6 +181,9 @@ router.patch('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, 
     if (current_step !== undefined) updates.current_step = current_step;
     if (theme_id !== undefined) updates.theme_id = theme_id;
     if (image_profile_id !== undefined) updates.image_profile_id = image_profile_id;
+    if (brand_id !== undefined) updates.brand_id = brand_id;
+    if (image_source !== undefined) updates.image_source = image_source;
+    if (options !== undefined) updates.options_json = options;
 
     // Update draft
     const { data: updated, error: updateError } = await supabase

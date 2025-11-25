@@ -40,6 +40,13 @@ SlideCoffee is a full-stack application with a clear separation between frontend
 -   **Input Validation:** Comprehensive backend and frontend input validation across all text fields to ensure data integrity and security.
 -   **Support Ticket System:** Integrated system with `v2_support_tickets` and `v2_support_ticket_replies` tables, API endpoints, and an admin panel for management.
 -   **AI Chatbot:** A floating chat widget ("Brew AI") provides streaming AI conversations with history, research mode, and quick support contact.
+-   **UI Redesign (Nov 2025):** Complete 4-phase UI refresh matching Gamma.app experience:
+    - Phase 1-3: Core Layout, Dashboard, AI Agent Experience (Complete)
+    - Phase 4: Paste Mode and Import Mode (Complete)
+      - Multi-step wizards with draft persistence via v2_outline_drafts table
+      - URL-based draft recovery (?draft=xxx) for page refresh resilience
+      - Debounced PATCH saves for outline editing, step changes, and theme selection
+      - Backend endpoints: /api/brews/analyze-content (paste mode), /api/brews/import-file (import mode)
 
 **System Design Choices:**
 -   **Data Flow:** React components interact with an API client via React Query, which then communicates with Express routes and the Supabase database.
