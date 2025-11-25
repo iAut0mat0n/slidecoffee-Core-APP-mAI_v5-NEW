@@ -1,11 +1,10 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
-import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
-import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
+import { validateLength } from '../utils/validation.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '../db.js';
-import { v2OutlineDrafts, v2Projects, v2ThemeProfiles } from '../../shared/schema.js';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { v2OutlineDrafts, v2Projects, v2ThemeProfiles, v2Presentations } from '../../shared/schema.js';
+import { eq, and, isNull, or, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -13,7 +12,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Helper function to sanitize JSON responses (remove markdown code fences)
 function sanitizeJSONResponse(text: string): string {
   return text
     .replace(/```json\s*/g, '')
@@ -21,10 +19,7 @@ function sanitizeJSONResponse(text: string): string {
     .trim();
 }
 
-// ============================================
 // POST /api/brews/generate-outline
-// Generate outline only (no full slides)
-// ============================================
 router.post('/brews/generate-outline', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { topic, projectId, slideCount = 10 } = req.body;
@@ -35,31 +30,25 @@ router.post('/brews/generate-outline', requireAuth, async (req: AuthRequest, res
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Validate topic
     const topicError = validateLength(topic, 'Topic', 500, 5);
     if (topicError) {
       return res.status(400).json({ error: topicError.message });
     }
 
-    // Validate project ownership if provided
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
-    
     if (projectId) {
-      const { data: project, error: projectError } = await supabase
-        .from('v2_projects')
-        .select('id, workspace_id')
-        .eq('id', projectId)
-        .eq('workspace_id', workspaceId)
-        .single();
+      const [project] = await db
+        .select({ id: v2Projects.id })
+        .from(v2Projects)
+        .where(and(eq(v2Projects.id, projectId), eq(v2Projects.workspaceId, workspaceId)))
+        .limit(1);
 
-      if (projectError || !project) {
+      if (!project) {
         return res.status(403).json({ error: 'Project not found or access denied' });
       }
     }
 
     console.log('🎯 Generating outline:', { topic, slideCount, projectId, workspaceId });
 
-    // Generate outline using Claude
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 2000,
@@ -102,30 +91,22 @@ Include 3-5 key points per content slide.`
     const sanitized = sanitizeJSONResponse(contentBlock.text);
     const outline = JSON.parse(sanitized);
 
-    // Validate outline structure
     if (!outline.title || !outline.slides || !Array.isArray(outline.slides)) {
       throw new Error('Invalid outline structure from AI');
     }
 
-    // Create outline draft in database
-    const { data: draft, error: draftError } = await supabase
-      .from('v2_outline_drafts')
-      .insert({
-        workspace_id: workspaceId,
-        project_id: projectId || null,
-        created_by: userId,
+    const [draft] = await db
+      .insert(v2OutlineDrafts)
+      .values({
+        workspaceId,
+        projectId: projectId || null,
+        createdBy: userId,
         topic,
-        outline_json: outline,
-        current_step: 2, // Move to outline editing step
+        outlineJson: outline,
+        currentStep: 2,
         status: 'draft'
       })
-      .select()
-      .single();
-
-    if (draftError) {
-      console.error('❌ Failed to create outline draft:', draftError);
-      throw draftError;
-    }
+      .returning();
 
     console.log('✅ Outline generated and saved:', { draftId: draft.id, slideCount: outline.slides.length });
 
@@ -144,10 +125,7 @@ Include 3-5 key points per content slide.`
   }
 });
 
-// ============================================
 // PATCH /api/brews/outline-drafts/:id
-// Update outline draft during editing
-// ============================================
 router.patch('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -158,48 +136,37 @@ router.patch('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const [existingDraft] = await db
+      .select({ id: v2OutlineDrafts.id, createdBy: v2OutlineDrafts.createdBy })
+      .from(v2OutlineDrafts)
+      .where(eq(v2OutlineDrafts.id, id))
+      .limit(1);
 
-    // Verify ownership
-    const { data: existingDraft, error: fetchError } = await supabase
-      .from('v2_outline_drafts')
-      .select('id, created_by')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !existingDraft) {
+    if (!existingDraft) {
       return res.status(404).json({ error: 'Outline draft not found' });
     }
 
-    if (existingDraft.created_by !== userId) {
+    if (existingDraft.createdBy !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Build update object
     const updates: any = {
-      updated_at: new Date().toISOString()
+      updatedAt: new Date()
     };
 
-    if (outline_json !== undefined) updates.outline_json = outline_json;
-    if (current_step !== undefined) updates.current_step = current_step;
-    if (theme_id !== undefined) updates.theme_id = theme_id;
-    if (image_profile_id !== undefined) updates.image_profile_id = image_profile_id;
-    if (brand_id !== undefined) updates.brand_id = brand_id;
-    if (image_source !== undefined) updates.image_source = image_source;
-    if (options !== undefined) updates.options_json = options;
+    if (outline_json !== undefined) updates.outlineJson = outline_json;
+    if (current_step !== undefined) updates.currentStep = current_step;
+    if (theme_id !== undefined) updates.themeId = theme_id;
+    if (image_profile_id !== undefined) updates.imageProfileId = image_profile_id;
+    if (brand_id !== undefined) updates.brandId = brand_id;
+    if (image_source !== undefined) updates.imageSource = image_source;
+    if (options !== undefined) updates.optionsJson = options;
 
-    // Update draft
-    const { data: updated, error: updateError } = await supabase
-      .from('v2_outline_drafts')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('❌ Failed to update draft:', updateError);
-      throw updateError;
-    }
+    const [updated] = await db
+      .update(v2OutlineDrafts)
+      .set(updates)
+      .where(eq(v2OutlineDrafts.id, id))
+      .returning();
 
     console.log('✅ Outline draft updated:', { draftId: id, step: current_step });
 
@@ -217,10 +184,7 @@ router.patch('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, 
   }
 });
 
-// ============================================
 // GET /api/brews/outline-drafts/:id
-// Get single outline draft
-// ============================================
 router.get('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -230,24 +194,37 @@ router.get('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, re
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const [draft] = await db
+      .select()
+      .from(v2OutlineDrafts)
+      .where(and(eq(v2OutlineDrafts.id, id), eq(v2OutlineDrafts.workspaceId, workspaceId)))
+      .limit(1);
 
-    const { data: draft, error } = await supabase
-      .from('v2_outline_drafts')
-      .select(`
-        *,
-        theme:v2_theme_profiles(id, name, category, palette_json, typography_json),
-        project:v2_projects(id, name, brand_id)
-      `)
-      .eq('id', id)
-      .eq('workspace_id', workspaceId)
-      .single();
-
-    if (error || !draft) {
+    if (!draft) {
       return res.status(404).json({ error: 'Outline draft not found' });
     }
 
-    res.json(draft);
+    let theme = null;
+    if (draft.themeId) {
+      const [themeResult] = await db
+        .select()
+        .from(v2ThemeProfiles)
+        .where(eq(v2ThemeProfiles.id, draft.themeId))
+        .limit(1);
+      theme = themeResult;
+    }
+
+    let project = null;
+    if (draft.projectId) {
+      const [projectResult] = await db
+        .select({ id: v2Projects.id, name: v2Projects.name, brandId: v2Projects.brandId })
+        .from(v2Projects)
+        .where(eq(v2Projects.id, draft.projectId))
+        .limit(1);
+      project = projectResult;
+    }
+
+    res.json({ ...draft, theme, project });
 
   } catch (error: any) {
     console.error('❌ Draft fetch error:', error);
@@ -258,10 +235,7 @@ router.get('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, re
   }
 });
 
-// ============================================
 // GET /api/brews/outline-drafts
-// List all outline drafts for workspace
-// ============================================
 router.get('/brews/outline-drafts', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const workspaceId = req.user?.workspaceId;
@@ -270,23 +244,11 @@ router.get('/brews/outline-drafts', requireAuth, async (req: AuthRequest, res: R
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
-
-    const { data: drafts, error } = await supabase
-      .from('v2_outline_drafts')
-      .select(`
-        *,
-        theme:v2_theme_profiles(id, name, category),
-        project:v2_projects(id, name)
-      `)
-      .eq('workspace_id', workspaceId)
-      .is('deleted_at', null)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      console.error('❌ Failed to fetch drafts:', error);
-      throw error;
-    }
+    const drafts = await db
+      .select()
+      .from(v2OutlineDrafts)
+      .where(and(eq(v2OutlineDrafts.workspaceId, workspaceId), isNull(v2OutlineDrafts.deletedAt)))
+      .orderBy(desc(v2OutlineDrafts.updatedAt));
 
     res.json(drafts || []);
 
@@ -299,46 +261,35 @@ router.get('/brews/outline-drafts', requireAuth, async (req: AuthRequest, res: R
   }
 });
 
-// ============================================
 // DELETE /api/brews/outline-drafts/:id
-// Soft delete outline draft
-// ============================================
 router.delete('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
+    const workspaceId = req.user?.workspaceId;
 
-    if (!userId) {
+    if (!userId || !workspaceId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const [draft] = await db
+      .select({ id: v2OutlineDrafts.id, createdBy: v2OutlineDrafts.createdBy, workspaceId: v2OutlineDrafts.workspaceId })
+      .from(v2OutlineDrafts)
+      .where(and(eq(v2OutlineDrafts.id, id), eq(v2OutlineDrafts.workspaceId, workspaceId)))
+      .limit(1);
 
-    // Verify ownership
-    const { data: draft, error: fetchError } = await supabase
-      .from('v2_outline_drafts')
-      .select('id, created_by')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !draft) {
+    if (!draft) {
       return res.status(404).json({ error: 'Outline draft not found' });
     }
 
-    if (draft.created_by !== userId) {
+    if (draft.createdBy !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Soft delete
-    const { error: deleteError } = await supabase
-      .from('v2_outline_drafts')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (deleteError) {
-      console.error('❌ Failed to delete draft:', deleteError);
-      throw deleteError;
-    }
+    await db
+      .update(v2OutlineDrafts)
+      .set({ deletedAt: new Date() })
+      .where(eq(v2OutlineDrafts.id, id));
 
     console.log('✅ Outline draft deleted:', { draftId: id });
 
@@ -353,10 +304,7 @@ router.delete('/brews/outline-drafts/:id', requireAuth, async (req: AuthRequest,
   }
 });
 
-// ============================================
-// POST /api/brews/generate-from-outline
-// Generate slides from edited outline (Server-Sent Events)
-// ============================================
+// POST /api/brews/generate-from-outline (SSE)
 router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { draftId } = req.body;
@@ -367,35 +315,37 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const [draft] = await db
+      .select()
+      .from(v2OutlineDrafts)
+      .where(and(eq(v2OutlineDrafts.id, draftId), eq(v2OutlineDrafts.workspaceId, workspaceId)))
+      .limit(1);
 
-    // Fetch outline draft
-    const { data: draft, error: draftError } = await supabase
-      .from('v2_outline_drafts')
-      .select(`
-        *,
-        theme:v2_theme_profiles(*),
-        project:v2_projects(*)
-      `)
-      .eq('id', draftId)
-      .eq('workspace_id', workspaceId)
-      .single();
-
-    if (draftError || !draft) {
+    if (!draft) {
       return res.status(404).json({ error: 'Outline draft not found' });
     }
 
-    if (!draft.outline_json || !draft.outline_json.slides) {
+    const outlineJson = draft.outlineJson as any;
+    if (!outlineJson || !outlineJson.slides) {
       return res.status(400).json({ error: 'No outline found in draft' });
+    }
+
+    let theme = null;
+    if (draft.themeId) {
+      const [themeResult] = await db
+        .select()
+        .from(v2ThemeProfiles)
+        .where(eq(v2ThemeProfiles.id, draft.themeId))
+        .limit(1);
+      theme = themeResult;
     }
 
     console.log('🎨 Generating slides from outline:', {
       draftId,
-      slideCount: draft.outline_json.slides.length,
-      themeId: draft.theme_id
+      slideCount: outlineJson.slides.length,
+      themeId: draft.themeId
     });
 
-    // Set up Server-Sent Events
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -408,27 +358,23 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
     try {
       sendEvent('progress', { step: 'Starting slide generation', progress: 0 });
 
-      // Update draft status
-      await supabase
-        .from('v2_outline_drafts')
-        .update({ status: 'generating', current_step: 5 })
-        .eq('id', draftId);
+      await db
+        .update(v2OutlineDrafts)
+        .set({ status: 'generating', currentStep: 5 })
+        .where(eq(v2OutlineDrafts.id, draftId));
 
-      const outline = draft.outline_json;
       const slides = [];
 
-      // Generate slides based on outline
-      for (let i = 0; i < outline.slides.length; i++) {
-        const outlineSlide = outline.slides[i];
-        const progress = Math.round(((i + 1) / outline.slides.length) * 100);
+      for (let i = 0; i < outlineJson.slides.length; i++) {
+        const outlineSlide = outlineJson.slides[i];
+        const progress = Math.round(((i + 1) / outlineJson.slides.length) * 100);
 
         sendEvent('progress', {
-          step: `Generating slide ${i + 1}/${outline.slides.length}`,
+          step: `Generating slide ${i + 1}/${outlineJson.slides.length}`,
           progress,
           slideNumber: i + 1
         });
 
-        // Create slide based on outline and theme
         const slide: any = {
           id: `slide-${i + 1}`,
           title: outlineSlide.title,
@@ -439,11 +385,10 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
           }
         };
 
-        // Apply theme if available
-        if (draft.theme) {
+        if (theme) {
           slide.theme = {
-            colors: draft.theme.palette_json,
-            typography: draft.theme.typography_json
+            colors: theme.paletteJson,
+            typography: theme.typographyJson
           };
         }
 
@@ -457,37 +402,28 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
 
       sendEvent('progress', { step: 'Saving presentation', progress: 100 });
 
-      // Save presentation to database
-      const { data: presentation, error: saveError } = await supabase
-        .from('v2_presentations')
-        .insert({
-          title: outline.title || draft.topic,
-          description: outline.summary || '',
+      const [presentation] = await db
+        .insert(v2Presentations)
+        .values({
+          title: outlineJson.title || draft.topic,
+          description: outlineJson.summary || '',
           slides: slides,
-          workspace_id: workspaceId,
-          created_by: userId,
-          project_id: draft.project_id,
-          brand_id: draft.project?.brand_id || null,
-          outline_draft_id: draftId,
-          status: 'draft',
-          thumbnail: null
+          workspaceId: workspaceId,
+          createdBy: userId,
+          brandId: draft.brandId || null,
+          outlineDraftId: draftId,
+          status: 'draft'
         })
-        .select()
-        .single();
+        .returning();
 
-      if (saveError) {
-        throw saveError;
-      }
-
-      // Update draft with presentation link
-      await supabase
-        .from('v2_outline_drafts')
-        .update({
+      await db
+        .update(v2OutlineDrafts)
+        .set({
           status: 'completed',
-          presentation_id: presentation.id,
-          completed_at: new Date().toISOString()
+          presentationId: presentation.id,
+          completedAt: new Date()
         })
-        .eq('id', draftId);
+        .where(eq(v2OutlineDrafts.id, draftId));
 
       sendEvent('complete', {
         presentationId: presentation.id,
@@ -515,10 +451,7 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
   }
 });
 
-// ============================================
 // GET /api/themes
-// Get all available themes
-// ============================================
 router.get('/themes', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const workspaceId = req.user?.workspaceId;
@@ -527,20 +460,11 @@ router.get('/themes', requireAuth, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
-
-    // Get all standard themes (not workspace-specific) and workspace custom themes
-    const { data: themes, error } = await supabase
-      .from('v2_theme_profiles')
-      .select('*')
-      .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`)
-      .order('category', { ascending: true })
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('❌ Failed to fetch themes:', error);
-      throw error;
-    }
+    const themes = await db
+      .select()
+      .from(v2ThemeProfiles)
+      .where(or(isNull(v2ThemeProfiles.workspaceId), eq(v2ThemeProfiles.workspaceId, workspaceId)))
+      .orderBy(v2ThemeProfiles.category, v2ThemeProfiles.name);
 
     console.log('✅ Fetched themes:', themes?.length || 0);
     res.json(themes || []);
@@ -554,10 +478,7 @@ router.get('/themes', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// ============================================
 // GET /api/themes/:id
-// Get single theme by ID
-// ============================================
 router.get('/themes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -567,16 +488,16 @@ router.get('/themes/:id', requireAuth, async (req: AuthRequest, res: Response) =
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
+    const [theme] = await db
+      .select()
+      .from(v2ThemeProfiles)
+      .where(and(
+        eq(v2ThemeProfiles.id, id),
+        or(isNull(v2ThemeProfiles.workspaceId), eq(v2ThemeProfiles.workspaceId, workspaceId))
+      ))
+      .limit(1);
 
-    const { data: theme, error } = await supabase
-      .from('v2_theme_profiles')
-      .select('*')
-      .eq('id', id)
-      .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`)
-      .single();
-
-    if (error || !theme) {
+    if (!theme) {
       return res.status(404).json({ error: 'Theme not found' });
     }
 
@@ -591,10 +512,7 @@ router.get('/themes/:id', requireAuth, async (req: AuthRequest, res: Response) =
   }
 });
 
-// ============================================
 // POST /api/brews/analyze-content
-// Analyze pasted content and generate outline (follows outline draft pattern)
-// ============================================
 router.post('/brews/analyze-content', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { content, options = {} } = req.body;
@@ -605,7 +523,6 @@ router.post('/brews/analyze-content', requireAuth, async (req: AuthRequest, res:
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Validate content
     if (!content || typeof content !== 'string') {
       return res.status(400).json({ error: 'Content is required' });
     }
@@ -621,7 +538,6 @@ router.post('/brews/analyze-content', requireAuth, async (req: AuthRequest, res:
 
     console.log('📝 Analyzing pasted content:', { contentLength: trimmedContent.length, options });
 
-    // Generate outline from content using Claude
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 3000,
@@ -674,34 +590,23 @@ Extract the most important information from the content.`
     const sanitized = sanitizeJSONResponse(contentBlock.text);
     const outline = JSON.parse(sanitized);
 
-    // Validate outline structure
     if (!outline.title || !outline.slides || !Array.isArray(outline.slides)) {
       throw new Error('Invalid outline structure from AI');
     }
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
-
-    // Create outline draft (following existing pattern from generate-outline)
-    const { data: draft, error: draftError } = await supabase
-      .from('v2_outline_drafts')
-      .insert({
-        workspace_id: workspaceId,
-        project_id: null,
-        created_by: userId,
+    const [draft] = await db
+      .insert(v2OutlineDrafts)
+      .values({
+        workspaceId,
+        projectId: null,
+        createdBy: userId,
         topic: `Pasted: ${outline.title}`,
-        outline_json: outline,
-        source_content: trimmedContent.slice(0, 10000), // Store original content for recovery
-        source_type: 'paste',
-        current_step: 2, // Move to outline editing step
+        outlineJson: outline,
+        sourceContent: trimmedContent.slice(0, 10000),
+        currentStep: 2,
         status: 'draft'
       })
-      .select()
-      .single();
-
-    if (draftError) {
-      console.error('❌ Failed to create outline draft:', draftError);
-      throw draftError;
-    }
+      .returning();
 
     console.log('✅ Content analyzed, outline draft created:', { draftId: draft.id, slideCount: outline.slides.length });
 
@@ -721,11 +626,7 @@ Extract the most important information from the content.`
   }
 });
 
-// ============================================
 // POST /api/brews/import-file
-// Import and process uploaded file (follows outline draft pattern)
-// Supports: .txt, .md (text extraction), .pptx/.pdf (placeholder for future)
-// ============================================
 router.post('/brews/import-file', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const workspaceId = req.user?.workspaceId;
@@ -735,7 +636,6 @@ router.post('/brews/import-file', requireAuth, async (req: AuthRequest, res: Res
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check content type
     const contentType = req.headers['content-type'] || '';
     
     if (!contentType.includes('multipart/form-data')) {
@@ -744,10 +644,6 @@ router.post('/brews/import-file', requireAuth, async (req: AuthRequest, res: Res
 
     console.log('📁 Processing file import request');
 
-    // For MVP: Create a placeholder outline that user can customize
-    // Full file parsing (PPTX, PDF) requires additional processing pipeline
-    // which should be implemented as a separate microservice
-    
     const placeholderOutline = {
       title: 'Imported Presentation',
       summary: 'Review and customize this outline based on your uploaded content',
@@ -785,28 +681,18 @@ router.post('/brews/import-file', requireAuth, async (req: AuthRequest, res: Res
       ]
     };
 
-    const { supabase } = await getAuthenticatedSupabaseClient(req);
-
-    // Create outline draft (following existing pattern)
-    const { data: draft, error: draftError } = await supabase
-      .from('v2_outline_drafts')
-      .insert({
-        workspace_id: workspaceId,
-        project_id: null,
-        created_by: userId,
+    const [draft] = await db
+      .insert(v2OutlineDrafts)
+      .values({
+        workspaceId,
+        projectId: null,
+        createdBy: userId,
         topic: 'Imported: File Upload',
-        outline_json: placeholderOutline,
-        source_type: 'import',
-        current_step: 2, // Move to outline editing step
+        outlineJson: placeholderOutline,
+        currentStep: 2,
         status: 'draft'
       })
-      .select()
-      .single();
-
-    if (draftError) {
-      console.error('❌ Failed to create outline draft:', draftError);
-      throw draftError;
-    }
+      .returning();
 
     console.log('✅ Import processed, outline draft created:', { draftId: draft.id });
 

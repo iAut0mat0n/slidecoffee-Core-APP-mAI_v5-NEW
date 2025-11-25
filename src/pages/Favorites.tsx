@@ -1,0 +1,31 @@
+import { Link } from 'react-router-dom';
+import DashboardLayout from '../components/DashboardLayout';
+import { Star, Sparkles } from 'lucide-react';
+
+export default function Favorites() {
+  return (
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Star className="w-8 h-8 text-purple-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
+        </div>
+        
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Star className="w-10 h-10 text-yellow-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Your favorite presentations</h2>
+          <p className="text-gray-600 mb-6">Mark presentations as favorites to access them quickly</p>
+          <Link 
+            to="/brews" 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Sparkles className="w-5 h-5" />
+            Create Your First Brew
+          </Link>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

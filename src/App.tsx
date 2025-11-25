@@ -45,6 +45,8 @@ import LiveCollaboration from './pages/LiveCollaboration'
 import ActivityFeed from './pages/ActivityFeed'
 import FoldersManagement from './pages/FoldersManagement'
 import TagsManagement from './pages/TagsManagement'
+import Recent from './pages/Recent'
+import Favorites from './pages/Favorites'
 import AdvancedSearch from './pages/AdvancedSearch'
 import TemplateCreator from './pages/TemplateCreator'
 import ThemeEditor from './pages/ThemeEditor'
@@ -266,6 +268,16 @@ function App() {
         <Route path="/tags" element={
           <ProtectedRoute>
             <TagsManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/recent" element={
+          <ProtectedRoute>
+            <Recent />
+          </ProtectedRoute>
+        } />
+        <Route path="/favorites" element={
+          <ProtectedRoute>
+            <Favorites />
           </ProtectedRoute>
         } />
         <Route path="/search" element={
