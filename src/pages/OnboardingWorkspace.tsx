@@ -18,17 +18,24 @@ export default function OnboardingWorkspace() {
     setLoading(true);
     
     try {
+      console.log('📝 Creating workspace:', workspaceName);
+      
       // Only send name - workspace type is UI preference only
-      await createWorkspace.mutateAsync({
+      const workspace = await createWorkspace.mutateAsync({
         name: workspaceName,
       });
       
+      console.log('✅ Workspace created:', workspace);
+      
       // CRITICAL: Refresh user data to pick up new workspaceId
+      console.log('🔄 Refreshing user data...');
       await refreshUser();
+      console.log('✅ User data refreshed');
       
       toast.success('Workspace created successfully!');
       navigate('/onboarding/brand');
     } catch (error: any) {
+      console.error('❌ Workspace creation failed:', error);
       toast.error(error.message || 'Failed to create workspace');
     } finally {
       setLoading(false);

@@ -77,18 +77,23 @@ router.post('/workspaces', requireAuth, async (req: AuthRequest, res: Response) 
   try {
     const userId = req.user?.id;
     if (!userId) {
+      console.error('❌ Workspace creation failed: No userId in req.user');
       return res.status(401).json({ message: 'User not found' });
     }
+
+    console.log(`🏢 Creating workspace for user: ${userId}`, req.body);
 
     // Validate workspace name
     const nameError = validateLength(req.body.name, 'Workspace name', MAX_LENGTHS.WORKSPACE_NAME, 1);
     if (nameError) {
+      console.error('❌ Validation error:', nameError.message);
       return res.status(400).json({ error: nameError.message });
     }
 
     // Use transaction to ensure atomic workspace creation
     const workspace = await db.transaction(async (tx) => {
       // 1. Create workspace
+      console.log('📝 Step 1: Creating workspace...');
       const [newWorkspace] = await tx
         .insert(v2Workspaces)
         .values({
@@ -96,8 +101,10 @@ router.post('/workspaces', requireAuth, async (req: AuthRequest, res: Response) 
           ownerId: userId,
         })
         .returning();
+      console.log(`✅ Workspace created: ${newWorkspace.id}`);
 
       // 2. Create workspace membership for the owner
+      console.log('📝 Step 2: Creating workspace membership...');
       await tx
         .insert(v2WorkspaceMembers)
         .values({
@@ -106,25 +113,32 @@ router.post('/workspaces', requireAuth, async (req: AuthRequest, res: Response) 
           role: 'owner',
         })
         .onConflictDoNothing();
+      console.log('✅ Membership created');
 
       // 3. Update user's default workspace
+      console.log(`📝 Step 3: Updating user ${userId} defaultWorkspaceId to ${newWorkspace.id}...`);
       const updatedUsers = await tx
         .update(v2Users)
         .set({ defaultWorkspaceId: newWorkspace.id })
         .where(eq(v2Users.id, userId))
-        .returning({ id: v2Users.id });
+        .returning({ id: v2Users.id, defaultWorkspaceId: v2Users.defaultWorkspaceId });
+
+      console.log('📊 Update result:', updatedUsers);
 
       // Verify user was updated (throw to rollback transaction if not)
       if (!updatedUsers || updatedUsers.length === 0) {
+        console.error(`❌ User update failed - no rows returned for userId: ${userId}`);
         throw new Error(`Failed to update user default workspace - user ${userId} not found`);
       }
 
+      console.log(`✅ User ${userId} updated with defaultWorkspaceId: ${newWorkspace.id}`);
       return newWorkspace;
     });
 
+    console.log('🎉 Workspace creation transaction complete:', workspace);
     res.status(201).json(workspace);
   } catch (error: any) {
-    console.error('Error creating workspace:', error);
+    console.error('❌ Error creating workspace:', error);
     res.status(500).json({ message: error.message || 'Failed to create workspace' });
   }
 });
