@@ -82,10 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
               const result = await response.json()
               console.log('✅ User record created successfully:', result)
-              // Fetch the newly created user
-              console.log('4️⃣ Re-fetching user from database...')
-              userData = await getCurrentUser()
-              console.log('4️⃣ User after creation:', userData ? `Found: ${userData.email}` : 'Still not found')
+              
+              // Retry fetching user with backoff to handle read-after-write timing
+              console.log('4️⃣ Re-fetching user from database with retry...')
+              const maxRetries = 5
+              const retryDelay = 300 // ms
+              
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                console.log(`   Attempt ${attempt}/${maxRetries}...`)
+                userData = await getCurrentUser()
+                
+                if (userData) {
+                  console.log(`   ✅ User found: ${userData.email}`)
+                  break
+                }
+                
+                if (attempt < maxRetries) {
+                  console.log(`   ⏳ User not found yet, retrying in ${retryDelay}ms...`)
+                  await new Promise(resolve => setTimeout(resolve, retryDelay))
+                }
+              }
+              
+              if (!userData) {
+                console.error('❌ Failed to fetch user after creation despite retries')
+              }
             } else {
               const errorText = await response.text()
               console.error('❌ Failed to create user record:', response.status, errorText)

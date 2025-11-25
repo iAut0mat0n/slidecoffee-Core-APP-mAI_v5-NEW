@@ -1,0 +1,96 @@
+index-BwRqbEBT.js:53 🔄 loadUser() called
+index-BwRqbEBT.js:53 1️⃣ Fetching user from database...
+index-BwRqbEBT.js:53 🔄 loadUser() called
+index-BwRqbEBT.js:53 1️⃣ Fetching user from database...
+index-BwRqbEBT.js:53 🔄 loadUser() called
+index-BwRqbEBT.js:53 1️⃣ Fetching user from database...
+index-BwRqbEBT.js:53 1️⃣ getCurrentUser() result: User found: walt+21@forthlogic.com
+index-BwRqbEBT.js:53 ✅ User already exists, skipping creation
+index-BwRqbEBT.js:53 1️⃣ getCurrentUser() result: User found: walt+21@forthlogic.com
+index-BwRqbEBT.js:53 ✅ User already exists, skipping creation
+index-BwRqbEBT.js:53 1️⃣ getCurrentUser() result: User found: walt+21@forthlogic.com
+index-BwRqbEBT.js:53 ✅ User already exists, skipping creation
+index-BwRqbEBT.js:139 📝 Creating workspace: Z1 Tech
+index-BwRqbEBT.js:66  POST https://app.slidecoffee.ai/api/workspaces 500 (Internal Server Error)
+ft @ index-BwRqbEBT.js:66
+await in ft
+create @ index-BwRqbEBT.js:66
+fn @ index-BwRqbEBT.js:9
+w @ index-BwRqbEBT.js:9
+start @ index-BwRqbEBT.js:9
+execute @ index-BwRqbEBT.js:9
+await in execute
+mutate @ index-BwRqbEBT.js:9
+p @ index-BwRqbEBT.js:139
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
+index-BwRqbEBT.js:139 ❌ Workspace creation failed: APIError: An error occurred
+    at ft (index-BwRqbEBT.js:66:25566)
+p @ index-BwRqbEBT.js:139
+await in p
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
+index-BwRqbEBT.js:139 📝 Creating workspace: Z1 Tech
+index-BwRqbEBT.js:66  POST https://app.slidecoffee.ai/api/workspaces 500 (Internal Server Error)
+ft @ index-BwRqbEBT.js:66
+await in ft
+create @ index-BwRqbEBT.js:66
+fn @ index-BwRqbEBT.js:9
+w @ index-BwRqbEBT.js:9
+start @ index-BwRqbEBT.js:9
+execute @ index-BwRqbEBT.js:9
+await in execute
+mutate @ index-BwRqbEBT.js:9
+p @ index-BwRqbEBT.js:139
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
+index-BwRqbEBT.js:139 ❌ Workspace creation failed: APIError: An error occurred
+    at ft (index-BwRqbEBT.js:66:25566)
+p @ index-BwRqbEBT.js:139
+await in p
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
+index-BwRqbEBT.js:139 📝 Creating workspace: Z1 Tech
+index-BwRqbEBT.js:66  POST https://app.slidecoffee.ai/api/workspaces 500 (Internal Server Error)
+ft @ index-BwRqbEBT.js:66
+await in ft
+create @ index-BwRqbEBT.js:66
+fn @ index-BwRqbEBT.js:9
+w @ index-BwRqbEBT.js:9
+start @ index-BwRqbEBT.js:9
+execute @ index-BwRqbEBT.js:9
+await in execute
+mutate @ index-BwRqbEBT.js:9
+p @ index-BwRqbEBT.js:139
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
+index-BwRqbEBT.js:139 ❌ Workspace creation failed: APIError: An error occurred
+    at ft (index-BwRqbEBT.js:66:25566)
+p @ index-BwRqbEBT.js:139
+await in p
+Fx @ index-BwRqbEBT.js:8
+(anonymous) @ index-BwRqbEBT.js:8
+Qf @ index-BwRqbEBT.js:8
+Gd @ index-BwRqbEBT.js:8
+ih @ index-BwRqbEBT.js:9
+d1 @ index-BwRqbEBT.js:9
