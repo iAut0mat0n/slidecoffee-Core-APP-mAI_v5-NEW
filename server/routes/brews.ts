@@ -509,4 +509,80 @@ router.post('/brews/generate-from-outline', requireAuth, async (req: AuthRequest
   }
 });
 
+// ============================================
+// GET /api/themes
+// Get all available themes
+// ============================================
+router.get('/themes', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const workspaceId = req.user?.workspaceId;
+
+    if (!workspaceId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    // Get all standard themes (not workspace-specific) and workspace custom themes
+    const { data: themes, error } = await supabase
+      .from('v2_theme_profiles')
+      .select('*')
+      .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`)
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('❌ Failed to fetch themes:', error);
+      throw error;
+    }
+
+    console.log('✅ Fetched themes:', themes?.length || 0);
+    res.json(themes || []);
+
+  } catch (error: any) {
+    console.error('❌ Themes fetch error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch themes',
+      message: error.message 
+    });
+  }
+});
+
+// ============================================
+// GET /api/themes/:id
+// Get single theme by ID
+// ============================================
+router.get('/themes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const workspaceId = req.user?.workspaceId;
+
+    if (!workspaceId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    const { data: theme, error } = await supabase
+      .from('v2_theme_profiles')
+      .select('*')
+      .eq('id', id)
+      .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`)
+      .single();
+
+    if (error || !theme) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+
+    res.json(theme);
+
+  } catch (error: any) {
+    console.error('❌ Theme fetch error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch theme',
+      message: error.message 
+    });
+  }
+});
+
 export default router;

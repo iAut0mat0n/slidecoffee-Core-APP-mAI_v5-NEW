@@ -46,10 +46,6 @@ externalPort = 3000
 localPort = 33335
 externalPort = 3002
 
-[[ports]]
-localPort = 43633
-externalPort = 4200
-
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
