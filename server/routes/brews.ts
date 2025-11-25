@@ -585,4 +585,241 @@ router.get('/themes/:id', requireAuth, async (req: AuthRequest, res: Response) =
   }
 });
 
+// ============================================
+// POST /api/brews/analyze-content
+// Analyze pasted content and generate outline (follows outline draft pattern)
+// ============================================
+router.post('/brews/analyze-content', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { content, options = {} } = req.body;
+    const workspaceId = req.user?.workspaceId;
+    const userId = req.user?.id;
+
+    if (!workspaceId || !userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Validate content
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    const trimmedContent = content.trim();
+    if (trimmedContent.length < 50) {
+      return res.status(400).json({ error: 'Content must be at least 50 characters' });
+    }
+    
+    if (trimmedContent.length > 50000) {
+      return res.status(400).json({ error: 'Content must be less than 50,000 characters' });
+    }
+
+    console.log('📝 Analyzing pasted content:', { contentLength: trimmedContent.length, options });
+
+    // Generate outline from content using Claude
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 3000,
+      temperature: 0.7,
+      messages: [{
+        role: 'user',
+        content: `Analyze the following content and create a presentation outline. Extract the key structure, main points, and organize into slides.
+
+Content to analyze:
+"""
+${trimmedContent.slice(0, 8000)}
+"""
+
+${options.autoDetectHeadings ? 'Detect headings from # symbols or capitalized lines.' : ''}
+${options.createTitleSlide ? 'Include a title slide as the first slide.' : ''}
+${options.smartFormatting ? 'Optimize bullet points and key messages for slide format.' : ''}
+
+Return ONLY valid JSON (no markdown, no code fences) with this structure:
+{
+  "title": "Presentation Title (extracted or inferred)",
+  "summary": "Brief summary of the content",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "title": "Slide Title",
+      "type": "title",
+      "keyPoints": ["Tagline or subtitle"]
+    },
+    {
+      "slideNumber": 2,
+      "title": "Slide Title",
+      "type": "content",
+      "keyPoints": ["First point", "Second point", "Third point"]
+    }
+  ]
+}
+
+Slide types: "title", "content", "quote", "image", "chart", "timeline", "comparison", "conclusion"
+Create between 5-15 slides depending on content length.
+Include 3-5 key points per content slide.
+Extract the most important information from the content.`
+      }]
+    });
+
+    const contentBlock = response.content[0];
+    if (contentBlock.type !== 'text') {
+      throw new Error('Unexpected response type from AI');
+    }
+
+    const sanitized = sanitizeJSONResponse(contentBlock.text);
+    const outline = JSON.parse(sanitized);
+
+    // Validate outline structure
+    if (!outline.title || !outline.slides || !Array.isArray(outline.slides)) {
+      throw new Error('Invalid outline structure from AI');
+    }
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    // Create outline draft (following existing pattern from generate-outline)
+    const { data: draft, error: draftError } = await supabase
+      .from('v2_outline_drafts')
+      .insert({
+        workspace_id: workspaceId,
+        project_id: null,
+        created_by: userId,
+        topic: `Pasted: ${outline.title}`,
+        outline_json: outline,
+        source_content: trimmedContent.slice(0, 10000), // Store original content for recovery
+        source_type: 'paste',
+        current_step: 2, // Move to outline editing step
+        status: 'draft'
+      })
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error('❌ Failed to create outline draft:', draftError);
+      throw draftError;
+    }
+
+    console.log('✅ Content analyzed, outline draft created:', { draftId: draft.id, slideCount: outline.slides.length });
+
+    res.json({
+      success: true,
+      draft,
+      outline,
+      draft_id: draft.id,
+    });
+
+  } catch (error: any) {
+    console.error('❌ Content analysis error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze content',
+      message: error.message 
+    });
+  }
+});
+
+// ============================================
+// POST /api/brews/import-file
+// Import and process uploaded file (follows outline draft pattern)
+// Supports: .txt, .md (text extraction), .pptx/.pdf (placeholder for future)
+// ============================================
+router.post('/brews/import-file', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const workspaceId = req.user?.workspaceId;
+    const userId = req.user?.id;
+
+    if (!workspaceId || !userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check content type
+    const contentType = req.headers['content-type'] || '';
+    
+    if (!contentType.includes('multipart/form-data')) {
+      return res.status(400).json({ error: 'Expected multipart/form-data' });
+    }
+
+    console.log('📁 Processing file import request');
+
+    // For MVP: Create a placeholder outline that user can customize
+    // Full file parsing (PPTX, PDF) requires additional processing pipeline
+    // which should be implemented as a separate microservice
+    
+    const placeholderOutline = {
+      title: 'Imported Presentation',
+      summary: 'Review and customize this outline based on your uploaded content',
+      slides: [
+        {
+          slideNumber: 1,
+          title: 'Title Slide',
+          type: 'title',
+          keyPoints: ['Add your main title and subtitle']
+        },
+        {
+          slideNumber: 2,
+          title: 'Introduction',
+          type: 'content',
+          keyPoints: ['Overview of your topic', 'Key objectives', 'What we will cover']
+        },
+        {
+          slideNumber: 3,
+          title: 'Main Content',
+          type: 'content',
+          keyPoints: ['First main point', 'Second main point', 'Third main point']
+        },
+        {
+          slideNumber: 4,
+          title: 'Details',
+          type: 'content',
+          keyPoints: ['Supporting detail 1', 'Supporting detail 2', 'Examples or evidence']
+        },
+        {
+          slideNumber: 5,
+          title: 'Summary & Next Steps',
+          type: 'conclusion',
+          keyPoints: ['Key takeaways', 'Action items', 'Questions?']
+        }
+      ]
+    };
+
+    const { supabase } = await getAuthenticatedSupabaseClient(req);
+
+    // Create outline draft (following existing pattern)
+    const { data: draft, error: draftError } = await supabase
+      .from('v2_outline_drafts')
+      .insert({
+        workspace_id: workspaceId,
+        project_id: null,
+        created_by: userId,
+        topic: 'Imported: File Upload',
+        outline_json: placeholderOutline,
+        source_type: 'import',
+        current_step: 2, // Move to outline editing step
+        status: 'draft'
+      })
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error('❌ Failed to create outline draft:', draftError);
+      throw draftError;
+    }
+
+    console.log('✅ Import processed, outline draft created:', { draftId: draft.id });
+
+    res.json({
+      success: true,
+      message: 'File processed. Please review and customize the outline.',
+      content: 'Placeholder content - customize in the outline editor',
+      outline: placeholderOutline,
+      draft,
+      draft_id: draft.id,
+    });
+
+  } catch (error: any) {
+    console.error('❌ File import error:', error);
+    res.status(500).json({ 
+      error: 'Failed to import file',
+      message: error.message 
+    });
+  }
+});
+
 export default router;
