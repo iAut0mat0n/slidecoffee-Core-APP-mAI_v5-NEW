@@ -112,6 +112,40 @@ export const workspacesAPI = {
   }),
 };
 
+// Brews API (Gamma-style workflow)
+export const brewsAPI = {
+  // Generate outline from topic (Step 1)
+  generateOutline: (data: { topic: string; description?: string; brand_id?: string | null }) =>
+    fetchAPI<{ outline_draft: any }>('/brews/generate-outline', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  
+  // Get outline draft by ID
+  getOutlineDraft: (id: string) => fetchAPI<any>(`/brews/outline-drafts/${id}`),
+  
+  // Update outline draft (during editing)
+  updateOutlineDraft: (id: string, data: { outline_structure: any }) =>
+    fetchAPI<any>(`/brews/outline-drafts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  
+  // Delete outline draft
+  deleteOutlineDraft: (id: string) =>
+    fetchAPI<void>(`/brews/outline-drafts/${id}`, {
+      method: 'DELETE',
+    }),
+  
+  // Note: generateFromOutline uses SSE and is handled separately in api-slides-stream.ts
+};
+
+// Themes API (for theme picker)
+export const themesAPI = {
+  list: () => fetchAPI<any[]>('/themes'),
+  get: (id: string) => fetchAPI<any>(`/themes/${id}`),
+};
+
 // Admin API
 export const adminAPI = {
   getUsers: () => fetchAPI<any[]>('/admin/users'),

@@ -1,7 +1,7 @@
 // React Query hooks for API calls
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
-import { systemAPI, authAPI, brandsAPI, projectsAPI, templatesAPI, workspacesAPI } from './api-client';
+import { systemAPI, authAPI, brandsAPI, projectsAPI, templatesAPI, workspacesAPI, brewsAPI, themesAPI } from './api-client';
 
 // Type definitions
 interface Project {
@@ -226,3 +226,61 @@ export const useCreateWorkspace = () => {
   });
 };
 
+// Brews Hooks (Gamma-style workflow)
+export const useGenerateOutline = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: brewsAPI.generateOutline,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outline-drafts'] });
+    },
+  });
+};
+
+export const useOutlineDraft = (id: string, options?: UseQueryOptions<any>) => {
+  return useQuery({
+    queryKey: ['outline-drafts', id],
+    queryFn: () => brewsAPI.getOutlineDraft(id),
+    enabled: !!id,
+    ...options,
+  });
+};
+
+export const useUpdateOutlineDraft = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { outline_structure: any } }) =>
+      brewsAPI.updateOutlineDraft(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outline-drafts'] });
+    },
+  });
+};
+
+export const useDeleteOutlineDraft = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: brewsAPI.deleteOutlineDraft,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outline-drafts'] });
+    },
+  });
+};
+
+// Themes Hooks
+export const useThemes = (options?: UseQueryOptions<any[]>) => {
+  return useQuery({
+    queryKey: ['themes'],
+    queryFn: themesAPI.list,
+    ...options,
+  });
+};
+
+export const useTheme = (id: string, options?: UseQueryOptions<any>) => {
+  return useQuery({
+    queryKey: ['themes', id],
+    queryFn: () => themesAPI.get(id),
+    enabled: !!id,
+    ...options,
+  });
+};

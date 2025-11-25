@@ -59,6 +59,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Main Navigation */}
         <nav className="flex-1 p-4 space-y-1">
+          {/* BREWS - #1 Position (Gamma-style workflow) */}
+          <button
+            onClick={() => navigate('/brews')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              isActive('/brews') || location.pathname.startsWith('/brews')
+                ? 'bg-purple-50 text-purple-700'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="font-medium">Brews</span>
+          </button>
+
           <button
             onClick={() => navigate('/dashboard')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
@@ -86,7 +99,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <button
             onClick={() => navigate('/projects')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-              isActive('/projects')
+              isActive('/projects') || location.pathname.startsWith('/projects')
                 ? 'bg-purple-50 text-purple-700'
                 : 'text-gray-700 hover:bg-gray-50'
             }`}

@@ -25,6 +25,7 @@ import Insights from './pages/Insights'
 import DashboardNew from './pages/DashboardNew'
 import BrandsNew from './pages/BrandsNew'
 import ProjectsNew from './pages/ProjectsNew'
+import Brews from './pages/Brews'
 import TemplatesNew from './pages/TemplatesNew'
 import ThemesNew from './pages/ThemesNew'
 import SettingsNew from './pages/SettingsNew'
@@ -153,6 +154,11 @@ function App() {
         <Route path="/brands" element={
           <ProtectedRoute>
             <BrandsNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/brews" element={
+          <ProtectedRoute>
+            <Brews />
           </ProtectedRoute>
         } />
         <Route path="/projects" element={
