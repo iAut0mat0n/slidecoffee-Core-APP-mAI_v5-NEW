@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCreateWorkspace } from '../lib/queries';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { UsersRound } from 'lucide-react';
 
 export default function OnboardingWorkspace() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const createWorkspace = useCreateWorkspace();
   const [workspaceName, setWorkspaceName] = useState('');
   const [workspaceType, setWorkspaceType] = useState<'personal' | 'team' | 'company'>('personal');
@@ -20,6 +22,9 @@ export default function OnboardingWorkspace() {
       await createWorkspace.mutateAsync({
         name: workspaceName,
       });
+      
+      // CRITICAL: Refresh user data to pick up new workspaceId
+      await refreshUser();
       
       toast.success('Workspace created successfully!');
       navigate('/onboarding/brand');

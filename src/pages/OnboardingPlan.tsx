@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Check, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function OnboardingPlan() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<string>('americano'); // Pre-select Americano
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [loading, setLoading] = useState(false);
@@ -70,7 +72,8 @@ export default function OnboardingPlan() {
     
     try {
       if (selectedPlan === 'espresso') {
-        // Free plan - just continue to dashboard
+        // Free plan - refresh user data and continue to dashboard
+        await refreshUser();
         toast.success('Welcome to SlideCoffee! You\'re on the free Espresso plan.');
         navigate('/dashboard');
         return;
@@ -102,7 +105,9 @@ export default function OnboardingPlan() {
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // Refresh user data before going to dashboard
+    await refreshUser();
     toast.success('You can upgrade anytime from Settings!');
     navigate('/dashboard');
   };
