@@ -3,6 +3,9 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { getAuthenticatedSupabaseClient } from '../utils/supabase-auth.js';
 import { validateLength, MAX_LENGTHS } from '../utils/validation.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { db } from '../db.js';
+import { v2OutlineDrafts, v2Projects, v2ThemeProfiles } from '../../shared/schema.js';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 const router = Router();
 

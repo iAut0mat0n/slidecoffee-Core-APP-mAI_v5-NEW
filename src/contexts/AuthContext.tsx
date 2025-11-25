@@ -64,16 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('3️⃣ Creating missing user record via backend...')
           
           try {
-            // Use proper API base URL (works in both dev and production)
-            // VITE_API_URL should be full base like "http://localhost:3001/api" (dev) or empty (prod)
-            const apiBase = import.meta.env.VITE_API_URL || ''
-            // Ensure we have exactly one /api prefix - normalize the URL construction
-            const createUserUrl = apiBase ? `${apiBase}/auth/create-user` : '/api/auth/create-user'
-            console.log('3️⃣ API call details:', {
-              url: createUserUrl,
-              apiBase: apiBase || '(default /api)',
-              hasToken: !!session.access_token
-            })
+            const createUserUrl = '/api/auth/create-user'
+            console.log('3️⃣ Calling create-user endpoint...')
             
             const response = await fetch(createUserUrl, {
               method: 'POST',
@@ -109,26 +101,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUser(userData)
       
-      // Check if user has completed onboarding by checking for workspaces
+      // Check if user has completed onboarding by checking for default workspace
       if (userData) {
-        const { data: workspaces, error } = await supabase
-          .from('v2_workspaces')
-          .select('id')
-          .eq('owner_id', userData.id)
-          .limit(1)
+        const hasWorkspace = !!userData.default_workspace_id
+        setIsOnboarded(hasWorkspace)
         
-        if (error) {
-          console.error('Failed to check onboarding status:', error)
-          // Default to not onboarded on error (safer)
-          setIsOnboarded(false)
-        } else {
-          const hasWorkspace = !!workspaces && workspaces.length > 0
-          setIsOnboarded(hasWorkspace)
-          
-          // Cache onboarding status
-          if (hasWorkspace) {
-            localStorage.setItem(`onboarded_${userData.id}`, 'true')
-          }
+        // Cache onboarding status
+        if (hasWorkspace) {
+          localStorage.setItem(`onboarded_${userData.id}`, 'true')
         }
       } else {
         setIsOnboarded(false)

@@ -42,20 +42,27 @@ function getTokenFromRequest(req: Request): string | undefined {
 
 router.get('/auth/me', async (req: Request, res: Response) => {
   try {
+    console.log('📍 GET /api/auth/me called');
+    
     if (!supabase) {
+      console.log('❌ Supabase not configured');
       return res.status(500).json({ error: 'Auth service not configured' });
     }
 
     const token = getTokenFromRequest(req);
     if (!token) {
+      console.log('❌ No token found in request');
       return res.status(401).json({ user: null });
     }
 
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !authUser) {
+      console.log('❌ Invalid token or auth error:', authError?.message);
       return res.status(401).json({ user: null });
     }
+
+    console.log('✅ Auth user verified:', authUser.email);
 
     const [userProfile] = await db
       .select({
@@ -73,18 +80,11 @@ router.get('/auth/me', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!userProfile) {
-      return res.json({
-        user: {
-          id: authUser.id,
-          email: authUser.email,
-          name: authUser.user_metadata?.name || authUser.email,
-          role: 'user',
-          plan: 'starter',
-          default_workspace_id: null,
-        },
-      });
+      console.log('⚠️ User not found in Replit DB, returning null');
+      return res.json({ user: null });
     }
 
+    console.log('✅ User found in Replit DB:', userProfile.email);
     res.json({ 
       user: {
         id: userProfile.id,

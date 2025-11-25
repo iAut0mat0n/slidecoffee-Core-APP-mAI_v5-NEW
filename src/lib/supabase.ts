@@ -150,26 +150,48 @@ export type AISettings = {
 
 // Helper functions
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return null
   
-  const { data } = await supabase
-    .from('v2_users')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-  
-  return data as User | null
+  try {
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      credentials: 'include',
+    })
+    
+    if (!response.ok) {
+      return null
+    }
+    
+    const data = await response.json()
+    return data.user as User | null
+  } catch (error) {
+    console.error('Failed to fetch current user:', error)
+    return null
+  }
 }
 
-export const getUserWorkspaces = async (userId: string) => {
-  const { data } = await supabase
-    .from('v2_workspaces')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('created_at', { ascending: false })
-  
-  return data as Workspace[] || []
+export const getUserWorkspaces = async (_userId?: string) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return []
+    
+    const response = await fetch('/api/workspaces', {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      credentials: 'include',
+    })
+    
+    if (!response.ok) return []
+    
+    return await response.json() as Workspace[]
+  } catch (error) {
+    console.error('Failed to fetch workspaces:', error)
+    return []
+  }
 }
 
 export const getWorkspaceBrands = async (workspaceId: string) => {
