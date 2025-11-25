@@ -146,6 +146,14 @@ export const themesAPI = {
   get: (id: string) => fetchAPI<any>(`/themes/${id}`),
 };
 
+// Users API
+export const usersAPI = {
+  updateProfile: (data: { name?: string }) => fetchAPI<any>('/users/me', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+};
+
 // Admin API
 export const adminAPI = {
   getUsers: () => fetchAPI<any[]>('/admin/users'),

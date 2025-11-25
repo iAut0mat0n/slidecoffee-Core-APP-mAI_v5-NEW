@@ -7,6 +7,7 @@ type AuthContextType = {
   supabaseUser: SupabaseUser | null
   loading: boolean
   isOnboarded: boolean
+  refreshUser: () => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string) => Promise<void>
   signOut: () => Promise<void>
@@ -172,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabaseUser,
       loading,
       isOnboarded,
+      refreshUser: loadUser,
       signIn,
       signUp,
       signOut,

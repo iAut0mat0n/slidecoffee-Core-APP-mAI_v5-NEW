@@ -1,21 +1,19 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, CreditCard, Users, Shield, Bell } from 'lucide-react'
+import { User, CreditCard, Users, Shield, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
+import DashboardLayout from '../components/DashboardLayout'
 import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
+import { usersAPI } from '../lib/api-client'
 
 type Tab = 'profile' | 'subscription' | 'team' | 'security' | 'notifications'
 
 export default function Settings() {
-  const { user } = useAuth()
-  const navigate = useNavigate()
+  const { user, refreshUser } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [saving, setSaving] = useState(false)
 
-  // Profile form
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || ''
@@ -26,12 +24,8 @@ export default function Settings() {
     
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('v2_users')
-        .update({ name: profileData.name })
-        .eq('id', user.id)
-      
-      if (error) throw error
+      await usersAPI.updateProfile({ name: profileData.name })
+      await refreshUser?.()
       alert('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -50,27 +44,14 @@ export default function Settings() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600">Manage your account and preferences</p>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
+    <DashboardLayout>
       <div className="p-8">
-        <div className="max-w-5xl mx-auto flex gap-8">
-          {/* Sidebar */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-600">Manage your account and preferences</p>
+        </div>
+
+        <div className="flex gap-8">
           <div className="w-64 flex-shrink-0">
             <Card className="p-2">
               {tabs.map((tab) => {
@@ -81,7 +62,7 @@ export default function Settings() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       activeTab === tab.id
-                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        ? 'bg-purple-50 text-purple-700 font-medium'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
@@ -93,14 +74,13 @@ export default function Settings() {
             </Card>
           </div>
 
-          {/* Main Content */}
           <div className="flex-1">
             {activeTab === 'profile' && (
               <Card className="p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Settings</h2>
                 <div className="space-y-6">
                   <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div>
@@ -137,7 +117,7 @@ export default function Settings() {
               <Card className="p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Subscription</h2>
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-primary-50 to-mint-50 rounded-lg p-6">
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 capitalize">
@@ -146,7 +126,7 @@ export default function Settings() {
                         <p className="text-gray-600">Current subscription</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-3xl font-bold text-primary-600">{user?.credits || 0}</div>
+                        <div className="text-3xl font-bold text-purple-600">{user?.credits || 0}</div>
                         <div className="text-sm text-gray-600">Credits remaining</div>
                       </div>
                     </div>
@@ -240,7 +220,7 @@ export default function Settings() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                       </label>
                     </div>
                   ))}
@@ -250,7 +230,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
-
