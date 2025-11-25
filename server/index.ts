@@ -21,6 +21,7 @@ import supportTicketsRouter from './routes/support-tickets.js';
 import usageRouter from './routes/usage.js';
 import { commentsRouter } from './routes/comments.js';
 import brewsRouter from './routes/brews.js';
+import { dbTestRouter } from './routes/db-test.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +91,7 @@ app.use('/api/support-tickets', supportTicketsRouter);
 app.use('/api/usage', usageRouter);
 app.use('/api', commentsRouter);
 app.use('/api', brewsRouter);
+app.use('/api', dbTestRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
