@@ -1,14 +1,28 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, varchar, index } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+
+export const sessions = pgTable(
+  'sessions',
+  {
+    sid: varchar('sid').primaryKey(),
+    sess: jsonb('sess').notNull(),
+    expire: timestamp('expire').notNull(),
+  },
+  (table) => [index('IDX_session_expire').on(table.expire)],
+);
 
 export const v2Users = pgTable('v2_users', {
   id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
-  email: text('email').notNull(),
+  replitAuthId: varchar('replit_auth_id').unique(),
+  email: text('email').unique(),
   name: text('name'),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
   avatarUrl: text('avatar_url'),
+  profileImageUrl: text('profile_image_url'),
   role: text('role').default('user'),
   credits: integer('credits').default(75),
-  plan: text('plan').default('starter'),
+  plan: text('plan').default('espresso'),
   defaultWorkspaceId: uuid('default_workspace_id'),
   subscriptionStatus: text('subscription_status').default('inactive'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { setupAuth } from './replitAuth.js';
 import { aiChatRouter } from './routes/ai-chat.js';
 import { aiChatStreamRouter } from './routes/ai-chat-stream.js';
 import { generateSlidesRouter } from './routes/generate-slides.js';
@@ -31,8 +32,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || process.env.BACKEND_PORT || '5000', 10);
 
-// Trust proxy for proper rate limiting behind reverse proxies (Replit, Netlify, etc.)
-app.set('trust proxy', 1);
+// Setup Replit Auth (must be early, before other middleware)
+await setupAuth(app);
 
 // CORS configuration
 const allowedOrigins = [
