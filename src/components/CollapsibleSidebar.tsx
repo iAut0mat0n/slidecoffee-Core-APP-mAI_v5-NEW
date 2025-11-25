@@ -34,7 +34,7 @@ export default function CollapsibleSidebar() {
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <Briefcase size={20} />, label: 'Brews', path: '/projects' },
     { icon: <Palette size={20} />, label: 'Brands', path: '/brands' },
-    { icon: <FileText size={20} />, label: 'Templates', path: '/templates' },
+    { icon: <FileText size={20} />, label: 'Templates', path: '/templates-new' },
     { icon: <Sparkles size={20} />, label: 'Themes', path: '/themes' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
   ]

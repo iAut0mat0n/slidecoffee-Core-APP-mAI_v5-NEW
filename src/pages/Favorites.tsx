@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import DashboardLayout from '../components/DashboardLayout';
+import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import { Star, Sparkles } from 'lucide-react';
 
 export default function Favorites() {
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8">
         <div className="flex items-center gap-3 mb-6">
           <Star className="w-8 h-8 text-purple-600" />
           <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
@@ -25,7 +27,8 @@ export default function Favorites() {
             Create Your First Brew
           </Link>
         </div>
+        </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

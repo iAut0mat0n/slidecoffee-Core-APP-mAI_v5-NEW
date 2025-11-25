@@ -177,6 +177,11 @@ function App() {
             <SettingsNew />
           </ProtectedRoute>
         } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <SettingsNew />
+          </ProtectedRoute>
+        } />
         <Route path="/create" element={
           <ProtectedRoute>
             <CreateModeSelector />
@@ -363,11 +368,12 @@ function App() {
             <Editor />
           </ProtectedRoute>
         } />
-        <Route path="/settings/*" element={
+        {/* DEPRECATED: Old settings route - now using /settings → SettingsNew */}
+        {/* <Route path="/settings/*" element={
           <ProtectedRoute>
             <Settings />
           </ProtectedRoute>
-        } />
+        } /> */}
         <Route path="/admin/*" element={
           <ProtectedRoute>
             <AdminPanel />
