@@ -122,9 +122,14 @@ export default function CollapsibleSidebar() {
     }
   }
 
-  const switchWorkspace = (ws: Workspace) => {
+  const switchWorkspace = async (ws: Workspace) => {
     setCurrentWorkspace(ws)
     setIsWorkspaceSwitcherOpen(false)
+    try {
+      await workspacesAPI.switch(ws.id)
+    } catch (error) {
+      console.error('Failed to switch workspace:', error)
+    }
   }
 
   // Get user display info

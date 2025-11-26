@@ -58,7 +58,15 @@ SlideCoffee is a full-stack application with a clear separation between frontend
       - All pages migrated: Dashboard, Brews, TemplatesNew, Settings, SubscriptionBilling, ImportMode, PasteMode
       - DashboardLayout.tsx has been removed
       - Sidebar navigation now shows: Dashboard, Brews, Templates, Themes (Brands and Settings removed from main nav; Settings accessible via user profile menu)
-    - **AI Brew Conversational Mode (Nov 26, 2025):** AIAgentCreate now has intent detection to distinguish between casual chat and presentation creation. Only triggers full AI slide generation when message contains BOTH an action verb (create, make, build, etc.) AND a presentation noun (presentation, slides, deck, etc.). Otherwise uses conversational chat mode via `/api/ai-chat-stream` endpoint.
+    - **AI Brew Conversational Mode (Nov 26, 2025):** AIAgentCreate now has intent detection to distinguish between casual chat and presentation creation. Only triggers full AI slide generation when message contains BOTH an action verb (create, make, build, generate, design, prepare, draft, write) AND a presentation noun (presentation, pitch deck, slides, deck, proposal, report, training, module, ppt, powerpoint). Otherwise uses conversational chat mode via `/api/ai-chat-stream` endpoint.
+    - **Navigation Fixes (Nov 26, 2025):**
+      - Dashboard "Create your first presentation" button now navigates to /create/generate (AIAgentCreate) instead of deprecated /editor/new
+      - Brews page "Create Brew" button navigates to /create/generate instead of showing old CreateBrewWizard modal
+      - CreateBrewWizard component is now deprecated (no longer used in primary flows)
+    - **Workspace Management (Nov 26, 2025):**
+      - Create workspace now uses inline modal in CollapsibleSidebar instead of navigating to /onboarding/workspace
+      - Workspace switching persists selection via workspacesAPI.switch() backend call
+      - Modal closes gracefully and keeps user on current page
     - **UX Polish (Nov 26, 2025):** Added cursor-pointer styling to Upgrade button and workspace items. Removed mock payment method and billing history from SubscriptionBilling (now shows proper empty states).
 
 **System Design Choices:**

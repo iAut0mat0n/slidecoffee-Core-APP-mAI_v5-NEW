@@ -110,6 +110,10 @@ export const workspacesAPI = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+  switch: (workspaceId: string) => fetchAPI<any>('/workspaces/switch', {
+    method: 'POST',
+    body: JSON.stringify({ workspaceId }),
+  }),
 };
 
 // Brews API (Gamma-style workflow)
