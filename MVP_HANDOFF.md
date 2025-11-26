@@ -1,353 +1,451 @@
-# SlideCoffee MVP Handoff Document
+# SlideCoffee MVP - Greenfield Development Guide
 
-## Overview
+## What We're Building
 
-SlideCoffee is an AI-powered presentation platform that enables users to generate professional slide decks through conversational AI. The core value proposition is the "AI Brew" experience - users describe what they want, and the AI researches, outlines, and generates a complete presentation.
+**SlideCoffee** is an AI-powered presentation generator. Users chat with an AI agent called "Brew" to create professional slide decks. The AI researches topics, creates outlines, and generates slides in real-time.
 
-**Production URL:** app.slidecoffee.ai  
-**Staging URL:** slidecoffeev3.replit.app
+**One Sentence:** "Describe what you want, watch your presentation appear."
 
 ---
 
-## Core MVP Features (Priority Order)
+## Core MVP Features (Build These Only)
 
-### 1. AI Brew Experience (HIGHEST PRIORITY)
-The central feature of SlideCoffee. Users chat with an AI that:
-- Detects intent (casual conversation vs. presentation creation)
-- Researches the topic using DuckDuckGo search
-- Creates an outline with slide structure
-- Generates slides one-by-one with real-time streaming
-- Saves the final presentation to the database
+### 1. AI Agent Chat Interface (PRIMARY FEATURE)
+A conversational UI where users interact with "Brew" - the AI presentation partner.
 
-**Key Files:**
-- `src/pages/AIAgentCreate.tsx` - Main AI chat interface
-- `src/lib/api-slides-stream.ts` - SSE client for streaming generation
-- `server/routes/generate-slides-stream.ts` - Backend SSE endpoint
-- `server/services/ai-service.ts` - AI provider abstraction (Anthropic Claude)
+**User Flow:**
+1. User types: "Create a pitch deck for my AI startup"
+2. AI responds conversationally, asks clarifying questions
+3. User confirms direction
+4. AI researches the topic (shows sources)
+5. AI creates outline (user can edit)
+6. AI generates slides one-by-one with real-time streaming
+7. User views/edits the finished presentation
 
-**Intent Detection Logic:**
+**Key UI Components:**
+- Chat message list (user messages + AI responses)
+- Text input with send button
+- Task progress indicator (Research → Outline → Generate → Complete)
+- Live preview panel showing slides as they generate
+- Source citations from research
+
+### 2. Slide Generation Engine
+Real-time streaming slide generation using Server-Sent Events (SSE).
+
+**Generation Phases:**
+1. **Research** - Search the web for topic information
+2. **Outline** - Create slide structure with titles and key points
+3. **Generate** - Create each slide with full content
+4. **Save** - Store presentation in database
+
+### 3. Presentation Viewer
+Simple viewer to display generated presentations.
+
+**Features:**
+- Slide navigation (prev/next)
+- Slide thumbnails
+- Full-screen mode
+- Export to PowerPoint (.pptx)
+
+### 4. Basic Auth & Workspace
+- Email/password login (use Supabase Auth)
+- User has one workspace
+- Workspace contains presentations
+
+---
+
+## AI Integration (Critical)
+
+### Primary: Claude API (Anthropic)
+**Model:** `claude-3-5-haiku-20241022` (fast, cost-effective for presentations)
+
 ```javascript
-// Only trigger full generation when message has BOTH:
-// 1. Action verb: create, make, build, generate, design, prepare, draft, write
-// 2. Presentation noun: presentation, slides, deck, pitch, proposal, report
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Generate outline
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-haiku-20241022',
+  max_tokens: 2000,
+  temperature: 0.7,
+  messages: [{
+    role: 'user',
+    content: `Create a presentation outline for: "${topic}"
+    
+Return JSON with this structure:
+{
+  "title": "Presentation Title",
+  "summary": "Brief description",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "title": "Slide Title",
+      "type": "title",
+      "keyPoints": ["Main point"]
+    }
+  ]
+}`
+  }]
+});
 ```
 
-### 2. Authentication & User Management
-- **Provider:** Supabase Auth (email/password, Google OAuth)
-- **Session:** JWT tokens validated via `supabase.auth.getUser()`
-- **Database:** User records stored in Replit PostgreSQL after Supabase auth
+### Alternative: Manus API (OpenAI-compatible)
+For chat conversations or if Claude is unavailable.
 
-**Key Files:**
-- `src/contexts/AuthContext.tsx` - Frontend auth context
-- `server/middleware/auth.ts` - Backend JWT validation
-- `src/pages/Login.tsx`, `src/pages/Signup.tsx` - Auth pages
+```javascript
+const MANUS_API_URL = process.env.BUILT_IN_FORGE_API_URL;
+const MANUS_API_KEY = process.env.BUILT_IN_FORGE_API_KEY;
 
-### 3. Workspace & Project Management
-- Users belong to workspaces
-- Projects contain presentations
-- Workspace switching should persist selection
+const response = await fetch(`${MANUS_API_URL}/v1/chat/completions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${MANUS_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: 'gemini-2.0-flash-exp',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...userMessages
+    ],
+    temperature: 0.7,
+    max_tokens: 1000
+  })
+});
+```
 
-**Key Files:**
-- `src/components/CollapsibleSidebar.tsx` - Sidebar with workspace switcher
-- `server/routes/workspaces.ts` - Workspace CRUD endpoints
-
-### 4. Presentation Viewer/Editor
-- View generated presentations
-- Edit slide content
-- Export to PowerPoint (pptxgenjs library installed)
-
-**Key Files:**
-- `src/pages/PresentView.tsx` - Presentation viewer
-- `server/routes/presentations.ts` - Presentation endpoints
-
-### 5. Subscription & Billing
-- Stripe integration for Pro/Enterprise plans
-- Credit-based usage system (75 credits for free tier)
-
-**Key Files:**
-- `src/pages/SubscriptionBilling.tsx` - Billing UI
-- `server/routes/stripe.ts` - Stripe webhook handlers
-
----
-
-## Tech Stack
-
-### Frontend
-- **Framework:** React 19 with TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS (v4)
-- **State:** React Query (TanStack Query)
-- **Routing:** React Router v7
-- **Icons:** Lucide React
-- **Toasts:** Sonner
-
-### Backend
-- **Runtime:** Node.js with TSX
-- **Framework:** Express.js
-- **Database:** Replit PostgreSQL (Neon-backed)
-- **ORM:** Drizzle ORM
-- **Auth:** Supabase Auth (JWT validation)
-- **AI:** Anthropic Claude API (Claude Haiku 4.5)
-- **Payments:** Stripe
-
-### Key Dependencies
-```json
+### AI Provider Configuration
+Store in database for easy switching:
+```javascript
+// v2_ai_settings table
 {
-  "@anthropic-ai/sdk": "^0.71.0",
-  "@supabase/supabase-js": "^2.81.1",
-  "@neondatabase/serverless": "^1.0.2",
-  "drizzle-orm": "^0.44.7",
-  "stripe": "^20.0.0",
-  "pptxgenjs": "^4.0.1"
+  provider: 'claude-haiku', // or 'manus', 'claude-sonnet', 'gpt-4'
+  model: 'claude-3-5-haiku-20241022',
+  apiUrl: 'https://api.anthropic.com',
+  apiKey: process.env.ANTHROPIC_API_KEY
 }
 ```
 
 ---
 
-## Color Scheme & Branding
+## Tech Stack (Recommended)
 
-### Primary Colors
-- **Primary Purple:** `#7C3AED` (purple-600)
-- **Primary Hover:** `#6D28D9` (purple-700)
-- **Primary Light:** `#EDE9FE` (purple-100)
+### Frontend
+- **React 19** - UI framework
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **React Query** - Server state
+- **React Router** - Navigation
+- **Lucide React** - Icons
+- **Sonner** - Toast notifications
 
-### Secondary Colors
-- **Success Green:** `#10B981`
-- **Error Red:** `#EF4444`
-- **Warning Yellow:** `#F59E0B`
+### Backend
+- **Node.js + Express** - API server
+- **Drizzle ORM** - Database queries
+- **PostgreSQL** - Database (Replit built-in)
 
-### Neutrals
-- **Background:** `#F9FAFB` (gray-50)
-- **Card Background:** `#FFFFFF`
-- **Border:** `#E5E7EB` (gray-200)
-- **Text Primary:** `#111827` (gray-900)
-- **Text Secondary:** `#6B7280` (gray-500)
-
-### Typography
-- **Font Family:** Inter (Google Fonts)
-- **Headings:** Bold, gray-900
-- **Body:** Regular, gray-700
+### External Services
+- **Supabase** - Authentication only
+- **Anthropic** - AI (Claude API)
+- **Manus/Forge** - Alternative AI (built into Replit)
 
 ---
 
-## Database Schema (v2_* Tables)
+## Color Scheme
 
-### Core Tables
+```css
+/* Primary - Purple */
+--primary: #7C3AED;
+--primary-hover: #6D28D9;
+--primary-light: #EDE9FE;
+
+/* Backgrounds */
+--bg-primary: #FFFFFF;
+--bg-secondary: #F9FAFB;
+
+/* Text */
+--text-primary: #111827;
+--text-secondary: #6B7280;
+
+/* Borders */
+--border: #E5E7EB;
+
+/* Status */
+--success: #10B981;
+--error: #EF4444;
+```
+
+---
+
+## Database Schema (Minimal)
 
 ```sql
 -- Users (synced from Supabase Auth)
-v2_users: id, email, name, role, credits, plan, default_workspace_id
+CREATE TABLE v2_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE,
+  name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Workspaces (multi-tenant)
-v2_workspaces: id, name, owner_id
-
--- Workspace Members
-v2_workspace_members: id, workspace_id, user_id, role
-
--- Projects (containers for presentations)
-v2_projects: id, workspace_id, name, description, brand_id
+-- Workspaces
+CREATE TABLE v2_workspaces (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  owner_id UUID REFERENCES v2_users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- Presentations
-v2_presentations: id, workspace_id, project_id, title, slides_json, status
+CREATE TABLE v2_presentations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES v2_workspaces(id),
+  title TEXT NOT NULL,
+  slides_json JSONB, -- Array of slide objects
+  status TEXT DEFAULT 'draft',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- Outline Drafts (intermediate state during generation)
-v2_outline_drafts: id, workspace_id, topic, outline_json, theme_id, status
-
--- Themes/Templates
-v2_theme_profiles: id, workspace_id, name, palette_json, typography_json
+CREATE TABLE v2_outline_drafts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES v2_workspaces(id),
+  topic TEXT NOT NULL,
+  outline_json JSONB,
+  status TEXT DEFAULT 'draft',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
-
-### Relationships
-- User -> Workspaces (owner)
-- Workspace -> Projects -> Presentations
-- Workspace -> Themes
-- User Context for AI personalization: `v2_user_context`
 
 ---
 
-## API Endpoints
+## API Endpoints to Build
 
 ### Authentication
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - Logout
-
-### Workspaces
-- `GET /api/workspaces` - List user's workspaces
-- `POST /api/workspaces` - Create workspace
-- `POST /api/workspaces/switch` - Switch active workspace (NEEDS WORK)
-
-### Projects
-- `GET /api/projects` - List projects
-- `POST /api/projects` - Create project
-- `GET /api/projects/:id` - Get project
+```
+GET  /api/auth/me          → Get current user
+POST /api/auth/logout      → Logout
+```
 
 ### Presentations
-- `GET /api/presentations` - List presentations
-- `POST /api/presentations` - Create presentation
-- `GET /api/presentations/:id` - Get presentation
-- `PUT /api/presentations/:id` - Update presentation
+```
+GET  /api/presentations         → List user's presentations
+POST /api/presentations         → Create presentation
+GET  /api/presentations/:id     → Get single presentation
+PUT  /api/presentations/:id     → Update presentation
+```
 
-### AI Generation (SSE)
-- `POST /api/generate-slides-stream` - Stream slide generation
-- `POST /api/ai-chat-stream` - Conversational chat
+### AI Generation (SSE Streaming)
+```
+POST /api/generate-slides-stream
+Body: { topic: string, enableResearch: boolean }
+Response: Server-Sent Events stream
 
-### Billing
-- `POST /api/stripe/create-checkout` - Create Stripe checkout
-- `POST /api/stripe/webhook` - Stripe webhook handler
-- `POST /api/stripe/customer-portal` - Get customer portal URL
+Events emitted:
+- start
+- research_start
+- research_source (url, title, snippet)
+- research_complete
+- outline_start
+- outline_complete (outline JSON)
+- slide_start
+- slide_generated (slide data, progress %)
+- slides_complete
+- complete (presentation ID)
+- error
+```
 
----
-
-## Environment Variables Required
-
-```bash
-# Database
-DATABASE_URL=postgresql://...
-
-# Supabase Auth
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-
-# AI Provider
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Stripe Billing
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_PRO=price_...
-STRIPE_PRICE_ENTERPRISE=price_...
-
-# App URLs
-VITE_API_URL=/api
+### AI Chat (Conversational)
+```
+POST /api/ai-chat-stream
+Body: { messages: Array<{role, content}> }
+Response: SSE stream of chat tokens
 ```
 
 ---
 
-## Current Status
-
-### Working
-- Unified dashboard layout (CollapsibleSidebar)
-- Authentication flow (Supabase)
-- User registration and login
-- Workspace creation (inline modal)
-- AI conversational mode (intent detection)
-- Navigation to AI Brew experience
-
-### Needs Work (Priority Order)
-
-1. **AI Generation Pipeline** - SSE stream errors after kickoff
-   - Debug: Check `/api/generate-slides-stream` endpoint
-   - Verify Anthropic API key and response handling
-   - Ensure presentation persistence to database
-
-2. **Workspace Switching** - Backend endpoint incomplete
-   - Add `POST /api/workspaces/switch` route
-   - Persist to user's `default_workspace_id`
-
-3. **Brands Module Removal** - Remnants exist
-   - Remove all `brand_id` references from flows
-   - Delete `src/pages/Brands*.tsx` files
-   - Remove `server/routes/brands.ts`
-
-4. **Templates/Themes** - Non-functional
-   - Theme picker shows empty
-   - Upload/selection handlers broken
-
-5. **Stripe Billing** - Using placeholder data
-   - Wire to real Stripe customer data
-   - Show actual subscription status
-
-6. **Login Regression** - Some existing users can't login
-   - Check Supabase user sync with Replit DB
-
----
-
-## File Structure
+## Key Files to Create
 
 ```
 /
-├── src/                      # Frontend React app
-│   ├── components/           # Reusable components
-│   ├── contexts/             # React contexts (Auth, etc.)
-│   ├── lib/                  # API clients, utilities
-│   ├── pages/                # Route pages
-│   └── App.tsx               # Route definitions
+├── src/
+│   ├── App.tsx                    # Routes
+│   ├── pages/
+│   │   ├── Login.tsx              # Auth
+│   │   ├── Dashboard.tsx          # Home
+│   │   ├── AIAgentCreate.tsx      # Main AI chat interface
+│   │   └── PresentationView.tsx   # View slides
+│   ├── components/
+│   │   ├── Sidebar.tsx            # Navigation
+│   │   ├── ChatMessage.tsx        # AI chat bubbles
+│   │   ├── SlidePreview.tsx       # Live slide preview
+│   │   └── TaskProgress.tsx       # Generation progress
+│   ├── lib/
+│   │   ├── api-client.ts          # API helpers
+│   │   └── api-slides-stream.ts   # SSE client
+│   └── contexts/
+│       └── AuthContext.tsx        # Auth state
 │
-├── server/                   # Backend Express app
-│   ├── routes/               # API route handlers
-│   ├── services/             # Business logic (AI, Stripe)
-│   ├── middleware/           # Auth, rate limiting
-│   └── index.ts              # Server entry point
+├── server/
+│   ├── index.ts                   # Express server
+│   ├── routes/
+│   │   ├── auth.ts
+│   │   ├── presentations.ts
+│   │   └── generate-slides-stream.ts  # AI generation
+│   ├── middleware/
+│   │   └── auth.ts                # JWT validation
+│   └── services/
+│       └── web-search.ts          # Research functionality
 │
-├── shared/                   # Shared between frontend/backend
-│   └── schema.ts             # Drizzle database schema
-│
-├── public/                   # Static assets
-│   └── branding/             # Logo, favicon
-│
-└── replit.md                 # Project documentation
+└── shared/
+    └── schema.ts                  # Drizzle schema
 ```
 
 ---
 
-## Running the Project
+## AI Agent Personality
+
+**Name:** Brew  
+**Tagline:** "Crafting presentations, one slide at a time ☕"
+
+**Personality:**
+- Warm and encouraging (like a supportive colleague)
+- Coffee-themed personality
+- Proactive - suggests ideas, asks clarifying questions
+- Expert in presentation design and storytelling
+
+**System Prompt:**
+```
+You are Brew, an AI presentation partner for SlideCoffee. You're warm, supportive, and genuinely excited to help users create amazing presentations.
+
+Your Approach:
+1. Listen First - Understand what the user wants
+2. Research Actively - Gather insights on the topic
+3. Suggest Ideas - Provide concrete suggestions
+4. Ask Smart Questions - Help refine ideas
+5. Guide to Action - Move toward creating slides
+
+When users ask to create a presentation:
+1. Acknowledge their request enthusiastically
+2. Ask 1-2 clarifying questions if needed
+3. Begin research and outline generation
+4. Stream slides as they're created
+```
+
+---
+
+## Intent Detection (Important)
+
+Not every message should trigger slide generation. Detect intent:
+
+```javascript
+function isCreationIntent(message) {
+  const lower = message.toLowerCase();
+  
+  const actionVerbs = ['create', 'make', 'build', 'generate', 'design', 'prepare', 'draft'];
+  const presentationNouns = ['presentation', 'slides', 'deck', 'pitch', 'proposal', 'report'];
+  
+  const hasAction = actionVerbs.some(v => lower.includes(v));
+  const hasPresentation = presentationNouns.some(n => lower.includes(n));
+  
+  return hasAction && hasPresentation;
+}
+
+// "hello" → conversational chat
+// "create a sales deck" → trigger slide generation
+```
+
+---
+
+## PowerPoint Export
+
+Use `pptxgenjs` library to generate .pptx files:
+
+```javascript
+import pptxgen from 'pptxgenjs';
+
+function generatePPTX(presentation) {
+  const pptx = new pptxgen();
+  
+  presentation.slides.forEach(slide => {
+    const pptSlide = pptx.addSlide();
+    pptSlide.addText(slide.title, { x: 0.5, y: 0.5, fontSize: 24, bold: true });
+    
+    slide.content.points.forEach((point, i) => {
+      pptSlide.addText(point, { x: 0.5, y: 1.5 + (i * 0.5), fontSize: 14 });
+    });
+  });
+  
+  return pptx.write('blob');
+}
+```
+
+---
+
+## Environment Variables
 
 ```bash
-# Development (frontend + backend)
-npm run dev
+# Database (auto-provided by Replit)
+DATABASE_URL=
 
-# Production build
-npm run build
-npm run start
+# Supabase Auth
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 
-# Database migrations
-npm run db:push
+# AI - Primary
+ANTHROPIC_API_KEY=
 
-# Tests
-npm run test
+# AI - Alternative (Replit built-in)
+BUILT_IN_FORGE_API_URL=
+BUILT_IN_FORGE_API_KEY=
 ```
 
 ---
 
-## Key Design Decisions
+## MVP Success Criteria
 
-1. **Unified Layout** - All pages use `CollapsibleSidebar` component
-2. **AI-First UX** - Chat interface is primary interaction
-3. **SSE Streaming** - Real-time slide generation feedback
-4. **Multi-tenant** - Workspace isolation via RLS policies
-5. **Credit System** - Usage-based with plan upgrades
-
----
-
-## Immediate Next Steps for New Developer
-
-1. **Stabilize AI Generation**
-   - Test `/api/generate-slides-stream` endpoint directly
-   - Add error logging and telemetry
-   - Ensure presentations save to `v2_presentations`
-
-2. **Complete Workspace Flow**
-   - Implement `POST /api/workspaces/switch`
-   - Update user's `default_workspace_id`
-   - Ensure workspace context persists across sessions
-
-3. **Clean Up Brand References**
-   - Remove brand dropdown from any remaining UIs
-   - Delete brand-related routes and pages
-   - Update schema if needed
-
-4. **Test End-to-End Flow**
-   - Signup -> Create Workspace -> Generate Presentation -> View/Export
+1. **User can sign up/login** with email
+2. **User can chat** with AI agent naturally
+3. **AI researches topics** and shows sources
+4. **AI generates outlines** user can review
+5. **Slides stream in real-time** as they're created
+6. **Presentations are saved** and viewable later
+7. **Export to PowerPoint** works
 
 ---
 
-## Contact & Resources
+## What NOT to Build for MVP
 
-- **Replit Project:** SlideCoffee v3
-- **Production Domain:** app.slidecoffee.ai
-- **Supabase Dashboard:** [Access via Supabase console]
-- **Stripe Dashboard:** [Access via Stripe console]
+- ❌ Teams/collaboration
+- ❌ Brand management
+- ❌ Theme/template library
+- ❌ Payment/subscriptions
+- ❌ Admin panel
+- ❌ Real-time editing
+- ❌ Version history
+- ❌ Comments/annotations
+
+Focus entirely on the AI → Slides pipeline. Everything else comes later.
+
+---
+
+## Getting Started
+
+1. Set up React + Vite frontend
+2. Set up Express backend
+3. Configure Supabase Auth
+4. Add Anthropic API key
+5. Create database tables
+6. Build the AI chat interface
+7. Implement SSE slide generation
+8. Add presentation viewer
+9. Add PowerPoint export
+
+**The entire MVP should be buildable in 2-3 weeks by one developer.**
 
 ---
 
