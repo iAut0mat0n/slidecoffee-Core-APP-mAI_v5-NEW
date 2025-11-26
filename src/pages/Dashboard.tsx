@@ -58,7 +58,7 @@ export default function Dashboard() {
   }
 
   const handleCreateProject = () => {
-    navigate('/editor/new')
+    navigate('/create/generate')
   }
 
   return (

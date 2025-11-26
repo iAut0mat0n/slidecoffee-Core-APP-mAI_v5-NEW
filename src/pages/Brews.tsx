@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Grid3x3, List, Filter, Calendar, Sparkles, Folder, Clock } from 'lucide-react';
 import CollapsibleSidebar from '../components/CollapsibleSidebar';
-import CreateBrewWizard from '../components/CreateBrewWizard';
 import { useProjects } from '../lib/queries';
 
 export default function Brews() {
@@ -10,10 +9,9 @@ export default function Brews() {
   const { data: projects = [], isLoading } = useProjects();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showWizard, setShowWizard] = useState(false);
 
   const handleCreateNew = () => {
-    setShowWizard(true);
+    navigate('/create/generate');
   };
 
   const filteredProjects = projects.filter(project =>
@@ -23,7 +21,6 @@ export default function Brews() {
   return (
     <div className="flex h-screen bg-gray-50">
       <CollapsibleSidebar />
-      {showWizard && <CreateBrewWizard onClose={() => setShowWizard(false)} />}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">

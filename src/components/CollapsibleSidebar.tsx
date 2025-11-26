@@ -36,6 +36,9 @@ export default function CollapsibleSidebar() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
   const [workspacesLoading, setWorkspacesLoading] = useState(true)
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false)
+  const [newWorkspaceName, setNewWorkspaceName] = useState('')
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
@@ -98,7 +101,25 @@ export default function CollapsibleSidebar() {
 
   const handleCreateWorkspace = () => {
     setIsWorkspaceSwitcherOpen(false)
-    navigate('/onboarding/workspace')
+    setShowCreateWorkspaceModal(true)
+    setNewWorkspaceName('')
+  }
+
+  const handleSubmitNewWorkspace = async () => {
+    if (!newWorkspaceName.trim() || isCreatingWorkspace) return
+    
+    setIsCreatingWorkspace(true)
+    try {
+      const newWorkspace = await workspacesAPI.create({ name: newWorkspaceName.trim() })
+      setWorkspaces(prev => [...prev, newWorkspace])
+      setCurrentWorkspace(newWorkspace)
+      setShowCreateWorkspaceModal(false)
+      setNewWorkspaceName('')
+    } catch (error) {
+      console.error('Failed to create workspace:', error)
+    } finally {
+      setIsCreatingWorkspace(false)
+    }
   }
 
   const switchWorkspace = (ws: Workspace) => {
@@ -377,6 +398,39 @@ export default function CollapsibleSidebar() {
           <ChevronLeft size={14} className="text-gray-600" />
         )}
       </button>
+
+      {/* Create Workspace Modal */}
+      {showCreateWorkspaceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-bold mb-4">Create New Workspace</h2>
+            <input
+              type="text"
+              value={newWorkspaceName}
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
+              placeholder="Workspace name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-4"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmitNewWorkspace()}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowCreateWorkspaceModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitNewWorkspace}
+                disabled={!newWorkspaceName.trim() || isCreatingWorkspace}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreatingWorkspace ? 'Creating...' : 'Create Workspace'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
