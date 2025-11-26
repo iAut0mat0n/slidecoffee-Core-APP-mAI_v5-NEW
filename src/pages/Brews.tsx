@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Grid3x3, List, Filter, Calendar, Sparkles, Folder, Clock } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import CreateBrewWizard from '../components/CreateBrewWizard';
 import { useProjects } from '../lib/queries';
 
@@ -21,9 +21,10 @@ export default function Brews() {
   );
 
   return (
-    <DashboardLayout>
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
       {showWizard && <CreateBrewWizard onClose={() => setShowWizard(false)} />}
-      <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between mb-6">
@@ -166,7 +167,7 @@ export default function Brews() {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, Coffee, FileText, CheckSquare, Edit3, X } from 'lucide-react'
-import DashboardLayout from '../components/DashboardLayout'
+import CollapsibleSidebar from '../components/CollapsibleSidebar'
 
 export default function TemplatesNew() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -10,8 +10,9 @@ export default function TemplatesNew() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto p-8">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
@@ -78,39 +79,39 @@ export default function TemplatesNew() {
             </div>
           </div>
         </div>
-      </div>
 
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Create Template</h2>
-              <button 
-                onClick={() => setShowCreateModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Choose a presentation to turn into a template
-            </p>
-            <div className="space-y-3 mb-6">
-              <div className="p-4 border border-gray-200 rounded-lg text-center text-gray-500">
-                No presentations available
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Create Template</h2>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Choose a presentation to turn into a template
+              </p>
+              <div className="space-y-3 mb-6">
+                <div className="p-4 border border-gray-200 rounded-lg text-center text-gray-500">
+                  No presentations available
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-    </DashboardLayout>
+        )}
+      </div>
+    </div>
   )
 }

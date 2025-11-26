@@ -47,6 +47,16 @@ SlideCoffee is a full-stack application with a clear separation between frontend
       - URL-based draft recovery (?draft=xxx) for page refresh resilience
       - Debounced PATCH saves for outline editing, step changes, and theme selection
       - Backend endpoints: /api/brews/analyze-content (paste mode), /api/brews/import-file (import mode)
+    - **Unified Layout (Nov 26, 2025):** All dashboard pages now use a single CollapsibleSidebar component. The dual-layout system (DashboardLayout + CollapsibleSidebar) has been consolidated into a unified pattern:
+      ```jsx
+      <div className="flex h-screen bg-gray-50">
+        <CollapsibleSidebar />
+        <div className="flex-1 overflow-y-auto">{content}</div>
+      </div>
+      ```
+      - CollapsibleSidebar handles workspace fetching, navigation, and user menu
+      - All pages migrated: Dashboard, Brews, TemplatesNew, Settings, SubscriptionBilling, ImportMode, PasteMode
+      - DashboardLayout.tsx has been removed
 
 **System Design Choices:**
 -   **Data Flow:** React components interact with an API client via React Query, which then communicates with Express routes and the Supabase database.

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { User, CreditCard, Users, Shield, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import DashboardLayout from '../components/DashboardLayout'
+import CollapsibleSidebar from '../components/CollapsibleSidebar'
 import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
@@ -44,8 +44,9 @@ export default function Settings() {
   ]
 
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto p-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-600">Manage your account and preferences</p>
@@ -230,6 +231,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   )
 }

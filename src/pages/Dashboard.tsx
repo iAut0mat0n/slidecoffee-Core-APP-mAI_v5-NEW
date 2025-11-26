@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, type Presentation } from '../lib/supabase'
-import DashboardLayout from '../components/DashboardLayout'
+import CollapsibleSidebar from '../components/CollapsibleSidebar'
 import Button from '../components/Button'
 import Card from '../components/Card'
 
@@ -62,8 +62,9 @@ export default function Dashboard() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto p-8">
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-gray-500">Loading...</div>
@@ -129,7 +130,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   )
 }
 

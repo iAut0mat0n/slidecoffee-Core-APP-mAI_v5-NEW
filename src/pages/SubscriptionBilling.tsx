@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import CollapsibleSidebar from '../components/CollapsibleSidebar';
 
 export default function SubscriptionBilling() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -25,8 +25,9 @@ export default function SubscriptionBilling() {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="p-8">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900">Subscription & Billing</h1>
@@ -181,6 +182,6 @@ export default function SubscriptionBilling() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

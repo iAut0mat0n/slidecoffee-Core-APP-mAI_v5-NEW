@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Loader2, FileText, Check, ChevronRight, Palette, Image as ImageIcon, GripVertical, Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBrands, useThemes } from '../lib/queries';
-import DashboardLayout from '../components/DashboardLayout';
+import CollapsibleSidebar from '../components/CollapsibleSidebar';
 
 type Step = 'paste' | 'outline' | 'theme' | 'images' | 'generate';
 
@@ -701,8 +701,9 @@ We'll automatically detect headings, sections, and key points to create slides.`
   };
 
   return (
-    <DashboardLayout>
-      <div className="min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50">
+      <CollapsibleSidebar />
+      <div className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -796,6 +797,6 @@ We'll automatically detect headings, sections, and key points to create slides.`
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
