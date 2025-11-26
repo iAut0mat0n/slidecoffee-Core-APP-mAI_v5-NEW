@@ -138,46 +138,19 @@ export default function SubscriptionBilling() {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-8 bg-gray-200 rounded flex items-center justify-center text-xs font-semibold">
-                  VISA
-                </div>
-                <div>
-                  <div className="font-medium">---- ---- ---- 4242</div>
-                  <div className="text-sm text-gray-600">Expires 12/25</div>
-                </div>
-              </div>
-              <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-                Update
+            <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
+              <p className="text-gray-500 mb-3">No payment method on file</p>
+              <button className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
+                Add Payment Method
               </button>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-semibold mb-4">Billing History</h2>
-            <div className="space-y-3">
-              {[
-                { date: 'Jan 1, 2024', amount: '$0.00', status: 'Paid', invoice: '#INV-001' },
-                { date: 'Dec 1, 2023', amount: '$0.00', status: 'Paid', invoice: '#INV-002' },
-                { date: 'Nov 1, 2023', amount: '$0.00', status: 'Paid', invoice: '#INV-003' },
-              ].map((item) => (
-                <div key={item.invoice} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <div className="font-medium">{item.date}</div>
-                      <div className="text-sm text-gray-600">{item.invoice}</div>
-                    </div>
-                    <div className="font-semibold">{item.amount}</div>
-                    <div className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                      {item.status}
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 text-sm text-purple-600 hover:text-purple-700">
-                    Download
-                  </button>
-                </div>
-              ))}
+            <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
+              <p className="text-gray-500">No billing history yet</p>
+              <p className="text-sm text-gray-400 mt-1">Your invoices will appear here after your first payment</p>
             </div>
           </div>
         </div>

@@ -251,6 +251,93 @@ export default function AIAgentCreate() {
     }
   }
 
+  const isCreationIntent = (message: string): boolean => {
+    const lowerMsg = message.toLowerCase()
+    
+    const actionVerbs = ['create', 'make', 'build', 'generate', 'design', 'prepare', 'draft', 'write']
+    const presentationNouns = [
+      'presentation', 'pitch deck', 'pitch', 'slides', 'deck', 'slideshow',
+      'proposal', 'report', 'training', 'module', 'ppt', 'powerpoint'
+    ]
+    
+    const hasActionVerb = actionVerbs.some(verb => lowerMsg.includes(verb))
+    const hasPresentationNoun = presentationNouns.some(noun => lowerMsg.includes(noun))
+    
+    return hasActionVerb && hasPresentationNoun
+  }
+
+  const handleConversationalChat = async (message: string) => {
+    try {
+      const { supabase } = await import('../lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) {
+        addAgentMessage("I'm having trouble connecting. Please try refreshing the page.")
+        return
+      }
+
+      const response = await fetch('/api/ai-chat-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [...messages.map(m => ({ role: m.role === 'agent' ? 'assistant' : m.role, content: m.content })), 
+                     { role: 'user', content: message }],
+          enableResearch: false,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+
+      const assistantMessageId = Date.now().toString()
+      setMessages(prev => [...prev, {
+        id: assistantMessageId,
+        role: 'agent',
+        content: '',
+        timestamp: new Date(),
+      }])
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let fullResponse = ''
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value, { stream: true })
+          const lines = chunk.split('\n')
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = line.slice(6)
+                if (data === '[DONE]') continue
+                const parsed = JSON.parse(data)
+                if (parsed.type === 'chunk' && parsed.content) {
+                  fullResponse += parsed.content
+                  setMessages(prev => prev.map(m => 
+                    m.id === assistantMessageId ? { ...m, content: fullResponse } : m
+                  ))
+                }
+              } catch (e) {
+                // Skip parse errors
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error)
+      addAgentMessage("I'm here to help! Would you like me to create a presentation for you? Just describe what you need, like 'Create a pitch deck for my startup'.")
+    }
+  }
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isGenerating) return
 
@@ -258,9 +345,13 @@ export default function AIAgentCreate() {
     setInputValue('')
     addUserMessage(userMessage)
 
-    // Start AI generation
     await new Promise(resolve => setTimeout(resolve, 300))
-    await generatePresentationWithAI(userMessage)
+
+    if (isCreationIntent(userMessage)) {
+      await generatePresentationWithAI(userMessage)
+    } else {
+      await handleConversationalChat(userMessage)
+    }
   }
 
   const handlePromptClick = (promptText: string) => {

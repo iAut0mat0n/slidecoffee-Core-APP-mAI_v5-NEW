@@ -4,10 +4,8 @@ import {
   Coffee, 
   LayoutDashboard, 
   Briefcase, 
-  Palette, 
   FileText, 
   Sparkles, 
-  Settings, 
   Clock, 
   Star,
   ChevronLeft,
@@ -71,10 +69,8 @@ export default function CollapsibleSidebar() {
   const mainNav: NavItem[] = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <Briefcase size={20} />, label: 'Brews', path: '/brews' },
-    { icon: <Palette size={20} />, label: 'Brands', path: '/brands' },
     { icon: <FileText size={20} />, label: 'Templates', path: '/templates-new' },
     { icon: <Sparkles size={20} />, label: 'Themes', path: '/themes' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
   ]
 
   const quickAccess: NavItem[] = [
@@ -169,7 +165,7 @@ export default function CollapsibleSidebar() {
                 <button
                   key={ws.id}
                   onClick={() => switchWorkspace(ws)}
-                  className={`w-full text-left px-3 py-2 hover:bg-white rounded-lg text-sm transition-colors ${
+                  className={`w-full text-left px-3 py-2 hover:bg-white rounded-lg text-sm transition-colors cursor-pointer ${
                     ws.id === currentWorkspace?.id ? 'bg-purple-50 text-purple-700 font-medium' : ''
                   }`}
                 >
@@ -284,7 +280,7 @@ export default function CollapsibleSidebar() {
                 </span>
                 <button 
                   onClick={handleUpgrade}
-                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                  className="text-xs text-purple-600 hover:text-purple-700 font-semibold cursor-pointer hover:underline"
                 >
                   Upgrade
                 </button>

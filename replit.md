@@ -57,6 +57,9 @@ SlideCoffee is a full-stack application with a clear separation between frontend
       - CollapsibleSidebar handles workspace fetching, navigation, and user menu
       - All pages migrated: Dashboard, Brews, TemplatesNew, Settings, SubscriptionBilling, ImportMode, PasteMode
       - DashboardLayout.tsx has been removed
+      - Sidebar navigation now shows: Dashboard, Brews, Templates, Themes (Brands and Settings removed from main nav; Settings accessible via user profile menu)
+    - **AI Brew Conversational Mode (Nov 26, 2025):** AIAgentCreate now has intent detection to distinguish between casual chat and presentation creation. Only triggers full AI slide generation when message contains BOTH an action verb (create, make, build, etc.) AND a presentation noun (presentation, slides, deck, etc.). Otherwise uses conversational chat mode via `/api/ai-chat-stream` endpoint.
+    - **UX Polish (Nov 26, 2025):** Added cursor-pointer styling to Upgrade button and workspace items. Removed mock payment method and billing history from SubscriptionBilling (now shows proper empty states).
 
 **System Design Choices:**
 -   **Data Flow:** React components interact with an API client via React Query, which then communicates with Express routes and the Supabase database.
