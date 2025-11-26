@@ -1,8 +1,10 @@
 # SlideCoffee - Replit Project Documentation
 
+**For comprehensive MVP handoff documentation, see: [MVP_HANDOFF.md](./MVP_HANDOFF.md)**
+
 ## Overview
 
-SlideCoffee is an AI-first presentation platform designed to enable users to generate, manage, and collaborate on presentations efficiently. It offers AI-powered slide generation, brand management, real-time collaboration, and various export options. The project aims to provide a comprehensive, AI-driven solution for creating high-quality presentations for individuals and teams, with over 93 functional screens.
+SlideCoffee is an AI-first presentation platform designed to enable users to generate, manage, and collaborate on presentations efficiently. The core feature is the "AI Brew" experience - users describe what they want in natural language, and the AI researches, outlines, and generates a complete presentation with real-time streaming feedback.
 
 ## User Preferences
 
